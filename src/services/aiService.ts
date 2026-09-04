@@ -54,6 +54,126 @@ export class AiService {
     return { mimeType, base64Data };
   }
 
+  static async scanInBodyWithGemini(
+    dataUrl: string,
+    fileMetaDate?: string
+  ): Promise<{
+    date?: string;
+    weightKg?: number;
+    muscleMassKg?: number;
+    fatMassKg?: number;
+    bodyFatPercent?: number;
+    fatFreeMassKg?: number;
+    visceralFatLevel?: number;
+    bmi?: number;
+    inBodyScore?: number;
+  }> {
+    const apiKey = this.getApiKey();
+    if (!apiKey) {
+      throw new Error('API ключ Gemini не указан.');
+    }
+
+    const parsedData = this.parseBase64Image(dataUrl);
+    if (!parsedData) {
+      throw new Error('Некорректный формат файла');
+    }
+
+    const { mimeType, base64Data } = parsedData;
+
+    const promptText = `Ты — экспертная OCR система для точного распознавания результатов анализа состава тела InBody (распечаток, фотографий, скриншотов и PDF файлов).
+
+Изучи документ/изображение и извлеки следующие показатели.
+Верни результат ИСКЛЮЧИТЕЛЬНО в виде одного валидного JSON объекта без дополнительного текста или markdown синтаксиса:
+
+{
+  "date": "YYYY-MM-DD",
+  "weightKg": number,
+  "muscleMassKg": number,
+  "fatMassKg": number,
+  "bodyFatPercent": number,
+  "fatFreeMassKg": number,
+  "visceralFatLevel": number,
+  "bmi": number,
+  "inBodyScore": number
+}
+
+Инструкции по заполнению:
+- "date": дата проведения анализа (в формате YYYY-MM-DD). Внимательно ищи дату на распечатке (например, "15.08.2026" или "15 авг 2026" преобразуй в "2026-08-15"). Если дата на документе отсутствует, верни ${fileMetaDate ? `"${fileMetaDate}"` : "null"}.
+- "weightKg": Общий вес тела (Weight, кг).
+- "muscleMassKg": Скелетно-мышечная масса (SMM / Skeletal Muscle Mass, кг).
+- "fatMassKg": Масса жира (BFM / Body Fat Mass, кг).
+- "bodyFatPercent": Процент жира в организме (PBF / Percent Body Fat, %).
+- "fatFreeMassKg": Безжировая масса (FFM / Fat Free Mass, кг).
+- "visceralFatLevel": Уровень висцерального жира (Visceral Fat Level, от 1 до 20).
+- "bmi": Индекс массы тела (BMI / ИМТ).
+- "inBodyScore": Оценка состава тела / балл InBody (InBody Score, от 1 до 100).
+
+Если какое-то поле не удается найти, установи значение null. Ответ должен содержать ТОЛЬКО этот JSON.`;
+
+    const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+    let lastErrorMsg = '';
+
+    for (const modelName of modelsToTry) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: promptText },
+                  {
+                    inline_data: {
+                      mime_type: mimeType,
+                      data: base64Data,
+                    },
+                  },
+                ],
+              },
+            ],
+            generationConfig: {
+              response_mime_type: 'application/json',
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          const errJson = await response.json().catch(() => ({}));
+          throw new Error(errJson.error?.message || `Ошибка HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        let rawJsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!rawJsonText) {
+          throw new Error('Модель не вернула данные');
+        }
+
+        rawJsonText = rawJsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(rawJsonText);
+
+        return {
+          date: parsed.date || undefined,
+          weightKg: typeof parsed.weightKg === 'number' ? parsed.weightKg : undefined,
+          muscleMassKg: typeof parsed.muscleMassKg === 'number' ? parsed.muscleMassKg : undefined,
+          fatMassKg: typeof parsed.fatMassKg === 'number' ? parsed.fatMassKg : undefined,
+          bodyFatPercent: typeof parsed.bodyFatPercent === 'number' ? parsed.bodyFatPercent : undefined,
+          fatFreeMassKg: typeof parsed.fatFreeMassKg === 'number' ? parsed.fatFreeMassKg : undefined,
+          visceralFatLevel: typeof parsed.visceralFatLevel === 'number' ? parsed.visceralFatLevel : undefined,
+          bmi: typeof parsed.bmi === 'number' ? parsed.bmi : undefined,
+          inBodyScore: typeof parsed.inBodyScore === 'number' ? parsed.inBodyScore : undefined,
+        };
+      } catch (err: any) {
+        console.warn(`Gemini OCR (${modelName}) failed:`, err);
+        lastErrorMsg = err.message || 'Ошибка вызова Gemini API';
+      }
+    }
+
+    throw new Error(lastErrorMsg);
+  }
+
   static async analyzeProgressWithGemini(params: {
     inBodyRecords: InBodyRecord[];
     photos: ProgressPhotoRecord[];

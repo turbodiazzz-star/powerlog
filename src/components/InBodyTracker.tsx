@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { InBodyRecord } from '../types/workout';
 import { StorageService } from '../services/storage';
+import { AiService } from '../services/aiService';
 import { createWorker } from 'tesseract.js';
 import {
   FileText,
@@ -15,6 +16,7 @@ import {
   CheckCircle,
   AlertCircle,
   TrendingUp,
+  Sparkles,
 } from 'lucide-react';
 
 interface ExtractedInBodyData {
@@ -285,11 +287,87 @@ export const InBodyTracker: React.FC = () => {
       setImageUrl(dataUrl);
 
       setIsAnalyzing(true);
-      setOcrStatusText('Инициализация движка сканирования...');
+      const isGeminiKeySet = Boolean(AiService.getApiKey());
 
+      // Priority 1: Gemini AI OCR (Supports PDF, screenshots, complex InBody tables, Russian dates)
+      if (isGeminiKeySet) {
+        setOcrStatusText('Распознавание распечатки / PDF через Gemini ИИ...');
+        setOcrProgress(50);
+
+        try {
+          const extracted = await AiService.scanInBodyWithGemini(dataUrl, fileMetaDate);
+          setOcrProgress(100);
+          setIsAnalyzing(false);
+
+          const foundItems: string[] = [];
+          if (extracted.date) {
+            setDate(extracted.date);
+            foundItems.push(`дата ${extracted.date}`);
+          }
+          if (extracted.weightKg) {
+            setWeightKg(extracted.weightKg.toString());
+            foundItems.push(`вес ${extracted.weightKg} кг`);
+          }
+          if (extracted.muscleMassKg) {
+            setMuscleMassKg(extracted.muscleMassKg.toString());
+            foundItems.push(`мышцы ${extracted.muscleMassKg} кг`);
+          }
+          if (extracted.bodyFatPercent) {
+            setBodyFatPercent(extracted.bodyFatPercent.toString());
+            foundItems.push(`жир ${extracted.bodyFatPercent}%`);
+          }
+          if (extracted.fatMassKg) {
+            setFatMassKg(extracted.fatMassKg.toString());
+            foundItems.push(`масса жира ${extracted.fatMassKg} кг`);
+          }
+          if (extracted.fatFreeMassKg) {
+            setFatFreeMassKg(extracted.fatFreeMassKg.toString());
+            foundItems.push(`безжировая масса ${extracted.fatFreeMassKg} кг`);
+          }
+          if (extracted.visceralFatLevel) {
+            setVisceralFatLevel(extracted.visceralFatLevel.toString());
+            foundItems.push(`висцеральный жир ${extracted.visceralFatLevel}`);
+          }
+          if (extracted.bmi) {
+            setBmi(extracted.bmi.toString());
+            foundItems.push(`ИМТ ${extracted.bmi}`);
+          }
+          if (extracted.inBodyScore) {
+            setInBodyScore(extracted.inBodyScore.toString());
+            foundItems.push(`оценка ${extracted.inBodyScore}`);
+          }
+
+          if (foundItems.length > 0) {
+            setOcrResultMsg({
+              type: 'success',
+              msg: `Gemini ИИ распознал данные: ${foundItems.join(', ')}`,
+            });
+          } else {
+            setOcrResultMsg({
+              type: 'warn',
+              msg: 'Gemini не нашел показателей на снимке. Заполните значения вручную.',
+            });
+          }
+          return;
+        } catch (err: any) {
+          console.warn('Gemini OCR failed:', err);
+        }
+      }
+
+      // Priority 2: Fallback for PDF without Gemini key
+      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+        setIsAnalyzing(false);
+        setOcrResultMsg({
+          type: 'warn',
+          msg: 'Для мгновенного распознавания PDF файлов укажите бесплатный API ключ Gemini во вкладке ИИ-Тренер.',
+        });
+        return;
+      }
+
+      // Priority 3: Local Tesseract OCR for Image files
+      setOcrStatusText('Распознавание снимка через локальный OCR...');
       try {
         const worker = await createWorker('rus+eng');
-        setOcrStatusText('Распознавание показателей с снимка InBody...');
         setOcrProgress(45);
 
         const ret = await worker.recognize(dataUrl);
@@ -342,12 +420,12 @@ export const InBodyTracker: React.FC = () => {
         if (foundItems.length > 0) {
           setOcrResultMsg({
             type: 'success',
-            msg: `Успешно распознано: ${foundItems.join(', ')}`,
+            msg: `Распознано локально: ${foundItems.join(', ')}`,
           });
         } else {
           setOcrResultMsg({
             type: 'warn',
-            msg: 'Не удалось четко определить цифры с снимка. Пожалуйста, введите значения вручную ниже.',
+            msg: 'Не удалось определить цифры. Введите значения вручную.',
           });
         }
       } catch (err) {
@@ -355,7 +433,7 @@ export const InBodyTracker: React.FC = () => {
         setIsAnalyzing(false);
         setOcrResultMsg({
           type: 'warn',
-          msg: 'Не удалось считать текст. Введите показания вручную ниже.',
+          msg: 'Не удалось распознать скан. Введите показания вручную ниже.',
         });
       }
     };
@@ -767,17 +845,22 @@ export const InBodyTracker: React.FC = () => {
             <div className="overflow-y-auto pt-3 space-y-4 pr-0.5 scrollbar-thin">
               {/* Scan Image Upload */}
               <div className="space-y-2">
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                  Фото / Скан распечатки InBody
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center justify-between">
+                  <span>Фото / PDF скан распечатки InBody</span>
+                  {AiService.getApiKey() && (
+                    <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-emerald-400" /> Gemini ИИ активен
+                    </span>
+                  )}
                 </label>
 
                 <label className="flex flex-col items-center justify-center p-3 border-2 border-dashed border-zinc-800 hover:border-zinc-600 rounded-xl cursor-pointer bg-zinc-950/60 transition-colors text-center">
                   <Upload className="w-5 h-5 text-emerald-400 mb-1" />
                   <span className="text-xs font-medium text-zinc-200">
-                    {imageUrl ? 'Изменить снимки' : 'Выбрать фото с телефона или камеры'}
+                    {imageUrl ? 'Изменить файл (фото / PDF)' : 'Выбрать фото с телефона или PDF скан InBody'}
                   </span>
-                  <span className="text-[10px] text-zinc-500 mt-0.5">PNG, JPG, HEIC</span>
-                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                  <span className="text-[10px] text-zinc-500 mt-0.5">PNG, JPG, HEIC, PDF</span>
+                  <input type="file" accept="image/*,application/pdf,.pdf" onChange={handleImageUpload} className="hidden" />
                 </label>
 
                 {isAnalyzing && (
@@ -815,8 +898,15 @@ export const InBodyTracker: React.FC = () => {
                 )}
 
                 {imageUrl && !isAnalyzing && (
-                  <div className="relative rounded-xl overflow-hidden border border-zinc-800 max-h-32 bg-zinc-950 flex items-center justify-center p-1">
-                    <img src={imageUrl} alt="InBody scan" className="max-h-28 object-contain rounded-lg" />
+                  <div className="relative rounded-xl overflow-hidden border border-zinc-800 max-h-32 bg-zinc-950 flex items-center justify-center p-2">
+                    {imageUrl.startsWith('data:application/pdf') ? (
+                      <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs py-2">
+                        <FileText className="w-6 h-6 text-emerald-400 shrink-0" />
+                        <span>Загружен PDF документ InBody</span>
+                      </div>
+                    ) : (
+                      <img src={imageUrl} alt="InBody scan" className="max-h-28 object-contain rounded-lg" />
+                    )}
                   </div>
                 )}
               </div>
@@ -1001,7 +1091,7 @@ export const InBodyTracker: React.FC = () => {
         </div>
       )}
 
-      {/* Modal View Full Image */}
+      {/* Modal View Full Image or PDF */}
       {selectedRecordImage && (
         <div
           onClick={() => setSelectedRecordImage(null)}
@@ -1010,11 +1100,19 @@ export const InBodyTracker: React.FC = () => {
           <div className="relative max-w-2xl w-full">
             <button
               onClick={() => setSelectedRecordImage(null)}
-              className="absolute top-2 right-2 p-2 bg-zinc-900 text-white rounded-full border border-zinc-700"
+              className="absolute top-2 right-2 p-2 bg-zinc-900 text-white rounded-full border border-zinc-700 z-10"
             >
               <X className="w-5 h-5" />
             </button>
-            <img src={selectedRecordImage} alt="Full InBody" className="w-full rounded-2xl border border-zinc-800 object-contain max-h-[85vh]" />
+            {selectedRecordImage.startsWith('data:application/pdf') ? (
+              <iframe
+                src={selectedRecordImage}
+                title="InBody PDF"
+                className="w-full h-[80vh] rounded-2xl border border-zinc-800 bg-white"
+              />
+            ) : (
+              <img src={selectedRecordImage} alt="Full InBody" className="w-full rounded-2xl border border-zinc-800 object-contain max-h-[85vh]" />
+            )}
           </div>
         </div>
       )}
