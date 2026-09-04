@@ -506,11 +506,11 @@ export const InBodyTracker: React.FC = () => {
 
       {/* Robust Modal: Add InBody Record */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-zinc-950/85 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-[100] flex flex-col justify-end sm:justify-center items-center p-2 sm:p-4 bg-zinc-950/95 backdrop-blur-md pb-safe pt-safe overflow-hidden animate-fadeIn">
           {/* Entire modal container IS the form element! */}
           <form
             onSubmit={handleSave}
-            className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col max-h-[82vh] my-auto overflow-hidden text-xs"
+            className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col max-h-[calc(100dvh-3rem)] sm:max-h-[85dvh] my-auto overflow-hidden text-xs shrink-0"
           >
             {/* Header (Fixed at top) */}
             <div className="flex justify-between items-center px-4 py-3 border-b border-zinc-800 bg-zinc-900 shrink-0">
@@ -521,7 +521,7 @@ export const InBodyTracker: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 text-zinc-400 hover:text-white rounded-lg transition-colors"
+                className="p-1.5 text-zinc-400 hover:text-white rounded-lg transition-colors active:scale-95"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -530,7 +530,7 @@ export const InBodyTracker: React.FC = () => {
             {/* Scrollable Body Content */}
             <div
               style={{ WebkitOverflowScrolling: 'touch' }}
-              className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 overscroll-contain"
+              className="flex-1 min-h-0 overflow-y-auto p-3.5 sm:p-4 space-y-3.5 overscroll-contain touch-pan-y"
             >
               {/* Scan Image / PDF Upload */}
               <div className="space-y-2">
@@ -585,14 +585,14 @@ export const InBodyTracker: React.FC = () => {
                 )}
 
                 {imageUrl && !isAnalyzing && (
-                  <div className="relative rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 flex items-center justify-center p-2 max-h-36">
+                  <div className="relative rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 flex items-center justify-center p-1.5 max-h-24">
                     {imageUrl.startsWith('data:application/pdf') ? (
-                      <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs py-2">
-                        <FileText className="w-6 h-6 text-emerald-400 shrink-0" />
+                      <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs py-1.5">
+                        <FileText className="w-5 h-5 text-emerald-400 shrink-0" />
                         <span>Загружен PDF документ InBody</span>
                       </div>
                     ) : (
-                      <img src={imageUrl} alt="InBody scan" className="max-h-32 object-contain rounded-lg" />
+                      <img src={imageUrl} alt="InBody scan" className="max-h-20 object-contain rounded-lg" />
                     )}
                   </div>
                 )}
@@ -763,7 +763,7 @@ export const InBodyTracker: React.FC = () => {
             </div>
 
             {/* Footer (Fixed inside the form) */}
-            <div className="flex justify-end gap-2 p-3 border-t border-zinc-800 shrink-0 bg-zinc-900 z-10">
+            <div className="flex items-center justify-end gap-2.5 p-3 border-t border-zinc-800 shrink-0 bg-zinc-900 z-10">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
@@ -773,9 +773,9 @@ export const InBodyTracker: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="px-5 py-2.5 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 font-black text-xs transition-all shadow-md active:scale-95 flex items-center gap-1.5"
+                className="px-5 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-black text-xs transition-all shadow-lg active:scale-95 flex items-center gap-1.5"
               >
-                <CheckCircle className="w-4 h-4 text-zinc-950" />
+                <CheckCircle className="w-4 h-4 text-zinc-950 stroke-[2.5]" />
                 Сохранить запись
               </button>
             </div>
