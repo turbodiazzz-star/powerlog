@@ -47,13 +47,14 @@ const METRICS_CONFIG: MetricConfig[] = [
   { key: 'inBodyScore', label: 'Оценка InBody', unit: 'балл', color: '#60a5fa' }, // blue
 ];
 
-const compressImageForOcr = (dataUrl: string, maxDim = 1400, quality = 0.8): Promise<string> => {
+const compressImageForOcr = (dataUrl: string, maxDim = 1000, quality = 0.7): Promise<string> => {
   return new Promise((resolve) => {
     if (!dataUrl || dataUrl.startsWith('data:application/pdf')) {
       resolve(dataUrl);
       return;
     }
     const img = new Image();
+    img.crossOrigin = 'anonymous';
     img.onload = () => {
       let width = img.width;
       let height = img.height;
@@ -75,7 +76,12 @@ const compressImageForOcr = (dataUrl: string, maxDim = 1400, quality = 0.8): Pro
         return;
       }
       ctx.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/jpeg', quality));
+      try {
+        const compressed = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressed);
+      } catch {
+        resolve(dataUrl);
+      }
     };
     img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;
@@ -549,34 +555,29 @@ export const InBodyTracker: React.FC = () => {
 
       {/* Robust & Clean Mobile-first Modal: Add InBody Record */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] bg-zinc-950/90 backdrop-blur-md flex flex-col justify-end sm:justify-center items-center p-2 sm:p-4 animate-fadeIn">
-          {/* Backdrop Click */}
-          <div className="absolute inset-0" onClick={() => setIsModalOpen(false)} />
-
-          <form
-            onSubmit={handleSave}
-            className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col h-[85dvh] sm:h-[85vh] max-h-[85dvh] sm:max-h-[85vh] overflow-hidden text-xs my-auto"
-          >
-            {/* Header (Top of card, fixed height, non-scrolling) */}
-            <div className="flex justify-between items-center px-4 py-3 border-b border-zinc-800 bg-zinc-900 shrink-0">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <FileText className="w-4 h-4 text-emerald-400" />
-                Загрузка & Ввод результатов InBody
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="p-1.5 text-zinc-400 hover:text-white rounded-lg transition-colors active:scale-95"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Scrollable Body Content (Only this area scrolls) */}
-            <div
-              style={{ WebkitOverflowScrolling: 'touch' }}
-              className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 touch-pan-y"
+        <div className="fixed inset-0 z-[100] bg-zinc-950/90 backdrop-blur-md overflow-y-auto p-3 sm:p-4 animate-fadeIn">
+          <div className="min-h-full flex items-center justify-center py-4">
+            <form
+              onSubmit={handleSave}
+              className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full shadow-2xl p-4 space-y-4 text-xs relative my-auto"
             >
+              {/* Header */}
+              <div className="flex justify-between items-center pb-3 border-b border-zinc-800">
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-emerald-400" />
+                  Загрузка & Ввод результатов InBody
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-1.5 text-zinc-400 hover:text-white rounded-lg transition-colors active:scale-95"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body Content */}
+              <div className="space-y-4">
               {/* Scan Image / PDF Upload */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
@@ -807,24 +808,25 @@ export const InBodyTracker: React.FC = () => {
               </div>
             </div>
 
-            {/* Footer (Bottom of card, fixed height, non-scrolling) */}
-            <div className="flex items-center justify-end gap-2.5 px-4 py-3 border-t border-zinc-800 bg-zinc-900 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl text-zinc-400 hover:text-white text-xs font-bold active:scale-95 transition-transform"
-              >
-                Отмена
-              </button>
-              <button
-                type="submit"
-                className="px-5 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-black text-xs transition-all shadow-lg active:scale-95 flex items-center gap-1.5"
-              >
-                <CheckCircle className="w-4 h-4 text-zinc-950 stroke-[2.5]" />
-                Сохранить запись
-              </button>
-            </div>
-          </form>
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl text-zinc-400 hover:text-white text-xs font-bold active:scale-95 transition-transform"
+                >
+                  Отмена
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-black text-xs transition-all shadow-lg active:scale-95 flex items-center gap-1.5"
+                >
+                  <CheckCircle className="w-4 h-4 text-zinc-950 stroke-[2.5]" />
+                  Сохранить запись
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
