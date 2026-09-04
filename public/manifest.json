@@ -3,17 +3,13 @@
   "name": "PowerLog - Мобильный Дневник Тренировок A/B",
   "icons": [
     {
-      "src": "/pwa-192.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "/pwa-512.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "./favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
     }
   ],
-  "start_url": "/",
+  "start_url": "./",
+  "scope": "./",
   "background_color": "#020617",
   "theme_color": "#020617",
   "display": "standalone",
