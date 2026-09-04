@@ -254,8 +254,8 @@ export const ProgressPhotoTracker: React.FC = () => {
 
       {/* Modal: Add Progress Photo */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 bg-zinc-950/90 backdrop-blur-md animate-fadeIn">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-sm w-full p-4 shadow-2xl space-y-3 max-h-[85vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[100] flex flex-col justify-start items-center p-3 pt-4 pb-20 bg-zinc-950/90 backdrop-blur-md animate-fadeIn overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-sm w-full p-4 shadow-2xl space-y-3 max-h-[60vh] overflow-y-auto my-auto">
             <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Camera className="w-4 h-4 text-indigo-400" />
