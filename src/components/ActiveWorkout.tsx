@@ -20,9 +20,6 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
-  Play,
-  Pause,
-  RotateCcw,
   BookOpen,
 } from 'lucide-react';
 
@@ -60,7 +57,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   const [timerSecondsLeft, setTimerSecondsLeft] = useState<number | null>(null);
   const [timerInitialSeconds, setTimerInitialSeconds] = useState<number>(60);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [timerLabel, setTimerLabel] = useState<string>('');
 
   // Active session state
   const [session, setSession] = useState<WorkoutSession>(() => {
@@ -174,11 +170,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     };
   }, [isTimerRunning, timerSecondsLeft]);
 
-  const startQuickTimer = (seconds: number, label?: string) => {
+  const startQuickTimer = (seconds: number) => {
     setTimerInitialSeconds(seconds);
     setTimerSecondsLeft(seconds);
     setIsTimerRunning(true);
-    if (label) setTimerLabel(label);
   };
 
   const handleGymChange = (newGymId: string) => {
@@ -248,7 +243,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     exerciseId: string,
     setId: string,
     restSec: number,
-    muscleGroup: string
+    _muscleGroup: string
   ) => {
     let newlyCompleted = false;
 
@@ -276,7 +271,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     }));
 
     if (newlyCompleted) {
-      startQuickTimer(restSec, muscleGroup);
+      startQuickTimer(restSec);
     }
   };
 
@@ -433,120 +428,82 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   const loggedSuperset = session.supersets.find(s => s.supersetId === currentSupersetDef.id);
 
   return (
-    <div className="space-y-3 pb-24 w-full max-w-md mx-auto overflow-x-hidden text-sm">
-      {/* 1. Comfortable Header Strip (iOS Safe Area Padding, Tall Buttons) */}
-      <header className="bg-zinc-900/95 border-b border-zinc-800 backdrop-blur-md sticky top-0 z-40 pt-safe px-3.5 py-3 rounded-b-2xl shadow-lg space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          {/* Day & Gym Selector */}
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="bg-white text-zinc-950 font-black text-xs px-2.5 py-1 rounded-lg shrink-0 shadow-sm">
-              ДЕНЬ {workoutType} ({dayName})
-            </span>
+    <div className="space-y-2 pb-16 w-full max-w-md mx-auto overflow-x-hidden text-xs pt-safe">
+      {/* 1. Header Card (Stand-alone Rounded Block - NO status bar bleed) */}
+      <header className="bg-zinc-900 border border-zinc-800 rounded-xl p-2 shadow-sm flex items-center justify-between gap-1">
+        {/* Workout Badge & Gym Selector */}
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="bg-white text-zinc-950 font-black text-xs px-2 py-0.5 rounded-md shrink-0 shadow-sm">
+            {workoutType} ({dayName})
+          </span>
 
-            <select
-              value={currentGymId}
-              onChange={e => handleGymChange(e.target.value)}
-              className="bg-zinc-950 text-xs text-zinc-200 font-bold rounded-lg px-2.5 py-1 border border-zinc-700 focus:outline-none shrink-0 max-w-[125px] truncate"
-            >
-              {gyms.map(g => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
+          <select
+            value={currentGymId}
+            onChange={e => handleGymChange(e.target.value)}
+            className="bg-zinc-950 text-xs text-zinc-200 font-bold rounded-md px-1.5 py-0.5 border border-zinc-700 focus:outline-none shrink-0 max-w-[100px] truncate"
+          >
+            {gyms.map(g => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Timer & Action Buttons */}
+        <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1 bg-zinc-950 px-1.5 py-0.5 rounded-md border border-zinc-800 text-xs font-mono font-bold text-white">
+            <Clock className="w-3 h-3 text-zinc-400" />
+            <span>{formatElapsed(elapsedSeconds)}</span>
           </div>
 
-          {/* Duration Clock & Finish/Cancel Controls */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <div className="flex items-center gap-1 bg-zinc-950 px-2.5 py-1 rounded-lg border border-zinc-800 text-xs font-mono font-bold text-white">
-              <Clock className="w-3.5 h-3.5 text-zinc-400" />
-              <span>{formatElapsed(elapsedSeconds)}</span>
-            </div>
+          <button
+            onClick={onCancelWorkout}
+            className="p-1 text-zinc-400 hover:text-rose-400 bg-zinc-800 rounded-md transition-colors"
+            title="Отменить"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
 
-            <button
-              onClick={onCancelWorkout}
-              className="p-1.5 text-zinc-400 hover:text-rose-400 bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-all"
-              title="Отменить тренировку"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={handleFinishWorkout}
-              className="flex items-center gap-1.5 bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-black px-3.5 py-1.5 rounded-lg transition-all active:scale-95 shrink-0 shadow-sm"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>Готово</span>
-            </button>
-          </div>
+          <button
+            onClick={handleFinishWorkout}
+            className="flex items-center gap-1 bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-black px-2.5 py-0.5 rounded-md transition-all active:scale-95 shrink-0 shadow-sm"
+          >
+            <Save className="w-3 h-3" />
+            <span>Готово</span>
+          </button>
         </div>
       </header>
 
-      {/* 2. Quick Rest Timer Header Bar (30, 60, 90, 120, 180s) */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 shadow-sm space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1">
-              ⏱️ Отдых {timerLabel ? `(${timerLabel})` : ''}:
+      {/* 2. Quick Rest Timer Row (Compact Single Line) */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-1.5 px-2 shadow-sm flex items-center justify-between gap-1 text-xs">
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="font-bold text-zinc-400 text-[11px] shrink-0">
+            ⏱️ Отдых:
+          </span>
+          {timerSecondsLeft !== null && (
+            <span className={`font-mono text-xs font-black px-1.5 py-0.2 rounded border ${
+              timerSecondsLeft === 0
+                ? 'bg-emerald-950 text-emerald-300 border-emerald-500 animate-bounce'
+                : 'bg-zinc-950 text-amber-400 border-zinc-800'
+            }`}>
+              {formatTimerDisplay(timerSecondsLeft)}
+              {timerSecondsLeft === 0 && ' 🎉'}
             </span>
-            {timerSecondsLeft !== null && (
-              <span className={`font-mono text-sm font-black px-2 py-0.5 rounded-lg border ${
-                timerSecondsLeft === 0
-                  ? 'bg-emerald-950 text-emerald-300 border-emerald-500 animate-bounce'
-                  : 'bg-zinc-950 text-amber-400 border-zinc-800'
-              }`}>
-                {formatTimerDisplay(timerSecondsLeft)}
-                {timerSecondsLeft === 0 && ' — ПОРА! 🎉'}
-              </span>
-            )}
-          </div>
-
-          {timerSecondsLeft !== null && timerSecondsLeft > 0 && (
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setIsTimerRunning(!isTimerRunning)}
-                className="p-1.5 bg-zinc-800 text-zinc-200 hover:text-white rounded-lg border border-zinc-700 text-xs"
-                title={isTimerRunning ? 'Пауза' : 'Старт'}
-              >
-                {isTimerRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              </button>
-
-              <button
-                onClick={() => {
-                  setTimerSecondsLeft(timerInitialSeconds);
-                  setIsTimerRunning(true);
-                }}
-                className="p-1.5 bg-zinc-800 text-zinc-200 hover:text-white rounded-lg border border-zinc-700 text-xs"
-                title="Сброс"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-
-              <button
-                onClick={() => {
-                  setTimerSecondsLeft(null);
-                  setIsTimerRunning(false);
-                }}
-                className="p-1.5 text-zinc-500 hover:text-white"
-                title="Закрыть таймер"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
           )}
         </div>
 
-        {/* Big Touch-Friendly Quick Buttons: 30s, 60s, 90s, 120s, 180s */}
-        <div className="grid grid-cols-5 gap-1.5">
+        {/* 5 Quick Preset Buttons */}
+        <div className="flex items-center gap-1 shrink-0">
           {TIMER_PRESETS.map(sec => {
             const isCurrentPreset = timerInitialSeconds === sec && timerSecondsLeft !== null;
             return (
               <button
                 key={sec}
                 onClick={() => startQuickTimer(sec)}
-                className={`py-2 px-1 text-center font-mono font-bold text-xs rounded-xl border transition-all active:scale-95 ${
+                className={`py-1 px-1.5 text-center font-mono font-bold text-[11px] rounded-lg border transition-all active:scale-95 ${
                   isCurrentPreset && isTimerRunning
-                    ? 'bg-amber-400 text-zinc-950 border-amber-300 shadow-md font-black'
+                    ? 'bg-amber-400 text-zinc-950 border-amber-300 font-black'
                     : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:border-zinc-700 hover:text-white'
                 }`}
               >
@@ -558,14 +515,14 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       </div>
 
       {/* 3. Superset Tabs Carousel Header */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-1 flex items-center justify-between gap-1 text-xs font-bold shadow-sm">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-0.5 flex items-center justify-between gap-1 text-[11px] font-bold shadow-sm">
         {program.supersets.map((_, idx) => {
           const isActive = idx === activeSupersetIndex;
           return (
             <button
               key={idx}
               onClick={() => setActiveSupersetIndex(idx)}
-              className={`flex-1 py-2 px-2 text-center rounded-lg transition-all uppercase text-xs ${
+              className={`flex-1 py-1 px-1.5 text-center rounded-lg transition-all uppercase ${
                 isActive
                   ? 'bg-white text-zinc-950 font-black shadow-sm'
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
@@ -577,18 +534,21 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         })}
       </div>
 
-      {/* 4. Active Superset Cards (Fills Height, Large Touch Targets) */}
+      {/* 4. Active Superset Container (Zero-Scroll Compact Layout) */}
       <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="bg-zinc-900 border border-zinc-800/90 rounded-2xl p-3.5 shadow-md space-y-4 animate-fadeIn"
+        className="bg-zinc-900 border border-zinc-800/90 rounded-xl p-2 shadow-sm space-y-2 animate-fadeIn"
       >
-        <div className="space-y-4">
+        <div className="space-y-2">
           {currentSupersetDef.exercises.map((exDef) => {
             const loggedEx = loggedSuperset?.exercises.find(e => e.exerciseId === exDef.id);
             const availableVariants = getOptionsForExercise(exDef.id, activeGymBrand);
             const prevVariantName = StorageService.getPreviousVariantUsed(exDef.id);
             const selectedVariantName = loggedEx?.machineName || availableVariants[0]?.name || '';
+
+            const selectedOption = availableVariants.find(opt => opt.name === selectedVariantName) || availableVariants[0];
+            const techniqueNotes = selectedOption?.focusNotes || exDef.focusNotes;
 
             const variantHistoryLog = StorageService.getLastExerciseLog(
               exDef.id,
@@ -603,41 +563,41 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             return (
               <div
                 key={exDef.id}
-                className="bg-zinc-950 border border-zinc-800 rounded-xl p-3 space-y-3 shadow-sm"
+                className="bg-zinc-950 border border-zinc-800/80 rounded-lg p-2 space-y-1.5 shadow-sm"
               >
-                {/* Exercise Header: Muscle Badge + Technique Button + Machine Selector */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs font-bold px-2 py-0.5 rounded-lg shrink-0">
+                {/* Single Row Exercise Bar: Muscle Badge + Technique Toggle + Machine Selector */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="bg-zinc-800 text-zinc-200 border border-zinc-700 text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0">
                         {exDef.muscleGroup}
                       </span>
 
                       {/* Technique Toggle Button */}
                       <button
                         onClick={() => toggleDetails(detailsKey)}
-                        className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg border transition-all ${
+                        className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded border transition-all ${
                           isDetailsOpen
                             ? 'bg-amber-400 text-zinc-950 border-amber-300'
                             : 'bg-zinc-900 text-zinc-300 border-zinc-800 hover:border-zinc-700 hover:text-white'
                         }`}
                       >
-                        <BookOpen className="w-3.5 h-3.5" />
+                        <BookOpen className="w-3 h-3" />
                         <span>Техника</span>
-                        {isDetailsOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        {isDetailsOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                       </button>
                     </div>
 
-                    <span className="text-xs text-zinc-500 font-mono">
+                    <span className="text-[10px] text-zinc-500 font-mono">
                       {exDef.targetSets} × {exDef.targetReps}
                     </span>
                   </div>
 
-                  {/* Machine Selector (Single Title & Selector combined) */}
+                  {/* Machine Selector */}
                   <select
                     value={selectedVariantName}
                     onChange={e => handleVariantChange(exDef.id, e.target.value)}
-                    className="w-full bg-zinc-900 text-xs text-white font-bold rounded-xl px-3 py-2 border border-zinc-700 focus:outline-none focus:border-zinc-500 truncate"
+                    className="w-full bg-zinc-900 text-[11px] text-white font-bold rounded-lg px-2 py-1 border border-zinc-700 focus:outline-none truncate"
                   >
                     {availableVariants.map(opt => {
                       const isPrev = opt.name === prevVariantName;
@@ -650,50 +610,50 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                   </select>
                 </div>
 
-                {/* Technique Description Accordion */}
+                {/* Technique Description Accordion tailored to SELECTED machine */}
                 {isDetailsOpen && (
-                  <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-300 leading-relaxed animate-fadeIn">
-                    <span className="font-bold text-amber-400 block mb-1">💡 Техника и фокус:</span>
-                    {exDef.focusNotes}
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-[11px] text-zinc-300 leading-snug animate-fadeIn">
+                    <span className="font-bold text-amber-400 block mb-0.5">💡 Техника для {selectedOption?.name}:</span>
+                    {techniqueNotes}
                   </div>
                 )}
 
-                {/* Sets Table: Comfortable Touch Rows with Inline Historical Weights */}
-                <div className="overflow-x-hidden pt-1">
+                {/* Sets Table: Ultra-Compact with Inline Past Weights */}
+                <div className="overflow-x-hidden pt-0.5">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="text-zinc-500 border-b border-zinc-800 text-[11px] uppercase font-bold">
-                        <th className="py-2 px-1 w-28">Сет / Прошлый</th>
-                        <th className="py-2 px-1">Вес (кг)</th>
-                        <th className="py-2 px-1">Повторы</th>
-                        <th className="py-2 px-1 text-center w-12">Готово</th>
-                        <th className="py-2 px-0.5 text-right w-6"></th>
+                      <tr className="text-zinc-500 border-b border-zinc-800 text-[9px] uppercase font-bold">
+                        <th className="py-1 px-1 w-24">Сет / Прошлый</th>
+                        <th className="py-1 px-1">Вес (кг)</th>
+                        <th className="py-1 px-1">Повторы</th>
+                        <th className="py-1 px-1 text-center w-10">Готово</th>
+                        <th className="py-1 px-0.5 text-right w-5"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-800/60">
+                    <tbody className="divide-y divide-zinc-800/40">
                       {loggedEx?.sets.map((st, idx) => {
                         const histSet = variantHistoryLog?.sets[idx];
                         return (
                           <tr
                             key={st.id}
                             className={`transition-all ${
-                              st.completed ? 'bg-emerald-950/30 text-emerald-200' : ''
+                              st.completed ? 'bg-emerald-950/25 text-emerald-200' : ''
                             }`}
                           >
                             {/* Set # + Historical Weight Inline */}
-                            <td className="py-2.5 px-1 font-mono text-xs">
+                            <td className="py-1 px-1 font-mono text-[10px]">
                               <span className="font-bold text-zinc-300">#{idx + 1}</span>
                               {histSet ? (
-                                <span className="text-amber-400 ml-2 font-bold text-xs">
+                                <span className="text-amber-400/90 ml-1.5 font-bold text-[10px]">
                                   {histSet.weightKg}кг
                                 </span>
                               ) : (
-                                <span className="text-zinc-600 ml-2 text-xs">—</span>
+                                <span className="text-zinc-600 ml-1.5 text-[9px]">—</span>
                               )}
                             </td>
 
                             {/* Weight Input */}
-                            <td className="py-2.5 px-1">
+                            <td className="py-1 px-1">
                               <input
                                 type="number"
                                 step="0.5"
@@ -707,12 +667,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     parseFloat(e.target.value) || 0
                                   )
                                 }
-                                className="w-14 h-9 bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-sm rounded-lg text-center focus:outline-none focus:border-zinc-400"
+                                className="w-13 h-7 bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-xs rounded text-center focus:outline-none focus:border-zinc-400"
                               />
                             </td>
 
                             {/* Reps Input */}
-                            <td className="py-2.5 px-1">
+                            <td className="py-1 px-1">
                               <input
                                 type="number"
                                 value={st.reps || ''}
@@ -725,12 +685,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     parseInt(e.target.value, 10) || 0
                                   )
                                 }
-                                className="w-14 h-9 bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-sm rounded-lg text-center focus:outline-none focus:border-zinc-400"
+                                className="w-13 h-7 bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-xs rounded text-center focus:outline-none focus:border-zinc-400"
                               />
                             </td>
 
                             {/* Checkbox */}
-                            <td className="py-2.5 px-1 text-center">
+                            <td className="py-1 px-1 text-center">
                               <button
                                 onClick={() =>
                                   toggleSetCompleted(
@@ -741,24 +701,24 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     exDef.muscleGroup
                                   )
                                 }
-                                className="p-1 rounded-lg transition-transform active:scale-90"
+                                className="p-0.5 rounded transition-transform active:scale-90"
                               >
                                 {st.completed ? (
-                                  <CheckCircle2 className="w-6 h-6 text-emerald-400 fill-emerald-950" />
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-400 fill-emerald-950" />
                                 ) : (
-                                  <Circle className="w-6 h-6 text-zinc-600 hover:text-zinc-300" />
+                                  <Circle className="w-4 h-4 text-zinc-600 hover:text-zinc-300" />
                                 )}
                               </button>
                             </td>
 
                             {/* Delete Set */}
-                            <td className="py-2.5 px-0.5 text-right">
+                            <td className="py-1 px-0.5 text-right">
                               {(loggedEx?.sets.length || 0) > 1 && (
                                 <button
                                   onClick={() => removeSet(currentSupersetDef.id, exDef.id, st.id)}
-                                  className="p-1 text-zinc-600 hover:text-rose-400"
+                                  className="p-0.5 text-zinc-600 hover:text-rose-400"
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Trash2 className="w-3 h-3" />
                                 </button>
                               )}
                             </td>
@@ -771,9 +731,9 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
                 <button
                   onClick={() => addSet(currentSupersetDef.id, exDef.id)}
-                  className="w-full py-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white font-bold text-xs rounded-xl border border-zinc-800 transition-colors flex items-center justify-center gap-1.5"
+                  className="inline-flex items-center gap-1 text-[10px] text-zinc-400 hover:text-white font-bold pt-0.5"
                 >
-                  <Plus className="w-4 h-4 text-indigo-400" /> Добавить подход
+                  <Plus className="w-3 h-3 text-indigo-400" /> Добавить подход
                 </button>
               </div>
             );
@@ -781,35 +741,35 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         </div>
 
         {/* Carousel Prev / Next Controls */}
-        <div className="flex items-center justify-between pt-2 border-t border-zinc-800 text-xs font-bold">
+        <div className="flex items-center justify-between pt-1 border-t border-zinc-800 text-[10px] font-bold">
           <button
             disabled={activeSupersetIndex === 0}
             onClick={() => setActiveSupersetIndex(prev => prev - 1)}
-            className={`flex items-center gap-1 px-3 py-2 rounded-xl border transition-all ${
+            className={`flex items-center gap-0.5 px-2 py-1 rounded border transition-all ${
               activeSupersetIndex === 0
                 ? 'opacity-20 border-transparent text-zinc-600'
                 : 'bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700'
             }`}
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3.5 h-3.5" />
             <span>Пред.</span>
           </button>
 
-          <span className="text-xs text-zinc-500 font-mono">
+          <span className="text-[9px] text-zinc-500 font-mono">
             {activeSupersetIndex + 1} / {program.supersets.length}
           </span>
 
           <button
             disabled={activeSupersetIndex === program.supersets.length - 1}
             onClick={() => setActiveSupersetIndex(prev => prev + 1)}
-            className={`flex items-center gap-1 px-3 py-2 rounded-xl border transition-all ${
+            className={`flex items-center gap-0.5 px-2 py-1 rounded border transition-all ${
               activeSupersetIndex === program.supersets.length - 1
                 ? 'opacity-20 border-transparent text-zinc-600'
                 : 'bg-white border-white text-zinc-950 font-black hover:bg-zinc-200 shadow-sm'
             }`}
           >
             <span>След.</span>
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
