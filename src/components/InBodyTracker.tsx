@@ -160,6 +160,9 @@ export const InBodyTracker: React.FC = () => {
           });
         }
       } catch (err: any) {
+// #region agent log
+fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eeecb0'},body:JSON.stringify({sessionId:'eeecb0',hypothesisId:'H1_H2_H3_H4',location:'InBodyTracker.tsx:163',message:'handleImageUpload catch block',data:{errName:err?.name,errMsg:err?.message,errStack:err?.stack,errRaw:String(err)},timestamp:Date.now()})}).catch(()=>{});
+// #endregion
         console.error('Gemini OCR failure', err);
         setIsAnalyzing(false);
         setOcrResultMsg({
