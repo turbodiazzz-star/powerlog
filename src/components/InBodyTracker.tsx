@@ -510,7 +510,7 @@ export const InBodyTracker: React.FC = () => {
           {/* Entire modal container IS the form element! */}
           <form
             onSubmit={handleSave}
-            className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col max-h-[88vh] my-auto overflow-hidden text-xs"
+            className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col max-h-[82vh] my-auto overflow-hidden text-xs"
           >
             {/* Header (Fixed at top) */}
             <div className="flex justify-between items-center px-4 py-3 border-b border-zinc-800 bg-zinc-900 shrink-0">
@@ -530,7 +530,7 @@ export const InBodyTracker: React.FC = () => {
             {/* Scrollable Body Content */}
             <div
               style={{ WebkitOverflowScrolling: 'touch' }}
-              className="flex-1 overflow-y-auto p-4 space-y-4 overscroll-contain"
+              className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 overscroll-contain"
             >
               {/* Scan Image / PDF Upload */}
               <div className="space-y-2">

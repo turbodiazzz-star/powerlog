@@ -207,7 +207,12 @@ export class AiService {
     let rawJsonText = '';
 
     if (isOpenRouter) {
-      const modelsToTry = ['google/gemini-2.0-flash-001', 'google/gemini-flash-1.5', 'google/gemini-2.0-flash-exp:free'];
+      const modelsToTry = [
+        'google/gemini-2.5-flash',
+        'google/gemini-2.5-flash-lite',
+        'google/gemini-3.5-flash',
+        'google/gemini-3-flash-preview',
+      ];
       let lastErr = '';
 
       for (const model of modelsToTry) {
@@ -215,7 +220,7 @@ export class AiService {
           rawJsonText = await this.callOpenRouterApi({
             apiKey,
             model,
-            responseFormatJson: true,
+            responseFormatJson: false,
             messagesContent: [
               { type: 'text', text: promptText },
               { type: 'image_url', image_url: { url: dataUrl } },
@@ -229,7 +234,7 @@ export class AiService {
       }
       if (!rawJsonText) throw new Error(lastErr || 'Не удалось распознать через OpenRouter');
     } else {
-      const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+      const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
       let lastErr = '';
 
       for (const model of modelsToTry) {
@@ -360,7 +365,12 @@ export class AiService {
         }
       }
 
-      const modelsToTry = ['google/gemini-2.0-flash-001', 'google/gemini-flash-1.5', 'google/gemini-2.0-flash-exp:free'];
+      const modelsToTry = [
+        'google/gemini-2.5-flash',
+        'google/gemini-2.5-flash-lite',
+        'google/gemini-3.5-flash',
+        'google/gemini-3-flash-preview',
+      ];
       let lastErr = '';
 
       for (const model of modelsToTry) {
@@ -393,7 +403,7 @@ export class AiService {
         }
       }
 
-      const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+      const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
       let lastErr = '';
 
       for (const model of modelsToTry) {
