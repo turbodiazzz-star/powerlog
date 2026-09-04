@@ -128,6 +128,10 @@ export const InBodyTracker: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+// #region agent log
+fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eeecb0'},body:JSON.stringify({sessionId:'eeecb0',hypothesisId:'H2',location:'InBodyTracker.tsx:128',message:'handleImageUpload file selected',data:{fileName:file.name,fileType:file.type,fileSize:file.size},timestamp:Date.now()})}).catch(()=>{});
+// #endregion
+
     setOcrResultMsg(null);
     setOcrProgress(0);
 
@@ -148,6 +152,10 @@ export const InBodyTracker: React.FC = () => {
       const dataUrl = await compressImageForOcr(rawDataUrl);
       setImageUrl(dataUrl);
 
+// #region agent log
+fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eeecb0'},body:JSON.stringify({sessionId:'eeecb0',hypothesisId:'H2',location:'InBodyTracker.tsx:150',message:'compressImageForOcr completed',data:{rawLength:rawDataUrl?.length,compressedLength:dataUrl?.length,compressedPrefix:dataUrl?.substring(0,35)},timestamp:Date.now()})}).catch(()=>{});
+// #endregion
+
       setOcrStatusText('Распознавание файла через Gemini ИИ Vision...');
       setOcrProgress(50);
 
@@ -155,6 +163,10 @@ export const InBodyTracker: React.FC = () => {
         const extracted = await AiService.scanInBodyWithGemini(dataUrl, fileMetaDate);
         setOcrProgress(100);
         setIsAnalyzing(false);
+
+// #region agent log
+fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eeecb0'},body:JSON.stringify({sessionId:'eeecb0',hypothesisId:'H3',location:'InBodyTracker.tsx:162',message:'AiService.scanInBodyWithGemini success',data:{extracted},timestamp:Date.now()})}).catch(()=>{});
+// #endregion
 
         const foundItems: string[] = [];
         if (extracted.date) {
@@ -207,6 +219,11 @@ export const InBodyTracker: React.FC = () => {
         }
       } catch (err: any) {
         console.error('Gemini OCR failure', err);
+
+// #region agent log
+fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eeecb0'},body:JSON.stringify({sessionId:'eeecb0',hypothesisId:'H1',location:'InBodyTracker.tsx:210',message:'Gemini OCR failure in catch',data:{errMessage:err?.message,errName:err?.name,errStack:err?.stack},timestamp:Date.now()})}).catch(()=>{});
+// #endregion
+
         setIsAnalyzing(false);
         const userMsg = err?.message && err.message !== 'Type error' && err.message !== 'Failed to fetch'
           ? err.message
