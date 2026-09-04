@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { WorkoutSession, ExerciseDefinition } from '../types/workout';
 import { StorageService } from '../services/storage';
 import { WORKOUT_PROGRAM } from '../data/workoutProgram';
+import { isBlockMachineOption } from '../data/machineVariants';
 import {
   History,
   TrendingUp,
@@ -165,9 +166,11 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
                         const completedSets = ex.sets.filter(s => s.completed);
                         if (completedSets.length === 0) return null;
 
-                        const isMatrix =
-                          (session.gymName && session.gymName.toLowerCase().includes('matrix')) ||
-                          (ex.machineName && ex.machineName.toLowerCase().includes('matrix'));
+                        const isBlockMachine = isBlockMachineOption(ex.machineName);
+                        const isMatrixBlock =
+                          ((session.gymName && session.gymName.toLowerCase().includes('matrix')) ||
+                            (ex.machineName && ex.machineName.toLowerCase().includes('matrix'))) &&
+                          isBlockMachine;
 
                         return (
                           <div
@@ -193,7 +196,7 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
                                     className="bg-zinc-900 border border-zinc-800 text-zinc-200 px-1.5 py-0.5 rounded"
                                   >
                                     #{idx + 1}: <strong className="text-white">{st.weightKg}</strong>кг
-                                    {isMatrix && st.weightKg > 0 && (
+                                    {isMatrixBlock && st.weightKg > 0 && (
                                       <span className="text-[10px] text-amber-400 font-normal"> ({lbs}lb)</span>
                                     )} x {st.reps}
                                   </span>
@@ -255,9 +258,11 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
 
                   const prevItem = exerciseProgression[index - 1];
                   const weightDiff = prevItem ? item.maxWeight - prevItem.maxWeight : 0;
-                  const isMatrix =
-                    (item.gymName && item.gymName.toLowerCase().includes('matrix')) ||
-                    (item.machineName && item.machineName.toLowerCase().includes('matrix'));
+                  const isBlockMachine = isBlockMachineOption(item.machineName);
+                  const isMatrixBlock =
+                    ((item.gymName && item.gymName.toLowerCase().includes('matrix')) ||
+                      (item.machineName && item.machineName.toLowerCase().includes('matrix'))) &&
+                    isBlockMachine;
                   const maxLbs = Math.round(item.maxWeight * 2.20462);
 
                   return (
@@ -284,7 +289,7 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
                         <div className="text-right font-mono">
                           <div className="font-bold text-white text-sm flex items-center gap-1 justify-end">
                             {item.maxWeight} кг
-                            {isMatrix && item.maxWeight > 0 && (
+                            {isMatrixBlock && item.maxWeight > 0 && (
                               <span className="text-xs text-amber-400 font-normal">({maxLbs}lb)</span>
                             )}
                             {weightDiff > 0 && (

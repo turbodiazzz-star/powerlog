@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, X, RotateCcw } from 'lucide-react';
 
 interface WeightScrollPickerProps {
   isOpen: boolean;
   initialWeight: number;
-  isMatrix: boolean;
+  isMatrixBlock: boolean;
   onSelect: (weightKg: number) => void;
   onClose: () => void;
 }
@@ -12,7 +12,7 @@ interface WeightScrollPickerProps {
 export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
   isOpen,
   initialWeight,
-  isMatrix,
+  isMatrixBlock,
   onSelect,
   onClose,
 }) => {
@@ -20,7 +20,7 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
 
-  // Generate weight array: 0 to 120kg in 0.5kg steps, then 121 to 300kg in 1kg steps
+  // Weight options list: 0 to 120 in 0.5kg steps, 121 to 300 in 1kg steps
   const weights: number[] = [];
   for (let w = 0; w <= 120; w = Math.round((w + 0.5) * 10) / 10) {
     weights.push(w);
@@ -37,7 +37,7 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
         if (el) {
           el.scrollIntoView({ block: 'center', behavior: 'smooth' });
         }
-      }, 60);
+      }, 80);
     }
   }, [isOpen, initialWeight]);
 
@@ -54,11 +54,19 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
     });
   };
 
+  const handleResetToZero = () => {
+    setSelectedWeight(0);
+    const el = itemRefs.current.get(0);
+    if (el) {
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }
+  };
+
   const lbsValue = Math.round(selectedWeight * 2.20462);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-zinc-950/80 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-t-2xl sm:rounded-2xl max-w-xs w-full p-4 shadow-2xl space-y-3 text-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-xs w-full p-4 shadow-2xl space-y-3 text-center my-auto">
         {/* Header */}
         <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
           <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
@@ -70,16 +78,34 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
         </div>
 
         {/* Selected Weight Large Display */}
-        <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800/80 space-y-1">
+        <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800/80 space-y-1 relative">
           <div className="flex items-baseline justify-center gap-1 font-mono">
             <span className="text-3xl font-black text-white">{selectedWeight}</span>
             <span className="text-sm font-bold text-zinc-400">кг</span>
           </div>
 
-          {isMatrix && (
+          {/* lbs shown ONLY for block stack machines on Matrix */}
+          {isMatrixBlock && selectedWeight > 0 ? (
             <div className="text-xs font-bold text-amber-400 font-mono">
-              ~ {lbsValue} lbs <span className="text-[10px] text-zinc-500 font-sans">(Matrix)</span>
+              ~ {lbsValue} lbs <span className="text-[10px] text-zinc-500 font-sans">(Matrix Стек)</span>
             </div>
+          ) : (
+            <div className="text-[10px] text-zinc-500 font-sans">
+              Только кг (свободный вес / блины)
+            </div>
+          )}
+
+          {/* Quick Clear / Eraser Button */}
+          {selectedWeight > 0 && (
+            <button
+              type="button"
+              onClick={handleResetToZero}
+              className="absolute right-2 top-2.5 px-2 py-1 bg-zinc-900 hover:bg-rose-950 text-rose-400 hover:text-rose-200 rounded-lg text-[10px] font-bold border border-zinc-800 transition-colors flex items-center gap-0.5"
+              title="Стереть указный вес (0 кг)"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>Стереть</span>
+            </button>
           )}
         </div>
 
@@ -129,7 +155,7 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
           </button>
         </div>
 
-        {/* Scrollable Wheel list */}
+        {/* Scrollable Wheel List */}
         <div
           ref={scrollRef}
           className="h-44 overflow-y-auto bg-zinc-950 rounded-xl border border-zinc-800 p-1.5 space-y-1 snap-y snap-mandatory scrollbar-thin shadow-inner"
@@ -175,7 +201,7 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
             }}
             className="flex-1 py-2 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 font-black text-xs transition-all shadow-sm flex items-center justify-center gap-1"
           >
-            <Check className="w-4 h-4" /> Выбрать
+            <Check className="w-4 h-4" /> Сохранить
           </button>
         </div>
       </div>

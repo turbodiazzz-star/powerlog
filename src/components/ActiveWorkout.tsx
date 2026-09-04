@@ -6,7 +6,7 @@ import type {
 } from '../types/workout';
 import { WORKOUT_PROGRAM } from '../data/workoutProgram';
 import { StorageService } from '../services/storage';
-import { getOptionsForExercise, type MachineOption } from '../data/machineVariants';
+import { getOptionsForExercise, isBlockMachineOption, type MachineOption } from '../data/machineVariants';
 import { WeightScrollPicker } from './WeightScrollPicker';
 import confetti from 'canvas-confetti';
 import {
@@ -66,7 +66,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     exerciseId: string;
     setId: string;
     currentWeight: number;
-    isMatrix: boolean;
+    isMatrixBlock: boolean;
   } | null>(null);
 
   // Rest Timer state
@@ -233,7 +233,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     setId: string,
     currentWeightKg: number,
     historyWeightKg?: number,
-    isMatrix?: boolean
+    isMatrixBlock?: boolean
   ) => {
     // Starting weight: if set has weight > 0 use it, else fallback to historyWeightKg, else 0
     const startWeight = currentWeightKg > 0 ? currentWeightKg : (historyWeightKg || 0);
@@ -244,7 +244,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       exerciseId,
       setId,
       currentWeight: startWeight,
-      isMatrix: !!isMatrix,
+      isMatrixBlock: !!isMatrixBlock,
     });
   };
 
@@ -639,10 +639,13 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             const selectedOption = availableVariants.find(opt => opt.name === selectedVariantName) || availableVariants[0];
             const techniqueNotes = selectedOption?.focusNotes || exDef.focusNotes;
 
-            const isMatrix =
-              activeGymBrand === 'matrix' ||
-              selectedOption?.brand === 'matrix' ||
-              selectedVariantName.toLowerCase().includes('matrix');
+            const isBlockMachine = selectedOption?.isBlockMachine ?? isBlockMachineOption(selectedVariantName);
+
+            const isMatrixBlock =
+              (activeGymBrand === 'matrix' ||
+                selectedOption?.brand === 'matrix' ||
+                selectedVariantName.toLowerCase().includes('matrix')) &&
+              isBlockMachine;
 
             const variantHistoryLog = StorageService.getLastExerciseLog(
               exDef.id,
@@ -729,13 +732,13 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                               st.completed ? 'bg-emerald-950/25 text-emerald-200' : ''
                             }`}
                           >
-                            {/* Set # + Historical Weight Inline (Includes lbs for Matrix) */}
+                            {/* Set # + Historical Weight Inline (Includes lbs ONLY for Matrix Block machines) */}
                             <td className="py-1 px-1 font-mono text-[10px]">
                               <span className="font-bold text-zinc-300">#{idx + 1}</span>
                               {histSet ? (
                                 <span className="text-amber-400 ml-1 font-bold text-xs">
                                   {histSet.weightKg}кг
-                                  {isMatrix && histLbs > 0 && (
+                                  {isMatrixBlock && histLbs > 0 && (
                                     <span className="text-[9px] text-amber-400/80 font-normal"> ({histLbs}lb)</span>
                                   )}
                                 </span>
@@ -755,13 +758,13 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     st.id,
                                     st.weightKg,
                                     histSet?.weightKg,
-                                    isMatrix
+                                    isMatrixBlock
                                   )
                                 }
                                 className="w-16 h-8 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 rounded font-mono font-bold text-xs flex flex-col items-center justify-center text-white active:scale-95 transition-all shadow-sm"
                               >
                                 <span>{st.weightKg || 0} кг</span>
-                                {isMatrix && st.weightKg > 0 && (
+                                {isMatrixBlock && st.weightKg > 0 && (
                                   <span className="text-[9px] text-amber-400/90 font-semibold leading-none">
                                     {Math.round(st.weightKg * 2.20462)} lbs
                                   </span>
@@ -906,7 +909,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         <WeightScrollPicker
           isOpen={pickerState.isOpen}
           initialWeight={pickerState.currentWeight}
-          isMatrix={pickerState.isMatrix}
+          isMatrixBlock={pickerState.isMatrixBlock}
           onSelect={w => {
             updateSetField(
               pickerState.supersetId,
