@@ -8,6 +8,7 @@ import { WORKOUT_PROGRAM } from '../data/workoutProgram';
 import { StorageService } from '../services/storage';
 import { getOptionsForExercise, isBlockMachineOption, type MachineOption } from '../data/machineVariants';
 import { WeightScrollPicker } from './WeightScrollPicker';
+import { RepsScrollPicker } from './RepsScrollPicker';
 import confetti from 'canvas-confetti';
 import {
   CheckCircle2,
@@ -162,6 +163,15 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     isMatrixBlock: boolean;
   } | null>(null);
 
+  // Reps Scroll Picker Modal State
+  const [repsPickerState, setRepsPickerState] = useState<{
+    isOpen: boolean;
+    supersetId: string;
+    exerciseId: string;
+    setId: string;
+    currentReps: number;
+  } | null>(null);
+
   // Rest Timer state
   const [timerSecondsLeft, setTimerSecondsLeft] = useState<number | null>(null);
   const [timerInitialSeconds, setTimerInitialSeconds] = useState<number>(60);
@@ -279,6 +289,33 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       setId,
       currentWeight: startWeight,
       isMatrixBlock: !!isMatrixBlock,
+    });
+  };
+
+  const handleOpenRepsPicker = (
+    supersetId: string,
+    exerciseId: string,
+    setId: string,
+    currentReps: number,
+    targetRepsStr?: string
+  ) => {
+    let startReps = currentReps;
+    if (!startReps || startReps === 0) {
+      if (targetRepsStr) {
+        const match = targetRepsStr.match(/\d+/);
+        if (match) {
+          startReps = parseInt(match[0], 10);
+        }
+      }
+      if (!startReps) startReps = 10;
+    }
+
+    setRepsPickerState({
+      isOpen: true,
+      supersetId,
+      exerciseId,
+      setId,
+      currentReps: startReps,
     });
   };
 
@@ -729,6 +766,13 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                   </div>
                 )}
 
+                {/* Target Plan Badge */}
+                <div className="flex items-center justify-between px-1 text-[10px] text-zinc-400 font-mono pt-0.5">
+                  <span>
+                    План: <strong className="text-zinc-200 font-sans">{exDef.targetSets} подх. по {exDef.targetReps} повт.</strong>
+                  </span>
+                </div>
+
                 {/* Sets Table */}
                 <div className="overflow-x-hidden pt-0.5">
                   <table className="w-full text-left text-xs">
@@ -793,22 +837,23 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                               </button>
                             </td>
 
-                            {/* Reps Input */}
+                            {/* Reps Button (Scroll Picker Trigger) */}
                             <td className="py-1 px-1">
-                              <input
-                                type="number"
-                                value={st.reps || ''}
-                                onChange={e =>
-                                  updateSetField(
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleOpenRepsPicker(
                                     currentSupersetDef.id,
                                     exDef.id,
                                     st.id,
-                                    'reps',
-                                    parseInt(e.target.value, 10) || 0
+                                    st.reps,
+                                    exDef.targetReps
                                   )
                                 }
-                                className="w-13 h-8 bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-xs rounded text-center focus:outline-none focus:border-zinc-400"
-                              />
+                                className="w-13 h-8 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 rounded font-mono font-bold text-xs flex items-center justify-center text-white active:scale-95 transition-all shadow-sm"
+                              >
+                                <span>{st.reps || 0}</span>
+                              </button>
                             </td>
 
                             {/* Checkbox */}
@@ -941,6 +986,24 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             );
           }}
           onClose={() => setPickerState(null)}
+        />
+      )}
+
+      {/* Reps Scroll Picker Modal */}
+      {repsPickerState && (
+        <RepsScrollPicker
+          isOpen={repsPickerState.isOpen}
+          initialReps={repsPickerState.currentReps}
+          onSelect={r => {
+            updateSetField(
+              repsPickerState.supersetId,
+              repsPickerState.exerciseId,
+              repsPickerState.setId,
+              'reps',
+              r
+            );
+          }}
+          onClose={() => setRepsPickerState(null)}
         />
       )}
     </div>
