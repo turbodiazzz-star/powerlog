@@ -105,7 +105,7 @@ export interface InBodyRecord {
 }
 
 // Progress Photo Records
-export type PhotoPose = 'front' | 'side' | 'back';
+export type PhotoPose = 'front' | 'side' | 'back' | 'biceps';
 
 export interface ProgressPhotoRecord {
   id: string;
