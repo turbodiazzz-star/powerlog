@@ -21,6 +21,9 @@ import {
   ChevronLeft,
   ChevronRight,
   BookOpen,
+  Play,
+  Pause,
+  RotateCcw,
 } from 'lucide-react';
 
 interface ActiveWorkoutProps {
@@ -50,16 +53,25 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   // Touch swipe ref
   const touchStartX = useRef<number | null>(null);
 
-  // Session timer
+  // Session duration timer
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  // Confirmation Modals State
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showFinishModal, setShowFinishModal] = useState(false);
 
   // Rest Timer state
   const [timerSecondsLeft, setTimerSecondsLeft] = useState<number | null>(null);
   const [timerInitialSeconds, setTimerInitialSeconds] = useState<number>(60);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
-  // Active session state
+  // Active session state with draft restore fallback
   const [session, setSession] = useState<WorkoutSession>(() => {
+    const draft = StorageService.getActiveDraft(workoutType);
+    if (draft && draft.session) {
+      return draft.session;
+    }
+
     const loadedGyms = StorageService.getGyms();
     const activeGym = loadedGyms.find(g => g.id === gymId) || loadedGyms[0];
     const gymBrand = activeGym?.brand || 'matrix';
@@ -119,6 +131,36 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   });
 
   const [expandedDetails, setExpandedDetails] = useState<Record<string, boolean>>({});
+
+  // Restore draft details on mount
+  useEffect(() => {
+    const draft = StorageService.getActiveDraft(workoutType);
+    if (draft) {
+      const timeDiffSec = Math.floor((Date.now() - draft.lastUpdatedTimestamp) / 1000);
+      const addedTime = timeDiffSec > 0 && timeDiffSec < 43200 ? timeDiffSec : 0;
+      setElapsedSeconds(draft.elapsedSeconds + addedTime);
+
+      if (draft.activeSupersetIndex !== undefined) {
+        setActiveSupersetIndex(draft.activeSupersetIndex);
+      }
+      if (draft.gymId) {
+        setCurrentGymId(draft.gymId);
+      }
+    }
+  }, [workoutType]);
+
+  // Continuously save active draft to localStorage
+  useEffect(() => {
+    StorageService.saveActiveDraft({
+      workoutType,
+      dayName,
+      gymId: currentGymId,
+      session,
+      elapsedSeconds,
+      lastUpdatedTimestamp: Date.now(),
+      activeSupersetIndex,
+    });
+  }, [session, elapsedSeconds, activeSupersetIndex, currentGymId, workoutType, dayName]);
 
   useEffect(() => {
     const loadedGyms = StorageService.getGyms();
@@ -352,21 +394,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     setExpandedDetails(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleFinishWorkout = () => {
-    const totalSetsCompleted = session.supersets.reduce(
-      (acc, ss) =>
-        acc +
-        ss.exercises.reduce((exAcc, ex) => exAcc + ex.sets.filter(s => s.completed).length, 0),
-      0
-    );
-
-    if (
-      totalSetsCompleted === 0 &&
-      !confirm('Вы не выполнили ни одного подхода. Завершить и сохранить всё равно?')
-    ) {
-      return;
-    }
-
+  const confirmAndFinishSession = () => {
     const completedSession: WorkoutSession = {
       ...session,
       durationMinutes: Math.round(elapsedSeconds / 60),
@@ -375,6 +403,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     };
 
     StorageService.saveSession(completedSession);
+    StorageService.clearActiveDraft();
 
     try {
       confetti({
@@ -429,10 +458,18 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
   return (
     <div className="space-y-2 pb-16 w-full max-w-md mx-auto overflow-x-hidden text-xs pt-safe">
-      {/* 1. Header Card (Stand-alone Rounded Block - NO status bar bleed) */}
+      {/* 1. Header Card (Stand-alone Rounded Block - X on the far left!) */}
       <header className="bg-zinc-900 border border-zinc-800 rounded-xl p-2 shadow-sm flex items-center justify-between gap-1">
-        {/* Workout Badge & Gym Selector */}
+        {/* Left: Cancel X Button + Workout Type Badge + Gym Selector */}
         <div className="flex items-center gap-1.5 min-w-0">
+          <button
+            onClick={() => setShowCancelModal(true)}
+            className="p-1 text-zinc-400 hover:text-rose-400 bg-zinc-800 rounded-md transition-colors shrink-0"
+            title="Закрыть без сохранения"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
           <span className="bg-white text-zinc-950 font-black text-xs px-2 py-0.5 rounded-md shrink-0 shadow-sm">
             {workoutType} ({dayName})
           </span>
@@ -450,60 +487,90 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           </select>
         </div>
 
-        {/* Timer & Action Buttons */}
-        <div className="flex items-center gap-1 shrink-0">
+        {/* Right: Duration Clock + Finish Button */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <div className="flex items-center gap-1 bg-zinc-950 px-1.5 py-0.5 rounded-md border border-zinc-800 text-xs font-mono font-bold text-white">
-            <Clock className="w-3 h-3 text-zinc-400" />
+            <Clock className="w-3.5 h-3.5 text-zinc-400" />
             <span>{formatElapsed(elapsedSeconds)}</span>
           </div>
 
           <button
-            onClick={onCancelWorkout}
-            className="p-1 text-zinc-400 hover:text-rose-400 bg-zinc-800 rounded-md transition-colors"
-            title="Отменить"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-
-          <button
-            onClick={handleFinishWorkout}
+            onClick={() => setShowFinishModal(true)}
             className="flex items-center gap-1 bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-black px-2.5 py-0.5 rounded-md transition-all active:scale-95 shrink-0 shadow-sm"
           >
-            <Save className="w-3 h-3" />
+            <Save className="w-3.5 h-3.5" />
             <span>Готово</span>
           </button>
         </div>
       </header>
 
-      {/* 2. Quick Rest Timer Row (Compact Single Line) */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-1.5 px-2 shadow-sm flex items-center justify-between gap-1 text-xs">
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="font-bold text-zinc-400 text-[11px] shrink-0">
-            ⏱️ Отдых:
-          </span>
-          {timerSecondsLeft !== null && (
-            <span className={`font-mono text-xs font-black px-1.5 py-0.2 rounded border ${
-              timerSecondsLeft === 0
-                ? 'bg-emerald-950 text-emerald-300 border-emerald-500 animate-bounce'
-                : 'bg-zinc-950 text-amber-400 border-zinc-800'
-            }`}>
-              {formatTimerDisplay(timerSecondsLeft)}
-              {timerSecondsLeft === 0 && ' 🎉'}
+      {/* 2. Quick Rest Timer Row (With Reset Timer Button) */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-2 shadow-sm space-y-1.5">
+        <div className="flex items-center justify-between gap-1 text-xs">
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="font-bold text-zinc-400 text-xs shrink-0">
+              ⏱️ Отдых:
             </span>
+            {timerSecondsLeft !== null && (
+              <span className={`font-mono text-xs font-black px-2 py-0.5 rounded border ${
+                timerSecondsLeft === 0
+                  ? 'bg-emerald-950 text-emerald-300 border-emerald-500 animate-bounce'
+                  : 'bg-zinc-950 text-amber-400 border-zinc-800'
+              }`}>
+                {formatTimerDisplay(timerSecondsLeft)}
+                {timerSecondsLeft === 0 && ' 🎉'}
+              </span>
+            )}
+          </div>
+
+          {/* Controls: Pause/Play, Reset, Close */}
+          {timerSecondsLeft !== null && timerSecondsLeft > 0 && (
+            <div className="flex items-center gap-1 shrink-0 text-xs">
+              <button
+                onClick={() => setIsTimerRunning(!isTimerRunning)}
+                className="p-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded border border-zinc-700"
+                title={isTimerRunning ? 'Пауза' : 'Старт'}
+              >
+                {isTimerRunning ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+              </button>
+
+              <button
+                onClick={() => {
+                  setTimerSecondsLeft(timerInitialSeconds);
+                  setIsTimerRunning(true);
+                }}
+                className="p-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded border border-zinc-700 flex items-center gap-0.5 font-bold"
+                title="Сбросить таймер"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="text-[10px]">Сброс</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setTimerSecondsLeft(null);
+                  setIsTimerRunning(false);
+                }}
+                className="p-1 text-zinc-500 hover:text-white"
+                title="Закрыть"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
           )}
         </div>
 
-        {/* 5 Quick Preset Buttons */}
-        <div className="flex items-center gap-1 shrink-0">
+        {/* 5 Quick Preset Buttons (Larger, Touch Friendly) */}
+        <div className="grid grid-cols-5 gap-1.5">
           {TIMER_PRESETS.map(sec => {
             const isCurrentPreset = timerInitialSeconds === sec && timerSecondsLeft !== null;
             return (
               <button
                 key={sec}
                 onClick={() => startQuickTimer(sec)}
-                className={`py-1 px-1.5 text-center font-mono font-bold text-[11px] rounded-lg border transition-all active:scale-95 ${
+                className={`py-1.5 px-1 text-center font-mono font-bold text-xs rounded-xl border transition-all active:scale-95 ${
                   isCurrentPreset && isTimerRunning
-                    ? 'bg-amber-400 text-zinc-950 border-amber-300 font-black'
+                    ? 'bg-amber-400 text-zinc-950 border-amber-300 font-black shadow-sm'
                     : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:border-zinc-700 hover:text-white'
                 }`}
               >
@@ -565,39 +632,18 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                 key={exDef.id}
                 className="bg-zinc-950 border border-zinc-800/80 rounded-lg p-2 space-y-1.5 shadow-sm"
               >
-                {/* Single Row Exercise Bar: Muscle Badge + Technique Toggle + Machine Selector */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="bg-zinc-800 text-zinc-200 border border-zinc-700 text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0">
-                        {exDef.muscleGroup}
-                      </span>
+                {/* Single Row Exercise Bar: Muscle (Left) | Machine Selector (Center) | Technique (Right) */}
+                <div className="flex items-center justify-between gap-1.5 bg-zinc-900/60 p-1.5 rounded-lg border border-zinc-800/80">
+                  {/* Left: Muscle badge */}
+                  <span className="bg-zinc-800 text-zinc-200 border border-zinc-700 text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0">
+                    {exDef.muscleGroup}
+                  </span>
 
-                      {/* Technique Toggle Button */}
-                      <button
-                        onClick={() => toggleDetails(detailsKey)}
-                        className={`flex items-center gap-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded border transition-all ${
-                          isDetailsOpen
-                            ? 'bg-amber-400 text-zinc-950 border-amber-300'
-                            : 'bg-zinc-900 text-zinc-300 border-zinc-800 hover:border-zinc-700 hover:text-white'
-                        }`}
-                      >
-                        <BookOpen className="w-3 h-3" />
-                        <span>Техника</span>
-                        {isDetailsOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                      </button>
-                    </div>
-
-                    <span className="text-[10px] text-zinc-500 font-mono">
-                      {exDef.targetSets} × {exDef.targetReps}
-                    </span>
-                  </div>
-
-                  {/* Machine Selector */}
+                  {/* Center: Machine Selector */}
                   <select
                     value={selectedVariantName}
                     onChange={e => handleVariantChange(exDef.id, e.target.value)}
-                    className="w-full bg-zinc-900 text-[11px] text-white font-bold rounded-lg px-2 py-1 border border-zinc-700 focus:outline-none truncate"
+                    className="flex-1 min-w-0 bg-zinc-950 text-xs text-white font-bold rounded-md px-1.5 py-1 border border-zinc-700 focus:outline-none truncate"
                   >
                     {availableVariants.map(opt => {
                       const isPrev = opt.name === prevVariantName;
@@ -608,9 +654,23 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                       );
                     })}
                   </select>
+
+                  {/* Right: Technique Toggle Button */}
+                  <button
+                    onClick={() => toggleDetails(detailsKey)}
+                    className={`flex items-center gap-0.5 text-[10px] font-bold px-2 py-1 rounded-md border transition-all shrink-0 ${
+                      isDetailsOpen
+                        ? 'bg-amber-400 text-zinc-950 border-amber-300 font-black'
+                        : 'bg-zinc-950 text-zinc-300 border-zinc-800 hover:border-zinc-700 hover:text-white'
+                    }`}
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>Техника</span>
+                    {isDetailsOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  </button>
                 </div>
 
-                {/* Technique Description Accordion tailored to SELECTED machine */}
+                {/* Technique Description Accordion */}
                 {isDetailsOpen && (
                   <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-2 text-[11px] text-zinc-300 leading-snug animate-fadeIn">
                     <span className="font-bold text-amber-400 block mb-0.5">💡 Техника для {selectedOption?.name}:</span>
@@ -618,7 +678,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                   </div>
                 )}
 
-                {/* Sets Table: Ultra-Compact with Inline Past Weights */}
+                {/* Sets Table: Comfortable Row Sizes & Inputs */}
                 <div className="overflow-x-hidden pt-0.5">
                   <table className="w-full text-left text-xs">
                     <thead>
@@ -644,7 +704,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                             <td className="py-1 px-1 font-mono text-[10px]">
                               <span className="font-bold text-zinc-300">#{idx + 1}</span>
                               {histSet ? (
-                                <span className="text-amber-400/90 ml-1.5 font-bold text-[10px]">
+                                <span className="text-amber-400 ml-1.5 font-bold text-xs">
                                   {histSet.weightKg}кг
                                 </span>
                               ) : (
@@ -667,7 +727,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     parseFloat(e.target.value) || 0
                                   )
                                 }
-                                className="w-13 h-7 bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-xs rounded text-center focus:outline-none focus:border-zinc-400"
+                                className="w-14 h-8 bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-xs rounded text-center focus:outline-none focus:border-zinc-400"
                               />
                             </td>
 
@@ -685,7 +745,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     parseInt(e.target.value, 10) || 0
                                   )
                                 }
-                                className="w-13 h-7 bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-xs rounded text-center focus:outline-none focus:border-zinc-400"
+                                className="w-14 h-8 bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-xs rounded text-center focus:outline-none focus:border-zinc-400"
                               />
                             </td>
 
@@ -701,7 +761,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     exDef.muscleGroup
                                   )
                                 }
-                                className="p-0.5 rounded transition-transform active:scale-90"
+                                className="p-1 rounded transition-transform active:scale-90"
                               >
                                 {st.completed ? (
                                   <CheckCircle2 className="w-4 h-4 text-emerald-400 fill-emerald-950" />
@@ -773,6 +833,64 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Confirmation Modal: Cancel Workout */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-xs w-full p-5 shadow-2xl space-y-3 text-center">
+            <h3 className="text-sm font-bold text-white">Точно закрыть тренировку?</h3>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Тренировка не сохранится в историю, но все введённые веса останутся в черновике.
+            </p>
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="flex-1 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={() => {
+                  setShowCancelModal(false);
+                  onCancelWorkout();
+                }}
+                className="flex-1 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold"
+              >
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal: Finish Workout */}
+      {showFinishModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-xs w-full p-5 shadow-2xl space-y-3 text-center">
+            <h3 className="text-sm font-bold text-white">Точно завершить тренировку?</h3>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Все выполненные подходы будут сохранены в вашу историю прогресса.
+            </p>
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => setShowFinishModal(false)}
+                className="flex-1 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold"
+              >
+                Отмена
+              </button>
+              <button
+                onClick={() => {
+                  setShowFinishModal(false);
+                  confirmAndFinishSession();
+                }}
+                className="flex-1 py-2 rounded-xl bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-black"
+              >
+                Да, Завершить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

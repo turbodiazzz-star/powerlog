@@ -3,13 +3,14 @@ import { WORKOUT_PROGRAM } from '../data/workoutProgram';
 import { StorageService } from '../services/storage';
 import { ActiveWorkout } from './ActiveWorkout';
 import { ProgressView } from './ProgressView';
-import type { Gym } from '../types/workout';
+import type { Gym, ActiveWorkoutDraft } from '../types/workout';
 import {
   Dumbbell,
   Play,
   Building2,
   ChevronRight,
   TrendingUp,
+  Clock,
 } from 'lucide-react';
 
 export const AppDashboard: React.FC = () => {
@@ -28,6 +29,8 @@ export const AppDashboard: React.FC = () => {
     lastDate?: string;
   }>({ workoutType: 'A', dayName: 'Пн', completedCount: 0 });
 
+  const [activeDraft, setActiveDraft] = useState<ActiveWorkoutDraft | null>(null);
+
   useEffect(() => {
     refreshDashboardData();
   }, [activeNav, activeSessionProps]);
@@ -41,6 +44,9 @@ export const AppDashboard: React.FC = () => {
 
     const rec = StorageService.getNextWorkoutRecommendation();
     setRecommendation(rec);
+
+    const draft = StorageService.getActiveDraft();
+    setActiveDraft(draft);
   };
 
   const handleStartWorkout = (type: 'A' | 'B', day: 'Пн' | 'Ср' | 'Пт' | 'Доп') => {
@@ -104,6 +110,30 @@ export const AppDashboard: React.FC = () => {
       <main className="px-3 pt-3 space-y-4">
         {activeNav === 'home' && (
           <div className="space-y-3.5">
+            {/* Active Draft Banner if user has an ongoing session */}
+            {activeDraft && (
+              <div className="bg-amber-950/60 border border-amber-500/80 rounded-xl p-3 shadow-md flex items-center justify-between gap-2 text-xs animate-fadeIn">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-2 h-2 rounded-full bg-amber-400 animate-ping shrink-0" />
+                  <div className="min-w-0">
+                    <span className="font-bold text-amber-200 block truncate">
+                      Незавершённая тренировка {activeDraft.workoutType} ({activeDraft.dayName})
+                    </span>
+                    <span className="text-amber-400/80 text-[11px] block truncate">
+                      Все веса и повторы сохранены в черновике
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleStartWorkout(activeDraft.workoutType, activeDraft.dayName)}
+                  className="bg-amber-400 hover:bg-amber-300 text-zinc-950 font-black px-3 py-1.5 rounded-lg text-xs shrink-0 shadow-sm flex items-center gap-1 active:scale-95"
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Продолжить</span>
+                </button>
+              </div>
+            )}
+
             {/* Active Gym Bar */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 shadow-sm flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">

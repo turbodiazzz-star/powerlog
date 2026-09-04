@@ -1,4 +1,4 @@
-import type { Gym, MachineEquipment, WorkoutSession, InBodyRecord, ProgressPhotoRecord } from '../types/workout';
+import type { Gym, MachineEquipment, WorkoutSession, InBodyRecord, ProgressPhotoRecord, ActiveWorkoutDraft } from '../types/workout';
 import { INITIAL_GYMS } from '../data/workoutProgram';
 
 const STORAGE_KEYS = {
@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   SELECTED_GYM: 'fit_tracker_selected_gym_v1',
   INBODY: 'fit_tracker_inbody_v1',
   PHOTOS: 'fit_tracker_photos_v1',
+  ACTIVE_DRAFT: 'fit_tracker_active_draft_v2',
 };
 
 export class StorageService {
@@ -219,7 +220,7 @@ export class StorageService {
   } {
     const sessions = this.getSessions()
       .filter(s => s.completed)
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      .sort((a, b) => new Date(a.completedAt || a.date).getTime() - new Date(b.completedAt || b.date).getTime());
 
     const totalCount = sessions.length;
     const lastSession = sessions[sessions.length - 1];
@@ -234,6 +235,33 @@ export class StorageService {
       completedCount: totalCount,
       lastDate: lastSession ? lastSession.date : undefined,
     };
+  }
+
+  // Active Draft Session (Auto-save current weights, reps, timer state)
+  static getActiveDraft(workoutType?: 'A' | 'B'): ActiveWorkoutDraft | null {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.ACTIVE_DRAFT);
+      if (!data) return null;
+      const draft: ActiveWorkoutDraft = JSON.parse(data);
+      if (workoutType && draft.workoutType !== workoutType) {
+        return null;
+      }
+      return draft;
+    } catch {
+      return null;
+    }
+  }
+
+  static saveActiveDraft(draft: ActiveWorkoutDraft): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_DRAFT, JSON.stringify(draft));
+    } catch (e) {
+      console.error('Failed to save draft', e);
+    }
+  }
+
+  static clearActiveDraft(): void {
+    localStorage.removeItem(STORAGE_KEYS.ACTIVE_DRAFT);
   }
 
   // InBody Records

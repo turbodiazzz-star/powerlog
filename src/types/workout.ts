@@ -115,3 +115,13 @@ export interface ProgressPhotoRecord {
   weightKg?: number;
   notes?: string;
 }
+
+export interface ActiveWorkoutDraft {
+  workoutType: 'A' | 'B';
+  dayName: 'Пн' | 'Ср' | 'Пт' | 'Доп';
+  gymId: string;
+  session: WorkoutSession;
+  elapsedSeconds: number;
+  lastUpdatedTimestamp: number;
+  activeSupersetIndex: number;
+}
