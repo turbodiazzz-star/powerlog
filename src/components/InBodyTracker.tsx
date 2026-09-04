@@ -570,27 +570,36 @@ export const InBodyTracker: React.FC = () => {
 
       {/* Robust & Clean Mobile-first Modal: Add InBody Record */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] bg-zinc-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+        <div className="fixed inset-0 z-[100] bg-zinc-950/95 backdrop-blur-md flex flex-col justify-center items-center p-2 sm:p-4 animate-fadeIn overflow-hidden">
           {/* Backdrop Click */}
           <div className="absolute inset-0" onClick={() => setIsModalOpen(false)} />
 
           <form
             onSubmit={handleSave}
-            className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg sm:max-w-xl w-full shadow-2xl flex flex-col h-[85vh] max-h-[85vh] overflow-hidden text-xs my-auto"
+            className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg sm:max-w-xl w-full shadow-2xl flex flex-col max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100vh-2rem)] overflow-hidden text-xs my-auto"
           >
             {/* Fixed Header */}
-            <div className="flex justify-between items-center px-4 sm:px-5 py-3.5 border-b border-zinc-800 bg-zinc-900 shrink-0">
-              <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                <FileText className="w-4 sm:w-5 h-4 sm:h-5 text-emerald-400" />
-                Загрузка & Ввод результатов InBody
+            <div className="flex justify-between items-center px-4 sm:px-5 py-3 border-b border-zinc-800 bg-zinc-900 shrink-0">
+              <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2 min-w-0 truncate">
+                <FileText className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span className="truncate">Загрузка & Ввод InBody</span>
               </h3>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="p-1.5 text-zinc-400 hover:text-white rounded-lg transition-colors active:scale-95"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="submit"
+                  className="px-3 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-black text-xs transition-all shadow-sm active:scale-95 flex items-center gap-1"
+                >
+                  <CheckCircle className="w-3.5 h-3.5 text-zinc-950 stroke-[2.5]" />
+                  <span>Сохранить</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-1 text-zinc-400 hover:text-white rounded-lg transition-colors active:scale-95"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Scrollable Body Content */}
