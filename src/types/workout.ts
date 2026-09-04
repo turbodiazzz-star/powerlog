@@ -99,8 +99,11 @@ export interface InBodyRecord {
   muscleMassKg?: number; // Скелетно-мышечная масса (SMM)
   fatMassKg?: number; // Масса жира (BFM)
   bodyFatPercent?: number; // Процент жира (PBF)
-  bmi?: number; // Индекс массы тела
-  imageUrl?: string; // Data URL or object URL of InBody report scan
+  fatFreeMassKg?: number; // Безжировая масса (FFM)
+  visceralFatLevel?: number; // Висцеральный жир (Уровень 1-20)
+  bmi?: number; // Индекс массы тела (ИМТ)
+  inBodyScore?: number; // Оценка InBody (Баллы 1-100)
+  imageUrl?: string; // Data URL of InBody scan
   notes?: string;
 }
 
