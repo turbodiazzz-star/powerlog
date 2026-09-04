@@ -800,134 +800,154 @@ export const InBodyTracker: React.FC = () => {
             <form onSubmit={handleSave} className="space-y-3 text-xs">
               {/* Row 1: Date | Total Weight */}
               <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-zinc-400 mb-1 font-bold">Дата анализа</label>
+                <div className="flex flex-col space-y-1">
+                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    Дата анализа
+                  </label>
                   <input
                     type="date"
                     required
                     value={date}
                     onChange={e => setDate(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-zinc-500"
+                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-zinc-400 mb-1 font-bold">Общий вес (кг)</label>
+                <div className="flex flex-col space-y-1">
+                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    Общий вес (кг)
+                  </label>
                   <input
                     type="number"
                     step="0.1"
                     required
-                    placeholder="Например: 90.9"
+                    placeholder="Напр: 90.9"
                     value={weightKg}
                     onChange={e => setWeightKg(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-zinc-500"
+                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
                   />
                 </div>
               </div>
 
               {/* Row 2: Muscle SMM | Fat-Free FFM */}
               <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-zinc-400 mb-1 font-bold">Мышцы SMM (кг)</label>
+                <div className="flex flex-col space-y-1">
+                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    Мышцы SMM (кг)
+                  </label>
                   <input
                     type="number"
                     step="0.1"
-                    placeholder="Например: 38.6"
+                    placeholder="Напр: 38.6"
                     value={muscleMassKg}
                     onChange={e => setMuscleMassKg(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-zinc-500"
+                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-zinc-400 mb-1 font-bold">Безжировая масса FFM (кг)</label>
+                <div className="flex flex-col space-y-1">
+                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    Безжировая FFM (кг)
+                  </label>
                   <input
                     type="number"
                     step="0.1"
-                    placeholder="Например: 67.8"
+                    placeholder="Напр: 67.8"
                     value={fatFreeMassKg}
                     onChange={e => setFatFreeMassKg(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-zinc-500"
+                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
                   />
                 </div>
               </div>
 
               {/* Row 3: Fat PBF (%) | Fat BFM (кг) */}
               <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-zinc-400 mb-1 font-bold">Процент жира PBF (%)</label>
+                <div className="flex flex-col space-y-1">
+                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    Жир PBF (%)
+                  </label>
                   <input
                     type="number"
                     step="0.1"
-                    placeholder="Например: 25.4"
+                    placeholder="Напр: 25.4"
                     value={bodyFatPercent}
                     onChange={e => setBodyFatPercent(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-zinc-500"
+                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-zinc-400 mb-1 font-bold">Масса жира BFM (кг)</label>
+                <div className="flex flex-col space-y-1">
+                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    Масса жира BFM (кг)
+                  </label>
                   <input
                     type="number"
                     step="0.1"
-                    placeholder="Например: 23.1"
+                    placeholder="Напр: 23.1"
                     value={fatMassKg}
                     onChange={e => setFatMassKg(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-zinc-500"
+                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
                   />
                 </div>
               </div>
 
               {/* Row 4: Visceral Fat Level | BMI */}
               <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-zinc-400 mb-1 font-bold">Висцеральный жир (1-20)</label>
+                <div className="flex flex-col space-y-1">
+                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    Висцеральный жир (1-20)
+                  </label>
                   <input
                     type="number"
                     step="1"
-                    placeholder="Например: 8"
+                    placeholder="Напр: 8"
                     value={visceralFatLevel}
                     onChange={e => setVisceralFatLevel(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-zinc-500"
+                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-zinc-400 mb-1 font-bold">ИМТ (BMI)</label>
+                <div className="flex flex-col space-y-1">
+                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    ИМТ (BMI)
+                  </label>
                   <input
                     type="number"
                     step="0.1"
-                    placeholder="Например: 27.4"
+                    placeholder="Напр: 27.4"
                     value={bmi}
                     onChange={e => setBmi(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-zinc-500"
+                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
                   />
                 </div>
               </div>
 
               {/* Row 5: InBody Score | Notes */}
               <div className="grid grid-cols-2 gap-2.5">
-                <div>
-                  <label className="block text-zinc-400 mb-1 font-bold">Оценка InBody (баллы 1-100)</label>
+                <div className="flex flex-col space-y-1">
+                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    Оценка InBody (1-100)
+                  </label>
                   <input
                     type="number"
                     step="1"
-                    placeholder="Например: 78"
+                    placeholder="Напр: 78"
                     value={inBodyScore}
                     onChange={e => setInBodyScore(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 py-2 text-white font-mono focus:outline-none focus:border-zinc-500"
+                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-zinc-400 mb-1 font-bold">Заметка</label>
+                <div className="flex flex-col space-y-1">
+                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    Заметка
+                  </label>
                   <input
                     type="text"
-                    placeholder="Например: Утром натощак"
+                    placeholder="Напр: Утром натощак"
                     value={notes}
                     onChange={e => setNotes(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 py-2 text-white focus:outline-none focus:border-zinc-500"
+                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
                   />
                 </div>
               </div>
