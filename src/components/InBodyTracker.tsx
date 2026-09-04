@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import type { InBodyRecord } from '../types/workout';
 import { StorageService } from '../services/storage';
 import { AiService } from '../services/aiService';
-import { createWorker } from 'tesseract.js';
 import {
   FileText,
   Plus,
@@ -18,190 +17,6 @@ import {
   TrendingUp,
   Sparkles,
 } from 'lucide-react';
-
-interface ExtractedInBodyData {
-  date?: string;
-  weightKg?: number;
-  muscleMassKg?: number;
-  fatMassKg?: number;
-  bodyFatPercent?: number;
-  fatFreeMassKg?: number;
-  visceralFatLevel?: number;
-  bmi?: number;
-  inBodyScore?: number;
-}
-
-const MONTH_MAP: Record<string, string> = {
-  янв: '01', январ: '01',
-  фев: '02', феврал: '02',
-  мар: '03', март: '03',
-  апр: '04', апрел: '04',
-  май: '05', мая: '05',
-  июн: '06', июня: '06',
-  июл: '07', июля: '07',
-  авг: '08', август: '08',
-  сен: '09', сентябр: '09',
-  окт: '10', октябр: '10',
-  ноя: '11', ноябр: '11',
-  дек: '12', декабр: '12',
-};
-
-export function parseInBodyText(rawText: string, fileMetaDate?: string): ExtractedInBodyData {
-  // Replace comma decimal separators with dots for uniform float parsing
-  const cleanText = rawText.replace(/(\d+),(\d+)/g, '$1.$2');
-
-  let date: string | undefined;
-  let weightKg: number | undefined;
-  let muscleMassKg: number | undefined;
-  let fatMassKg: number | undefined;
-  let bodyFatPercent: number | undefined;
-  let fatFreeMassKg: number | undefined;
-  let visceralFatLevel: number | undefined;
-  let bmi: number | undefined;
-  let inBodyScore: number | undefined;
-
-  // 1. Date Extraction
-  // Look for explicit Date labels in InBody prints: e.g., "Дата / Время", "Date / Time", "Дата рождения / Время"
-  // Often dates follow keywords: "Дата 15.08.2026" or "Date: 2026.08.15" or "15.08.2026 14:30"
-  const labelDateRegex = /(?:дата|date|время|time)[\s:.]*?(\b(?:0?[1-9]|[12]\d|3[01])[.\/-](?:0?[1-9]|1[0-2])[.\/-](?:20[23]\d)\b|\b(?:20[23]\d)[.\/-](?:0?[1-9]|1[0-2])[.\/-](?:0?[1-9]|[12]\d|3[01])\b)/i;
-  const labelMatch = cleanText.match(labelDateRegex);
-
-  if (labelMatch) {
-    const rawFoundDate = labelMatch[1];
-    const dmy = rawFoundDate.match(/\b(0?[1-9]|[12]\d|3[01])[.\/-](0?[1-9]|1[0-2])[.\/-](20[23]\d)\b/);
-    const ymd = rawFoundDate.match(/\b(20[23]\d)[.\/-](0?[1-9]|1[0-2])[.\/-](0?[1-9]|[12]\d|3[01])\b/);
-    if (dmy) {
-      date = `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
-    } else if (ymd) {
-      date = `${ymd[1]}-${ymd[2].padStart(2, '0')}-${ymd[3].padStart(2, '0')}`;
-    }
-  }
-
-  // A. Standard numeric dates if keyword didn't match: YYYY.MM.DD or DD.MM.YYYY
-  if (!date) {
-    const dateRegexYMD = /\b(20[23]\d)[.\/-](0[1-9]|1[0-2])[.\/-](0[1-9]|[12]\d|3[01])\b/;
-    const dateRegexDMY = /\b(0[1-9]|[12]\d|3[01])[.\/-](0[1-9]|1[0-2])[.\/-](20[23]\d)\b/;
-
-    const dateMatchDMY = cleanText.match(dateRegexDMY);
-    if (dateMatchDMY) {
-      date = `${dateMatchDMY[3]}-${dateMatchDMY[2].padStart(2, '0')}-${dateMatchDMY[1].padStart(2, '0')}`;
-    } else {
-      const dateMatchYMD = cleanText.match(dateRegexYMD);
-      if (dateMatchYMD) {
-        date = `${dateMatchYMD[1]}-${dateMatchYMD[2].padStart(2, '0')}-${dateMatchYMD[3].padStart(2, '0')}`;
-      }
-    }
-  }
-
-  // B. Textual date parsing (e.g., "15 авг 2026" or "15 августа 2026")
-  if (!date) {
-    const dateRegexText = /\b(0?[1-9]|[12]\d|3[01])\s+([а-яА-Яa-zA-Z]{3,8})\.?,?\s+(20[23]\d)\b/;
-    const textMatch = cleanText.match(dateRegexText);
-    if (textMatch) {
-      const day = textMatch[1].padStart(2, '0');
-      const monthStr = textMatch[2].toLowerCase();
-      const year = textMatch[3];
-
-      let monthNum: string | undefined;
-      for (const [key, val] of Object.entries(MONTH_MAP)) {
-        if (monthStr.startsWith(key)) {
-          monthNum = val;
-          break;
-        }
-      }
-
-      if (monthNum) {
-        date = `${year}-${monthNum}-${day}`;
-      }
-    }
-  }
-
-  // Fallback to photo EXIF / metadata date if OCR didn't catch a valid date
-  if (!date && fileMetaDate) {
-    date = fileMetaDate;
-  }
-
-  // 2. Keyword-based metric extraction
-  const weightRegex = /(?:weight|вес|масса\s*тела)\D*?(\d{2,3}\.\d)/i;
-  const smmRegex = /(?:smm|skeletal\s*muscle|скелетно[- ]мышечная|мышечная\s*масса)\D*?(\d{2,3}\.\d)/i;
-  const ffmRegex = /(?:ffm|fat\s*free\s*mass|безжировая\s*масса)\D*?(\d{2,3}\.\d)/i;
-  const bfmRegex = /(?:bfm|body\s*fat\s*mass|жировая\s*масса|масса\s*жира)\D*?(\d{1,2}\.\d|\d{2}\.\d)/i;
-  const pbfRegex = /(?:pbf|percent\s*body\s*fat|процент\s*жира|пжk|pbf\s*%)\D*?(\d{1,2}\.\d)/i;
-  const bmiRegex = /(?:bmi|имт|индекс\s*массы)\D*?(\d{1,2}\.\d)/i;
-  const visceralRegex = /(?:visceral|висцеральн|уровень\s*висцерального)\D*?(\d{1,2})/i;
-  const scoreRegex = /(?:inbody\s*score|оценка\s*inbody|оценка\s*состава|total\s*score)\D*?(\d{2,3})/i;
-
-  const wMatch = cleanText.match(weightRegex);
-  if (wMatch) weightKg = parseFloat(wMatch[1]);
-
-  const smmMatch = cleanText.match(smmRegex);
-  if (smmMatch) muscleMassKg = parseFloat(smmMatch[1]);
-
-  const ffmMatch = cleanText.match(ffmRegex);
-  if (ffmMatch) fatFreeMassKg = parseFloat(ffmMatch[1]);
-
-  const bfmMatch = cleanText.match(bfmRegex);
-  if (bfmMatch) fatMassKg = parseFloat(bfmMatch[1]);
-
-  const pbfMatch = cleanText.match(pbfRegex);
-  if (pbfMatch) bodyFatPercent = parseFloat(pbfMatch[1]);
-
-  const bmiMatch = cleanText.match(bmiRegex);
-  if (bmiMatch) bmi = parseFloat(bmiMatch[1]);
-
-  const visMatch = cleanText.match(visceralRegex);
-  if (visMatch) visceralFatLevel = parseInt(visMatch[1], 10);
-
-  const scoreMatch = cleanText.match(scoreRegex);
-  if (scoreMatch) inBodyScore = parseInt(scoreMatch[1], 10);
-
-  // 3. Mathematical & Range Disambiguation
-  const allFloats = (cleanText.match(/\b\d{1,3}\.\d\b/g) || []).map(n => parseFloat(n));
-
-  if (!weightKg) {
-    const possibleWeight = allFloats.find(n => n >= 45 && n <= 180);
-    if (possibleWeight) weightKg = possibleWeight;
-  }
-
-  if (!muscleMassKg) {
-    const possibleSMM = allFloats.find(n => n >= 18 && n <= 65 && n !== weightKg);
-    if (possibleSMM) muscleMassKg = possibleSMM;
-  }
-
-  if (!bodyFatPercent) {
-    const possiblePBF = allFloats.find(n => n >= 4 && n <= 50 && n !== weightKg && n !== muscleMassKg);
-    if (possiblePBF) bodyFatPercent = possiblePBF;
-  }
-
-  // Cross-calculate Fat Mass vs Fat Free Mass if missing
-  if (weightKg && bodyFatPercent) {
-    const calculatedFatKg = Math.round((weightKg * (bodyFatPercent / 100)) * 10) / 10;
-    const calculatedFFMKg = Math.round((weightKg - calculatedFatKg) * 10) / 10;
-
-    if (!fatMassKg || fatMassKg > weightKg * 0.6) {
-      // If OCR misidentified FFM as Fat Mass, fix it!
-      if (fatMassKg && Math.abs(fatMassKg - calculatedFFMKg) < 3) {
-        fatFreeMassKg = fatMassKg;
-      }
-      fatMassKg = calculatedFatKg;
-    }
-    if (!fatFreeMassKg) {
-      fatFreeMassKg = calculatedFFMKg;
-    }
-  }
-
-  return {
-    date,
-    weightKg,
-    muscleMassKg,
-    fatMassKg,
-    bodyFatPercent,
-    fatFreeMassKg,
-    visceralFatLevel,
-    bmi,
-    inBodyScore,
-  };
-}
 
 // Chart Metric Type
 type MetricKey =
@@ -251,7 +66,7 @@ export const InBodyTracker: React.FC = () => {
   const [imageUrl, setImageUrl] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
 
-  // OCR Progress State
+  // OCR Progress State (Gemini Only)
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [ocrProgress, setOcrProgress] = useState<number>(0);
   const [ocrStatusText, setOcrStatusText] = useState<string>('');
@@ -287,99 +102,15 @@ export const InBodyTracker: React.FC = () => {
       setImageUrl(dataUrl);
 
       setIsAnalyzing(true);
-      const isGeminiKeySet = Boolean(AiService.getApiKey());
+      setOcrStatusText('Распознавание файла через Gemini ИИ Vision...');
+      setOcrProgress(40);
 
-      // Priority 1: Gemini AI OCR (Supports PDF, screenshots, complex InBody tables, Russian dates)
-      if (isGeminiKeySet) {
-        setOcrStatusText('Распознавание распечатки / PDF через Gemini ИИ...');
-        setOcrProgress(50);
-
-        try {
-          const extracted = await AiService.scanInBodyWithGemini(dataUrl, fileMetaDate);
-          setOcrProgress(100);
-          setIsAnalyzing(false);
-
-          const foundItems: string[] = [];
-          if (extracted.date) {
-            setDate(extracted.date);
-            foundItems.push(`дата ${extracted.date}`);
-          }
-          if (extracted.weightKg) {
-            setWeightKg(extracted.weightKg.toString());
-            foundItems.push(`вес ${extracted.weightKg} кг`);
-          }
-          if (extracted.muscleMassKg) {
-            setMuscleMassKg(extracted.muscleMassKg.toString());
-            foundItems.push(`мышцы ${extracted.muscleMassKg} кг`);
-          }
-          if (extracted.bodyFatPercent) {
-            setBodyFatPercent(extracted.bodyFatPercent.toString());
-            foundItems.push(`жир ${extracted.bodyFatPercent}%`);
-          }
-          if (extracted.fatMassKg) {
-            setFatMassKg(extracted.fatMassKg.toString());
-            foundItems.push(`масса жира ${extracted.fatMassKg} кг`);
-          }
-          if (extracted.fatFreeMassKg) {
-            setFatFreeMassKg(extracted.fatFreeMassKg.toString());
-            foundItems.push(`безжировая масса ${extracted.fatFreeMassKg} кг`);
-          }
-          if (extracted.visceralFatLevel) {
-            setVisceralFatLevel(extracted.visceralFatLevel.toString());
-            foundItems.push(`висцеральный жир ${extracted.visceralFatLevel}`);
-          }
-          if (extracted.bmi) {
-            setBmi(extracted.bmi.toString());
-            foundItems.push(`ИМТ ${extracted.bmi}`);
-          }
-          if (extracted.inBodyScore) {
-            setInBodyScore(extracted.inBodyScore.toString());
-            foundItems.push(`оценка ${extracted.inBodyScore}`);
-          }
-
-          if (foundItems.length > 0) {
-            setOcrResultMsg({
-              type: 'success',
-              msg: `Gemini ИИ распознал данные: ${foundItems.join(', ')}`,
-            });
-          } else {
-            setOcrResultMsg({
-              type: 'warn',
-              msg: 'Gemini не нашел показателей на снимке. Заполните значения вручную.',
-            });
-          }
-          return;
-        } catch (err: any) {
-          console.warn('Gemini OCR failed:', err);
-        }
-      }
-
-      // Priority 2: Fallback for PDF without Gemini key
-      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-        setIsAnalyzing(false);
-        setOcrResultMsg({
-          type: 'warn',
-          msg: 'Для мгновенного распознавания PDF файлов укажите бесплатный API ключ Gemini во вкладке ИИ-Тренер.',
-        });
-        return;
-      }
-
-      // Priority 3: Local Tesseract OCR for Image files
-      setOcrStatusText('Распознавание снимка через локальный OCR...');
       try {
-        const worker = await createWorker('rus+eng');
-        setOcrProgress(45);
-
-        const ret = await worker.recognize(dataUrl);
-        await worker.terminate();
-
-        const recognizedText = ret.data.text;
+        const extracted = await AiService.scanInBodyWithGemini(dataUrl, fileMetaDate);
         setOcrProgress(100);
         setIsAnalyzing(false);
 
-        const extracted = parseInBodyText(recognizedText, fileMetaDate);
         const foundItems: string[] = [];
-
         if (extracted.date) {
           setDate(extracted.date);
           foundItems.push(`дата ${extracted.date}`);
@@ -420,20 +151,20 @@ export const InBodyTracker: React.FC = () => {
         if (foundItems.length > 0) {
           setOcrResultMsg({
             type: 'success',
-            msg: `Распознано локально: ${foundItems.join(', ')}`,
+            msg: `Gemini ИИ распознал: ${foundItems.join(', ')}`,
           });
         } else {
           setOcrResultMsg({
             type: 'warn',
-            msg: 'Не удалось определить цифры. Введите значения вручную.',
+            msg: 'Gemini ИИ не нашел показателей на снимке. Пожалуйста, введите значения вручную.',
           });
         }
-      } catch (err) {
-        console.error('OCR failure', err);
+      } catch (err: any) {
+        console.error('Gemini OCR failure', err);
         setIsAnalyzing(false);
         setOcrResultMsg({
           type: 'warn',
-          msg: 'Не удалось распознать скан. Введите показания вручную ниже.',
+          msg: err.message || 'Ошибка вызова Gemini ИИ. Заполните значения вручную.',
         });
       }
     };
@@ -458,12 +189,10 @@ export const InBodyTracker: React.FC = () => {
       notes,
     });
 
-    setIsModalOpen(false);
-    resetForm();
     loadRecords();
-  };
+    setIsModalOpen(false);
 
-  const resetForm = () => {
+    // Reset Form
     setDate(new Date().toISOString().split('T')[0]);
     setWeightKg('');
     setMuscleMassKg('');
@@ -479,93 +208,61 @@ export const InBodyTracker: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
-    if (confirm('Удалить эту запись InBody?')) {
+    if (window.confirm('Удалить эту запись InBody?')) {
       StorageService.deleteInBodyRecord(id);
       loadRecords();
     }
   };
 
-  // Prepare data for selected chart
+  // Calculations for current active chart metric
   const currentMetricCfg = METRICS_CONFIG.find(m => m.key === activeChartMetric) || METRICS_CONFIG[0];
   const chartData = records
-    .filter(r => r[activeChartMetric] !== undefined && r[activeChartMetric] !== null)
+    .filter(r => r[activeChartMetric] !== undefined)
     .map(r => ({
-      dateStr: new Date(r.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }),
+      dateStr: r.date,
       value: r[activeChartMetric] as number,
     }));
 
-  const chartValues = chartData.map(d => d.value);
-  const minVal = chartValues.length > 0 ? Math.min(...chartValues) : 0;
-  const maxVal = chartValues.length > 0 ? Math.max(...chartValues) : 100;
-  const valRange = maxVal - minVal || 1;
-
-  const firstVal = chartValues[0];
-  const lastVal = chartValues[chartValues.length - 1];
-  const totalDiff = firstVal !== undefined && lastVal !== undefined ? lastVal - firstVal : 0;
-
-  // Reverse list for recent records display (newest first)
-  const displayRecords = [...records].reverse();
+  const metricValues = chartData.map(d => d.value);
+  const minVal = metricValues.length ? Math.min(...metricValues) : 0;
+  const maxVal = metricValues.length ? Math.max(...metricValues) : 100;
+  const valRange = maxVal === minVal ? 1 : maxVal - minVal;
 
   return (
-    <div className="space-y-5">
-      {/* Header Banner */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+    <div className="space-y-4">
+      {/* Header Controls */}
+      <div className="flex justify-between items-center bg-zinc-900 border border-zinc-800 p-3 rounded-2xl shadow-md">
         <div>
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Activity className="w-5 h-5 text-emerald-400" />
-            Состав Тела & InBody Аналитика
+          <h2 className="text-sm font-black text-white flex items-center gap-2">
+            <Activity className="w-4 h-4 text-emerald-400" />
+            Анализатор состава тела (InBody)
           </h2>
-          <p className="text-xs text-zinc-400 mt-0.5">
-            Отслеживайте жировую и мышечную массу, висцеральный жир и ИМТ во времени
-          </p>
+          <p className="text-[11px] text-zinc-400">Динамика веса, мышц, жира и висцеральных показателей</p>
         </div>
-
         <button
-          onClick={() => {
-            resetForm();
-            setIsModalOpen(true);
-          }}
-          className="flex items-center gap-2 bg-white hover:bg-zinc-200 text-zinc-950 font-black text-xs px-4 py-2.5 rounded-xl transition-all active:scale-95 shrink-0 shadow-sm"
+          onClick={() => setIsModalOpen(true)}
+          className="px-3 py-2 bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-black rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
         >
-          <Plus className="w-4 h-4" /> Добавить InBody
+          <Plus className="w-4 h-4" />
+          <span>Добавить</span>
         </button>
       </div>
 
+      {/* Dynamic Progression Charts */}
       {records.length > 0 && (
-        /* Dynamic Progression Trend Chart */
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 shadow-sm space-y-3">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-amber-400" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300">
-                Динамика изменений
-              </h3>
-            </div>
-
-            {chartData.length > 1 && (
-              <div className="flex items-center gap-1.5 text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-zinc-950 border border-zinc-800">
-                <span className="text-zinc-400 text-[11px] font-sans">Итого за период:</span>
-                <span
-                  className={
-                    totalDiff > 0
-                      ? activeChartMetric === 'muscleMassKg' || activeChartMetric === 'inBodyScore'
-                        ? 'text-emerald-400'
-                        : 'text-amber-400'
-                      : totalDiff < 0
-                      ? activeChartMetric === 'bodyFatPercent' || activeChartMetric === 'fatMassKg' || activeChartMetric === 'visceralFatLevel'
-                        ? 'text-emerald-400'
-                        : 'text-rose-400'
-                      : 'text-zinc-400'
-                  }
-                >
-                  {totalDiff > 0 ? `+${totalDiff.toFixed(1)}` : totalDiff.toFixed(1)} {currentMetricCfg.unit}
-                </span>
-              </div>
-            )}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3.5 space-y-3 shadow-lg">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+              График динамики
+            </span>
+            <span className="text-xs font-mono font-bold text-emerald-400">
+              {currentMetricCfg.label}: {chartData.length > 0 ? chartData[chartData.length - 1].value : 0} {currentMetricCfg.unit}
+            </span>
           </div>
 
-          {/* Metric Selector Tabs */}
-          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+          {/* Metric Selector Pills */}
+          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
             {METRICS_CONFIG.map(m => {
               const isActive = m.key === activeChartMetric;
               const hasData = records.some(r => r[m.key] !== undefined);
@@ -689,44 +386,28 @@ export const InBodyTracker: React.FC = () => {
 
       {/* Main Records List */}
       {records.length === 0 ? (
-        <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-8 text-center text-zinc-500 space-y-3">
-          <FileText className="w-10 h-10 text-zinc-700 mx-auto" />
-          <div>
-            <h3 className="text-sm font-bold text-zinc-300">Записей InBody пока нет</h3>
-            <p className="text-xs text-zinc-500 mt-1">
-              Загрузите скан или введите показания вручную.
-            </p>
-          </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="inline-flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold text-xs px-4 py-2 rounded-xl transition-all border border-zinc-700"
-          >
-            <Upload className="w-4 h-4 text-emerald-400" /> Загрузить первый скан
-          </button>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center text-zinc-500 text-xs space-y-2">
+          <FileText className="w-8 h-8 text-zinc-700 mx-auto" />
+          <p>Записи InBody пока отсутствуют.</p>
+          <p className="text-[11px] text-zinc-600">Нажмите «Добавить», чтобы занести результаты замера.</p>
         </div>
       ) : (
         <div className="space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 px-1">
-            История результатов ({records.length})
+            Записи за все время ({records.length})
           </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {displayRecords.map((rec) => {
-              const dateStr = new Date(rec.date).toLocaleDateString('ru-RU', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-              });
-
+          <div className="space-y-3">
+            {[...records].reverse().map(rec => {
               return (
                 <div
                   key={rec.id}
-                  className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 shadow-sm space-y-3 relative"
+                  className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3.5 space-y-3 shadow-md"
                 >
-                  <div className="flex justify-between items-center gap-2 border-b border-zinc-800 pb-2.5">
+                  {/* Record Header */}
+                  <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
                     <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-zinc-400" />
-                      <span className="font-mono text-xs font-bold text-white">{dateStr}</span>
+                      <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-xs font-bold font-mono text-white">{rec.date}</span>
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -823,38 +504,44 @@ export const InBodyTracker: React.FC = () => {
         </div>
       )}
 
-      {/* Redesigned Modal: Add InBody Record */}
+      {/* Robust Modal: Add InBody Record */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-zinc-950/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full p-4 sm:p-5 shadow-2xl flex flex-col max-h-[92vh] my-auto overflow-hidden">
-            {/* Header (Fixed) */}
-            <div className="flex justify-between items-center border-b border-zinc-800 pb-3 shrink-0">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-zinc-950/85 backdrop-blur-sm animate-fadeIn">
+          {/* Entire modal container IS the form element! */}
+          <form
+            onSubmit={handleSave}
+            className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col max-h-[88vh] my-auto overflow-hidden text-xs"
+          >
+            {/* Header (Fixed at top) */}
+            <div className="flex justify-between items-center px-4 py-3 border-b border-zinc-800 bg-zinc-900 shrink-0">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <FileText className="w-4 h-4 text-emerald-400" />
                 Загрузка & Ввод результатов InBody
               </h3>
               <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 text-zinc-400 hover:text-white"
+                className="p-1 text-zinc-400 hover:text-white rounded-lg transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Scrollable Content Body */}
-            <div className="overflow-y-auto pt-3 space-y-4 pr-0.5 scrollbar-thin">
-              {/* Scan Image Upload */}
+            {/* Scrollable Body Content */}
+            <div
+              style={{ WebkitOverflowScrolling: 'touch' }}
+              className="flex-1 overflow-y-auto p-4 space-y-4 overscroll-contain"
+            >
+              {/* Scan Image / PDF Upload */}
               <div className="space-y-2">
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center justify-between">
+                <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
                   <span>Фото / PDF скан распечатки InBody</span>
-                  {AiService.getApiKey() && (
-                    <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-                      <Sparkles className="w-3 h-3 text-emerald-400" /> Gemini ИИ активен
-                    </span>
-                  )}
-                </label>
+                  <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                    <Sparkles className="w-3 h-3 text-emerald-400" /> Gemini ИИ Vision
+                  </span>
+                </div>
 
-                <label className="flex flex-col items-center justify-center p-3 border-2 border-dashed border-zinc-800 hover:border-zinc-600 rounded-xl cursor-pointer bg-zinc-950/60 transition-colors text-center">
+                <label className="flex flex-col items-center justify-center p-3 border-2 border-dashed border-zinc-800 hover:border-zinc-600 rounded-xl cursor-pointer bg-zinc-950/60 transition-colors text-center active:scale-98">
                   <Upload className="w-5 h-5 text-emerald-400 mb-1" />
                   <span className="text-xs font-medium text-zinc-200">
                     {imageUrl ? 'Изменить файл (фото / PDF)' : 'Выбрать фото с телефона или PDF скан InBody'}
@@ -866,8 +553,8 @@ export const InBodyTracker: React.FC = () => {
                 {isAnalyzing && (
                   <div className="space-y-1.5 bg-emerald-950/40 border border-emerald-800/50 p-2.5 rounded-xl animate-fadeIn">
                     <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold">
-                      <Zap className="w-4 h-4 animate-bounce" />
-                      <span>{ocrStatusText || 'Распознаем данные...'}</span>
+                      <Zap className="w-4 h-4 animate-bounce text-emerald-400" />
+                      <span>{ocrStatusText || 'Gemini ИИ распознает данные...'}</span>
                     </div>
                     {ocrProgress > 0 && (
                       <div className="w-full bg-zinc-950 rounded-full h-1.5 overflow-hidden">
@@ -893,44 +580,50 @@ export const InBodyTracker: React.FC = () => {
                     ) : (
                       <AlertCircle className="w-4 h-4 shrink-0 stroke-[2.5] text-amber-400 mt-0.5" />
                     )}
-                    <span>{ocrResultMsg.msg}</span>
+                    <span className="leading-snug">{ocrResultMsg.msg}</span>
                   </div>
                 )}
 
                 {imageUrl && !isAnalyzing && (
-                  <div className="relative rounded-xl overflow-hidden border border-zinc-800 max-h-32 bg-zinc-950 flex items-center justify-center p-2">
+                  <div className="relative rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 flex items-center justify-center p-2 max-h-36">
                     {imageUrl.startsWith('data:application/pdf') ? (
                       <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs py-2">
                         <FileText className="w-6 h-6 text-emerald-400 shrink-0" />
                         <span>Загружен PDF документ InBody</span>
                       </div>
                     ) : (
-                      <img src={imageUrl} alt="InBody scan" className="max-h-28 object-contain rounded-lg" />
+                      <img src={imageUrl} alt="InBody scan" className="max-h-32 object-contain rounded-lg" />
                     )}
                   </div>
                 )}
               </div>
 
-              {/* Form Fields: 2 Clean Columns per row */}
-              <form id="inbody-form" onSubmit={handleSave} className="space-y-3 text-xs">
+              {/* Form Input Fields */}
+              <div className="space-y-3 pt-1 border-t border-zinc-800/80">
+                <div className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                  Показатели состава тела
+                </div>
+
                 {/* Row 1: Date | Total Weight */}
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="flex flex-col space-y-1">
-                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
-                      Дата анализа
+                    <label className="text-[11px] font-bold text-zinc-400 flex items-center justify-between">
+                      <span>Дата анализа</span>
+                      <span className="text-rose-400">*</span>
                     </label>
                     <input
                       type="date"
                       required
                       value={date}
                       onChange={e => setDate(e.target.value)}
-                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner"
                     />
                   </div>
 
                   <div className="flex flex-col space-y-1">
-                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
-                      Общий вес (кг)
+                    <label className="text-[11px] font-bold text-zinc-400 flex items-center justify-between">
+                      <span>Общий вес (кг)</span>
+                      <span className="text-rose-400">*</span>
                     </label>
                     <input
                       type="number"
@@ -939,7 +632,7 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 90.9"
                       value={weightKg}
                       onChange={e => setWeightKg(e.target.value)}
-                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner"
                     />
                   </div>
                 </div>
@@ -947,7 +640,7 @@ export const InBodyTracker: React.FC = () => {
                 {/* Row 2: Muscle SMM | Fat-Free FFM */}
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="flex flex-col space-y-1">
-                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    <label className="text-[11px] font-bold text-zinc-400 truncate">
                       Мышцы SMM (кг)
                     </label>
                     <input
@@ -956,12 +649,12 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 38.6"
                       value={muscleMassKg}
                       onChange={e => setMuscleMassKg(e.target.value)}
-                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner"
                     />
                   </div>
 
                   <div className="flex flex-col space-y-1">
-                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    <label className="text-[11px] font-bold text-zinc-400 truncate">
                       Безжировая FFM (кг)
                     </label>
                     <input
@@ -970,7 +663,7 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 67.8"
                       value={fatFreeMassKg}
                       onChange={e => setFatFreeMassKg(e.target.value)}
-                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner"
                     />
                   </div>
                 </div>
@@ -978,7 +671,7 @@ export const InBodyTracker: React.FC = () => {
                 {/* Row 3: Fat PBF (%) | Fat BFM (кг) */}
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="flex flex-col space-y-1">
-                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    <label className="text-[11px] font-bold text-zinc-400 truncate">
                       Жир PBF (%)
                     </label>
                     <input
@@ -987,12 +680,12 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 25.4"
                       value={bodyFatPercent}
                       onChange={e => setBodyFatPercent(e.target.value)}
-                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner"
                     />
                   </div>
 
                   <div className="flex flex-col space-y-1">
-                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    <label className="text-[11px] font-bold text-zinc-400 truncate">
                       Масса жира BFM (кг)
                     </label>
                     <input
@@ -1001,7 +694,7 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 23.1"
                       value={fatMassKg}
                       onChange={e => setFatMassKg(e.target.value)}
-                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner"
                     />
                   </div>
                 </div>
@@ -1009,7 +702,7 @@ export const InBodyTracker: React.FC = () => {
                 {/* Row 4: Visceral Fat Level | BMI */}
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="flex flex-col space-y-1">
-                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    <label className="text-[11px] font-bold text-zinc-400 truncate">
                       Висцеральный жир (1-20)
                     </label>
                     <input
@@ -1018,12 +711,12 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 8"
                       value={visceralFatLevel}
                       onChange={e => setVisceralFatLevel(e.target.value)}
-                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner"
                     />
                   </div>
 
                   <div className="flex flex-col space-y-1">
-                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    <label className="text-[11px] font-bold text-zinc-400 truncate">
                       ИМТ (BMI)
                     </label>
                     <input
@@ -1032,7 +725,7 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 27.4"
                       value={bmi}
                       onChange={e => setBmi(e.target.value)}
-                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner"
                     />
                   </div>
                 </div>
@@ -1040,7 +733,7 @@ export const InBodyTracker: React.FC = () => {
                 {/* Row 5: InBody Score | Notes */}
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="flex flex-col space-y-1">
-                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    <label className="text-[11px] font-bold text-zinc-400 truncate">
                       Оценка InBody (1-100)
                     </label>
                     <input
@@ -1049,12 +742,12 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 78"
                       value={inBodyScore}
                       onChange={e => setInBodyScore(e.target.value)}
-                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner"
                     />
                   </div>
 
                   <div className="flex flex-col space-y-1">
-                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                    <label className="text-[11px] font-bold text-zinc-400 truncate">
                       Заметка
                     </label>
                     <input
@@ -1062,36 +755,35 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: Утром натощак"
                       value={notes}
                       onChange={e => setNotes(e.target.value)}
-                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-bold focus:outline-none focus:border-emerald-500 shadow-inner"
                     />
                   </div>
                 </div>
-              </form>
+              </div>
             </div>
 
-            {/* Modal Action Controls (STUCK AT BOTTOM) */}
-            <div className="flex justify-end gap-2 pt-3 mt-3 border-t border-zinc-800 shrink-0 bg-zinc-900 z-10">
+            {/* Footer (Fixed inside the form) */}
+            <div className="flex justify-end gap-2 p-3 border-t border-zinc-800 shrink-0 bg-zinc-900 z-10">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl text-zinc-400 hover:text-white text-xs font-bold"
+                className="px-4 py-2.5 rounded-xl text-zinc-400 hover:text-white text-xs font-bold active:scale-95 transition-transform"
               >
                 Отмена
               </button>
               <button
                 type="submit"
-                form="inbody-form"
                 className="px-5 py-2.5 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 font-black text-xs transition-all shadow-md active:scale-95 flex items-center gap-1.5"
               >
                 <CheckCircle className="w-4 h-4 text-zinc-950" />
                 Сохранить запись
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
-      {/* Modal View Full Image or PDF */}
+      {/* Modal View Full Image */}
       {selectedRecordImage && (
         <div
           onClick={() => setSelectedRecordImage(null)}
