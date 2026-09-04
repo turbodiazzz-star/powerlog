@@ -265,16 +265,40 @@ export class AiService {
     rawJsonText = rawJsonText.replace(/```json/gi, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(rawJsonText);
 
+    let weightKg = typeof parsed.weightKg === 'number' ? parsed.weightKg : undefined;
+    let muscleMassKg = typeof parsed.muscleMassKg === 'number' ? parsed.muscleMassKg : undefined;
+    let fatMassKg = typeof parsed.fatMassKg === 'number' ? parsed.fatMassKg : undefined;
+    let bodyFatPercent = typeof parsed.bodyFatPercent === 'number' ? parsed.bodyFatPercent : undefined;
+    let fatFreeMassKg = typeof parsed.fatFreeMassKg === 'number' ? parsed.fatFreeMassKg : undefined;
+    let visceralFatLevel = typeof parsed.visceralFatLevel === 'number' ? parsed.visceralFatLevel : undefined;
+    let bmi = typeof parsed.bmi === 'number' ? parsed.bmi : undefined;
+    let inBodyScore = typeof parsed.inBodyScore === 'number' ? parsed.inBodyScore : undefined;
+
+    // Derived auto-calculations for missing metrics
+    if (weightKg && fatFreeMassKg && !fatMassKg && weightKg > fatFreeMassKg) {
+      fatMassKg = Math.round((weightKg - fatFreeMassKg) * 10) / 10;
+    } else if (weightKg && bodyFatPercent && !fatMassKg) {
+      fatMassKg = Math.round((weightKg * (bodyFatPercent / 100)) * 10) / 10;
+    }
+
+    if (weightKg && fatMassKg && !fatFreeMassKg && weightKg > fatMassKg) {
+      fatFreeMassKg = Math.round((weightKg - fatMassKg) * 10) / 10;
+    }
+
+    if (weightKg && fatMassKg && !bodyFatPercent && weightKg > 0) {
+      bodyFatPercent = Math.round(((fatMassKg / weightKg) * 100) * 10) / 10;
+    }
+
     return {
       date: parsed.date || undefined,
-      weightKg: typeof parsed.weightKg === 'number' ? parsed.weightKg : undefined,
-      muscleMassKg: typeof parsed.muscleMassKg === 'number' ? parsed.muscleMassKg : undefined,
-      fatMassKg: typeof parsed.fatMassKg === 'number' ? parsed.fatMassKg : undefined,
-      bodyFatPercent: typeof parsed.bodyFatPercent === 'number' ? parsed.bodyFatPercent : undefined,
-      fatFreeMassKg: typeof parsed.fatFreeMassKg === 'number' ? parsed.fatFreeMassKg : undefined,
-      visceralFatLevel: typeof parsed.visceralFatLevel === 'number' ? parsed.visceralFatLevel : undefined,
-      bmi: typeof parsed.bmi === 'number' ? parsed.bmi : undefined,
-      inBodyScore: typeof parsed.inBodyScore === 'number' ? parsed.inBodyScore : undefined,
+      weightKg,
+      muscleMassKg,
+      fatMassKg,
+      bodyFatPercent,
+      fatFreeMassKg,
+      visceralFatLevel,
+      bmi,
+      inBodyScore,
     };
   }
 

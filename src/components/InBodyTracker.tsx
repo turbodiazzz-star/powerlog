@@ -117,6 +117,21 @@ export const InBodyTracker: React.FC = () => {
     loadRecords();
   }, []);
 
+  // Auto-calculate derived fat mass if missing
+  useEffect(() => {
+    const w = parseFloat(weightKg);
+    const ffm = parseFloat(fatFreeMassKg);
+    const pbf = parseFloat(bodyFatPercent);
+
+    if (w > 0 && ffm > 0 && ffm < w && !fatMassKg) {
+      const calcFat = Math.round((w - ffm) * 10) / 10;
+      setFatMassKg(calcFat.toString());
+    } else if (w > 0 && pbf > 0 && pbf < 100 && !fatMassKg) {
+      const calcFat = Math.round((w * (pbf / 100)) * 10) / 10;
+      setFatMassKg(calcFat.toString());
+    }
+  }, [weightKg, fatFreeMassKg, bodyFatPercent, fatMassKg]);
+
   const loadRecords = () => {
     const loaded = StorageService.getInBodyRecords();
     // Sort chronologically ascending for charts
@@ -650,15 +665,15 @@ export const InBodyTracker: React.FC = () => {
               </div>
 
               {/* Form Input Fields */}
-              <div className="space-y-4 pt-2 border-t border-zinc-800/80">
+              <div className="space-y-3 pt-2 border-t border-zinc-800/80">
                 <div className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
                   Показатели состава тела
                 </div>
 
                 {/* Row 1: Date | Total Weight */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="flex flex-col space-y-1.5 min-w-0">
-                    <label className="text-xs font-bold text-zinc-300 flex items-center justify-between">
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+                  <div className="flex flex-col space-y-1 min-w-0">
+                    <label className="text-[11px] sm:text-xs font-bold text-zinc-300 flex items-center justify-between truncate">
                       <span>Дата анализа</span>
                       <span className="text-rose-400">*</span>
                     </label>
@@ -667,12 +682,12 @@ export const InBodyTracker: React.FC = () => {
                       required
                       value={date}
                       onChange={e => setDate(e.target.value)}
-                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-10.5 sm:h-11 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
 
-                  <div className="flex flex-col space-y-1.5 min-w-0">
-                    <label className="text-xs font-bold text-zinc-300 flex items-center justify-between">
+                  <div className="flex flex-col space-y-1 min-w-0">
+                    <label className="text-[11px] sm:text-xs font-bold text-zinc-300 flex items-center justify-between truncate">
                       <span>Общий вес (кг)</span>
                       <span className="text-rose-400">*</span>
                     </label>
@@ -683,15 +698,15 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 90.9"
                       value={weightKg}
                       onChange={e => setWeightKg(e.target.value)}
-                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-10.5 sm:h-11 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
                 </div>
 
                 {/* Row 2: Muscle SMM | Fat-Free FFM */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="flex flex-col space-y-1.5 min-w-0">
-                    <label className="text-xs font-bold text-zinc-300">
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+                  <div className="flex flex-col space-y-1 min-w-0">
+                    <label className="text-[11px] sm:text-xs font-bold text-zinc-300 truncate">
                       Мышцы SMM (кг)
                     </label>
                     <input
@@ -700,12 +715,12 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 38.6"
                       value={muscleMassKg}
                       onChange={e => setMuscleMassKg(e.target.value)}
-                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-10.5 sm:h-11 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
 
-                  <div className="flex flex-col space-y-1.5 min-w-0">
-                    <label className="text-xs font-bold text-zinc-300">
+                  <div className="flex flex-col space-y-1 min-w-0">
+                    <label className="text-[11px] sm:text-xs font-bold text-zinc-300 truncate">
                       Безжировая FFM (кг)
                     </label>
                     <input
@@ -714,15 +729,15 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 67.8"
                       value={fatFreeMassKg}
                       onChange={e => setFatFreeMassKg(e.target.value)}
-                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-10.5 sm:h-11 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
                 </div>
 
                 {/* Row 3: Fat PBF (%) | Fat BFM (кг) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="flex flex-col space-y-1.5 min-w-0">
-                    <label className="text-xs font-bold text-zinc-300">
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+                  <div className="flex flex-col space-y-1 min-w-0">
+                    <label className="text-[11px] sm:text-xs font-bold text-zinc-300 truncate">
                       Жир PBF (%)
                     </label>
                     <input
@@ -731,12 +746,12 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 25.4"
                       value={bodyFatPercent}
                       onChange={e => setBodyFatPercent(e.target.value)}
-                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-10.5 sm:h-11 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
 
-                  <div className="flex flex-col space-y-1.5 min-w-0">
-                    <label className="text-xs font-bold text-zinc-300">
+                  <div className="flex flex-col space-y-1 min-w-0">
+                    <label className="text-[11px] sm:text-xs font-bold text-zinc-300 truncate">
                       Масса жира BFM (кг)
                     </label>
                     <input
@@ -745,16 +760,16 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 23.1"
                       value={fatMassKg}
                       onChange={e => setFatMassKg(e.target.value)}
-                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-10.5 sm:h-11 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
                 </div>
 
                 {/* Row 4: Visceral Fat Level | BMI */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="flex flex-col space-y-1.5 min-w-0">
-                    <label className="text-xs font-bold text-zinc-300">
-                      Висцеральный жир (1-20)
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+                  <div className="flex flex-col space-y-1 min-w-0">
+                    <label className="text-[11px] sm:text-xs font-bold text-zinc-300 truncate">
+                      Висцеральный жир
                     </label>
                     <input
                       type="number"
@@ -762,12 +777,12 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 8"
                       value={visceralFatLevel}
                       onChange={e => setVisceralFatLevel(e.target.value)}
-                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-10.5 sm:h-11 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
 
-                  <div className="flex flex-col space-y-1.5 min-w-0">
-                    <label className="text-xs font-bold text-zinc-300">
+                  <div className="flex flex-col space-y-1 min-w-0">
+                    <label className="text-[11px] sm:text-xs font-bold text-zinc-300 truncate">
                       ИМТ (BMI)
                     </label>
                     <input
@@ -776,16 +791,16 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 27.4"
                       value={bmi}
                       onChange={e => setBmi(e.target.value)}
-                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-10.5 sm:h-11 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
                 </div>
 
                 {/* Row 5: InBody Score | Notes */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="flex flex-col space-y-1.5 min-w-0">
-                    <label className="text-xs font-bold text-zinc-300">
-                      Оценка InBody (1-100)
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+                  <div className="flex flex-col space-y-1 min-w-0">
+                    <label className="text-[11px] sm:text-xs font-bold text-zinc-300 truncate">
+                      Оценка InBody
                     </label>
                     <input
                       type="number"
@@ -793,20 +808,20 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 78"
                       value={inBodyScore}
                       onChange={e => setInBodyScore(e.target.value)}
-                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-10.5 sm:h-11 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
 
-                  <div className="flex flex-col space-y-1.5 min-w-0">
-                    <label className="text-xs font-bold text-zinc-300">
+                  <div className="flex flex-col space-y-1 min-w-0">
+                    <label className="text-[11px] sm:text-xs font-bold text-zinc-300 truncate">
                       Заметка
                     </label>
                     <input
                       type="text"
-                      placeholder="Напр: Утром натощак"
+                      placeholder="Напр: Утром"
                       value={notes}
                       onChange={e => setNotes(e.target.value)}
-                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-10.5 sm:h-11 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 sm:px-3 text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
                 </div>
