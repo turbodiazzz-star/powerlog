@@ -47,6 +47,41 @@ const METRICS_CONFIG: MetricConfig[] = [
   { key: 'inBodyScore', label: 'Оценка InBody', unit: 'балл', color: '#60a5fa' }, // blue
 ];
 
+const compressImageForOcr = (dataUrl: string, maxDim = 1400, quality = 0.8): Promise<string> => {
+  return new Promise((resolve) => {
+    if (!dataUrl || dataUrl.startsWith('data:application/pdf')) {
+      resolve(dataUrl);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      let width = img.width;
+      let height = img.height;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) {
+          height = Math.round((height * maxDim) / width);
+          width = maxDim;
+        } else {
+          width = Math.round((width * maxDim) / height);
+          height = maxDim;
+        }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(dataUrl);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+};
+
 export const InBodyTracker: React.FC = () => {
   const [records, setRecords] = useState<InBodyRecord[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -98,12 +133,17 @@ export const InBodyTracker: React.FC = () => {
 
     const reader = new FileReader();
     reader.onload = async (evt) => {
-      const dataUrl = evt.target?.result as string;
-      setImageUrl(dataUrl);
+      const rawDataUrl = evt.target?.result as string;
 
       setIsAnalyzing(true);
+      setOcrStatusText('Сжатие файла...');
+      setOcrProgress(20);
+
+      const dataUrl = await compressImageForOcr(rawDataUrl);
+      setImageUrl(dataUrl);
+
       setOcrStatusText('Распознавание файла через Gemini ИИ Vision...');
-      setOcrProgress(40);
+      setOcrProgress(50);
 
       try {
         const extracted = await AiService.scanInBodyWithGemini(dataUrl, fileMetaDate);
@@ -160,14 +200,14 @@ export const InBodyTracker: React.FC = () => {
           });
         }
       } catch (err: any) {
-// #region agent log
-fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eeecb0'},body:JSON.stringify({sessionId:'eeecb0',hypothesisId:'H1_H2_H3_H4',location:'InBodyTracker.tsx:163',message:'handleImageUpload catch block',data:{errName:err?.name,errMsg:err?.message,errStack:err?.stack,errRaw:String(err)},timestamp:Date.now()})}).catch(()=>{});
-// #endregion
         console.error('Gemini OCR failure', err);
         setIsAnalyzing(false);
+        const userMsg = err?.message && err.message !== 'Type error' && err.message !== 'Failed to fetch'
+          ? err.message
+          : 'Не удалось распознать скан. Пожалуйста, введите показатели вручную.';
         setOcrResultMsg({
           type: 'warn',
-          msg: err.message || 'Ошибка вызова Gemini ИИ. Заполните значения вручную.',
+          msg: userMsg,
         });
       }
     };
@@ -509,10 +549,13 @@ fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{metho
 
       {/* Robust & Clean Mobile-first Modal: Add InBody Record */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-zinc-950/90 backdrop-blur-md animate-fadeIn">
+        <div className="fixed inset-0 z-[100] bg-zinc-950/90 backdrop-blur-md flex flex-col justify-end sm:justify-center items-center p-2 sm:p-4 animate-fadeIn">
+          {/* Backdrop Click */}
+          <div className="absolute inset-0" onClick={() => setIsModalOpen(false)} />
+
           <form
             onSubmit={handleSave}
-            className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col max-h-[85vh] overflow-hidden text-xs my-auto"
+            className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col h-[85dvh] sm:h-[85vh] max-h-[85dvh] sm:max-h-[85vh] overflow-hidden text-xs my-auto"
           >
             {/* Header (Top of card, fixed height, non-scrolling) */}
             <div className="flex justify-between items-center px-4 py-3 border-b border-zinc-800 bg-zinc-900 shrink-0">

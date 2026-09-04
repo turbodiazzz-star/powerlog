@@ -69,10 +69,6 @@ export class AiService {
   }): Promise<string> {
     const { apiKey, model, messagesContent, responseFormatJson } = params;
 
-// #region agent log
-fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eeecb0'},body:JSON.stringify({sessionId:'eeecb0',hypothesisId:'H1_H3',location:'aiService.ts:77',message:'callOpenRouterApi entry',data:{model,keyPrefix:apiKey.slice(0,10),messagesCount:messagesContent.length,types:messagesContent.map(m=>m.type)},timestamp:Date.now()})}).catch(()=>{});
-// #endregion
-
     const payload: any = {
       model,
       messages: [
@@ -87,44 +83,29 @@ fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{metho
       payload.response_format = { type: 'json_object' };
     }
 
-    try {
-      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'Тренировки Workout Tracker',
-        },
-        body: JSON.stringify(payload),
-      });
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'X-Title': 'Тренировки Workout Tracker',
+      },
+      body: JSON.stringify(payload),
+    });
 
-      if (!response.ok) {
-        const errJson = await response.json().catch(() => ({}));
-// #region agent log
-fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eeecb0'},body:JSON.stringify({sessionId:'eeecb0',hypothesisId:'H2',location:'aiService.ts:107',message:'OpenRouter non-200 response',data:{status:response.status,errJson},timestamp:Date.now()})}).catch(()=>{});
-// #endregion
-        throw new Error(errJson.error?.message || `OpenRouter HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      const message = data.choices?.[0]?.message?.content;
-
-// #region agent log
-fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eeecb0'},body:JSON.stringify({sessionId:'eeecb0',hypothesisId:'H2_H4',location:'aiService.ts:117',message:'OpenRouter response parsed',data:{hasChoices:!!data.choices,choice0Message:data.choices?.[0]?.message,messageType:typeof message,messagePreview:String(message).slice(0,100)},timestamp:Date.now()})}).catch(()=>{});
-// #endregion
-
-      if (!message) {
-        throw new Error('OpenRouter вернул пустой ответ');
-      }
-
-      return typeof message === 'string' ? message : JSON.stringify(message);
-    } catch (fetchErr: any) {
-// #region agent log
-fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eeecb0'},body:JSON.stringify({sessionId:'eeecb0',hypothesisId:'H1_H2',location:'aiService.ts:128',message:'callOpenRouterApi caught exception',data:{errName:fetchErr?.name,errMsg:fetchErr?.message,errStack:fetchErr?.stack},timestamp:Date.now()})}).catch(()=>{});
-// #endregion
-      throw fetchErr;
+    if (!response.ok) {
+      const errJson = await response.json().catch(() => ({}));
+      throw new Error(errJson.error?.message || `OpenRouter HTTP ${response.status}`);
     }
+
+    const data = await response.json();
+    const message = data.choices?.[0]?.message?.content;
+
+    if (!message) {
+      throw new Error('OpenRouter вернул пустой ответ');
+    }
+
+    return typeof message === 'string' ? message : JSON.stringify(message);
   }
 
   // --- Direct Google Gemini API handler (Supports AIzaSy... keys) ---
