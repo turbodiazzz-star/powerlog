@@ -44,7 +44,7 @@ const MONTH_MAP: Record<string, string> = {
   дек: '12', декабр: '12',
 };
 
-export function parseInBodyText(rawText: string): ExtractedInBodyData {
+export function parseInBodyText(rawText: string, fileMetaDate?: string): ExtractedInBodyData {
   // Replace comma decimal separators with dots for uniform float parsing
   const cleanText = rawText.replace(/(\d+),(\d+)/g, '$1.$2');
 
@@ -59,21 +59,39 @@ export function parseInBodyText(rawText: string): ExtractedInBodyData {
   let inBodyScore: number | undefined;
 
   // 1. Date Extraction
-  // A. Standard numeric dates: YYYY.MM.DD or DD.MM.YYYY
-  const dateRegexYMD = /\b(20[23]\d)[.\/-](0[1-9]|1[0-2])[.\/-](0[1-9]|[12]\d|3[01])\b/;
-  const dateRegexDMY = /\b(0[1-9]|[12]\d|3[01])[.\/-](0[1-9]|1[0-2])[.\/-](20[23]\d)\b/;
+  // Look for explicit Date labels in InBody prints: e.g., "Дата / Время", "Date / Time", "Дата рождения / Время"
+  // Often dates follow keywords: "Дата 15.08.2026" or "Date: 2026.08.15" or "15.08.2026 14:30"
+  const labelDateRegex = /(?:дата|date|время|time)[\s:.]*?(\b(?:0?[1-9]|[12]\d|3[01])[.\/-](?:0?[1-9]|1[0-2])[.\/-](?:20[23]\d)\b|\b(?:20[23]\d)[.\/-](?:0?[1-9]|1[0-2])[.\/-](?:0?[1-9]|[12]\d|3[01])\b)/i;
+  const labelMatch = cleanText.match(labelDateRegex);
 
-  const dateMatchYMD = cleanText.match(dateRegexYMD);
-  if (dateMatchYMD) {
-    date = `${dateMatchYMD[1]}-${dateMatchYMD[2].padStart(2, '0')}-${dateMatchYMD[3].padStart(2, '0')}`;
-  } else {
-    const dateMatchDMY = cleanText.match(dateRegexDMY);
-    if (dateMatchDMY) {
-      date = `${dateMatchDMY[3]}-${dateMatchDMY[2].padStart(2, '0')}-${dateMatchDMY[1].padStart(2, '0')}`;
+  if (labelMatch) {
+    const rawFoundDate = labelMatch[1];
+    const dmy = rawFoundDate.match(/\b(0?[1-9]|[12]\d|3[01])[.\/-](0?[1-9]|1[0-2])[.\/-](20[23]\d)\b/);
+    const ymd = rawFoundDate.match(/\b(20[23]\d)[.\/-](0?[1-9]|1[0-2])[.\/-](0?[1-9]|[12]\d|3[01])\b/);
+    if (dmy) {
+      date = `${dmy[3]}-${dmy[2].padStart(2, '0')}-${dmy[1].padStart(2, '0')}`;
+    } else if (ymd) {
+      date = `${ymd[1]}-${ymd[2].padStart(2, '0')}-${ymd[3].padStart(2, '0')}`;
     }
   }
 
-  // B. Textual date parsing (e.g., "31 авг. 2026" or "31 августа 2026")
+  // A. Standard numeric dates if keyword didn't match: YYYY.MM.DD or DD.MM.YYYY
+  if (!date) {
+    const dateRegexYMD = /\b(20[23]\d)[.\/-](0[1-9]|1[0-2])[.\/-](0[1-9]|[12]\d|3[01])\b/;
+    const dateRegexDMY = /\b(0[1-9]|[12]\d|3[01])[.\/-](0[1-9]|1[0-2])[.\/-](20[23]\d)\b/;
+
+    const dateMatchDMY = cleanText.match(dateRegexDMY);
+    if (dateMatchDMY) {
+      date = `${dateMatchDMY[3]}-${dateMatchDMY[2].padStart(2, '0')}-${dateMatchDMY[1].padStart(2, '0')}`;
+    } else {
+      const dateMatchYMD = cleanText.match(dateRegexYMD);
+      if (dateMatchYMD) {
+        date = `${dateMatchYMD[1]}-${dateMatchYMD[2].padStart(2, '0')}-${dateMatchYMD[3].padStart(2, '0')}`;
+      }
+    }
+  }
+
+  // B. Textual date parsing (e.g., "15 авг 2026" or "15 августа 2026")
   if (!date) {
     const dateRegexText = /\b(0?[1-9]|[12]\d|3[01])\s+([а-яА-Яa-zA-Z]{3,8})\.?,?\s+(20[23]\d)\b/;
     const textMatch = cleanText.match(dateRegexText);
@@ -94,6 +112,11 @@ export function parseInBodyText(rawText: string): ExtractedInBodyData {
         date = `${year}-${monthNum}-${day}`;
       }
     }
+  }
+
+  // Fallback to photo EXIF / metadata date if OCR didn't catch a valid date
+  if (!date && fileMetaDate) {
+    date = fileMetaDate;
   }
 
   // 2. Keyword-based metric extraction
@@ -276,7 +299,7 @@ export const InBodyTracker: React.FC = () => {
         setOcrProgress(100);
         setIsAnalyzing(false);
 
-        const extracted = parseInBodyText(recognizedText);
+        const extracted = parseInBodyText(recognizedText, fileMetaDate);
         const foundItems: string[] = [];
 
         if (extracted.date) {
@@ -725,9 +748,9 @@ export const InBodyTracker: React.FC = () => {
       {/* Redesigned Modal: Add InBody Record */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-zinc-950/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full p-4 sm:p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto my-auto">
-            {/* Header */}
-            <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full p-4 sm:p-5 shadow-2xl flex flex-col max-h-[92vh] my-auto overflow-hidden">
+            {/* Header (Fixed) */}
+            <div className="flex justify-between items-center border-b border-zinc-800 pb-3 shrink-0">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <FileText className="w-4 h-4 text-emerald-400" />
                 Загрузка & Ввод результатов InBody
@@ -740,235 +763,240 @@ export const InBodyTracker: React.FC = () => {
               </button>
             </div>
 
-            {/* Scan Image Upload */}
-            <div className="space-y-2">
-              <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                Фото / Скан распечатки InBody
-              </label>
+            {/* Scrollable Content Body */}
+            <div className="overflow-y-auto pt-3 space-y-4 pr-0.5 scrollbar-thin">
+              {/* Scan Image Upload */}
+              <div className="space-y-2">
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                  Фото / Скан распечатки InBody
+                </label>
 
-              <label className="flex flex-col items-center justify-center p-3 border-2 border-dashed border-zinc-800 hover:border-zinc-600 rounded-xl cursor-pointer bg-zinc-950/60 transition-colors text-center">
-                <Upload className="w-5 h-5 text-emerald-400 mb-1" />
-                <span className="text-xs font-medium text-zinc-200">
-                  {imageUrl ? 'Изменить снимки' : 'Выбрать фото с телефона или камеры'}
-                </span>
-                <span className="text-[10px] text-zinc-500 mt-0.5">PNG, JPG, HEIC</span>
-                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-              </label>
+                <label className="flex flex-col items-center justify-center p-3 border-2 border-dashed border-zinc-800 hover:border-zinc-600 rounded-xl cursor-pointer bg-zinc-950/60 transition-colors text-center">
+                  <Upload className="w-5 h-5 text-emerald-400 mb-1" />
+                  <span className="text-xs font-medium text-zinc-200">
+                    {imageUrl ? 'Изменить снимки' : 'Выбрать фото с телефона или камеры'}
+                  </span>
+                  <span className="text-[10px] text-zinc-500 mt-0.5">PNG, JPG, HEIC</span>
+                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                </label>
 
-              {isAnalyzing && (
-                <div className="space-y-1.5 bg-emerald-950/40 border border-emerald-800/50 p-2.5 rounded-xl animate-fadeIn">
-                  <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold">
-                    <Zap className="w-4 h-4 animate-bounce" />
-                    <span>{ocrStatusText || 'Распознаем данные...'}</span>
-                  </div>
-                  {ocrProgress > 0 && (
-                    <div className="w-full bg-zinc-950 rounded-full h-1.5 overflow-hidden">
-                      <div
-                        className="bg-emerald-400 h-full transition-all duration-300"
-                        style={{ width: `${ocrProgress}%` }}
-                      />
+                {isAnalyzing && (
+                  <div className="space-y-1.5 bg-emerald-950/40 border border-emerald-800/50 p-2.5 rounded-xl animate-fadeIn">
+                    <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold">
+                      <Zap className="w-4 h-4 animate-bounce" />
+                      <span>{ocrStatusText || 'Распознаем данные...'}</span>
                     </div>
-                  )}
-                </div>
-              )}
+                    {ocrProgress > 0 && (
+                      <div className="w-full bg-zinc-950 rounded-full h-1.5 overflow-hidden">
+                        <div
+                          className="bg-emerald-400 h-full transition-all duration-300"
+                          style={{ width: `${ocrProgress}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              {ocrResultMsg && (
-                <div
-                  className={`p-2.5 rounded-xl border text-xs flex items-start gap-2 animate-fadeIn ${
-                    ocrResultMsg.type === 'success'
-                      ? 'bg-emerald-950/50 border-emerald-800 text-emerald-300'
-                      : 'bg-amber-950/50 border-amber-800 text-amber-300'
-                  }`}
-                >
-                  {ocrResultMsg.type === 'success' ? (
-                    <CheckCircle className="w-4 h-4 shrink-0 stroke-[2.5] text-emerald-400 mt-0.5" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 shrink-0 stroke-[2.5] text-amber-400 mt-0.5" />
-                  )}
-                  <span>{ocrResultMsg.msg}</span>
-                </div>
-              )}
+                {ocrResultMsg && (
+                  <div
+                    className={`p-2.5 rounded-xl border text-xs flex items-start gap-2 animate-fadeIn ${
+                      ocrResultMsg.type === 'success'
+                        ? 'bg-emerald-950/50 border-emerald-800 text-emerald-300'
+                        : 'bg-amber-950/50 border-amber-800 text-amber-300'
+                    }`}
+                  >
+                    {ocrResultMsg.type === 'success' ? (
+                      <CheckCircle className="w-4 h-4 shrink-0 stroke-[2.5] text-emerald-400 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 shrink-0 stroke-[2.5] text-amber-400 mt-0.5" />
+                    )}
+                    <span>{ocrResultMsg.msg}</span>
+                  </div>
+                )}
 
-              {imageUrl && !isAnalyzing && (
-                <div className="relative rounded-xl overflow-hidden border border-zinc-800 max-h-32 bg-zinc-950 flex items-center justify-center p-1">
-                  <img src={imageUrl} alt="InBody scan" className="max-h-28 object-contain rounded-lg" />
+                {imageUrl && !isAnalyzing && (
+                  <div className="relative rounded-xl overflow-hidden border border-zinc-800 max-h-32 bg-zinc-950 flex items-center justify-center p-1">
+                    <img src={imageUrl} alt="InBody scan" className="max-h-28 object-contain rounded-lg" />
+                  </div>
+                )}
+              </div>
+
+              {/* Form Fields: 2 Clean Columns per row */}
+              <form id="inbody-form" onSubmit={handleSave} className="space-y-3 text-xs">
+                {/* Row 1: Date | Total Weight */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="flex flex-col space-y-1">
+                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                      Дата анализа
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={date}
+                      onChange={e => setDate(e.target.value)}
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                    />
+                  </div>
+
+                  <div className="flex flex-col space-y-1">
+                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                      Общий вес (кг)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      required
+                      placeholder="Напр: 90.9"
+                      value={weightKg}
+                      onChange={e => setWeightKg(e.target.value)}
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                    />
+                  </div>
                 </div>
-              )}
+
+                {/* Row 2: Muscle SMM | Fat-Free FFM */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="flex flex-col space-y-1">
+                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                      Мышцы SMM (кг)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Напр: 38.6"
+                      value={muscleMassKg}
+                      onChange={e => setMuscleMassKg(e.target.value)}
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                    />
+                  </div>
+
+                  <div className="flex flex-col space-y-1">
+                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                      Безжировая FFM (кг)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Напр: 67.8"
+                      value={fatFreeMassKg}
+                      onChange={e => setFatFreeMassKg(e.target.value)}
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                    />
+                  </div>
+                </div>
+
+                {/* Row 3: Fat PBF (%) | Fat BFM (кг) */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="flex flex-col space-y-1">
+                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                      Жир PBF (%)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Напр: 25.4"
+                      value={bodyFatPercent}
+                      onChange={e => setBodyFatPercent(e.target.value)}
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                    />
+                  </div>
+
+                  <div className="flex flex-col space-y-1">
+                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                      Масса жира BFM (кг)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Напр: 23.1"
+                      value={fatMassKg}
+                      onChange={e => setFatMassKg(e.target.value)}
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                    />
+                  </div>
+                </div>
+
+                {/* Row 4: Visceral Fat Level | BMI */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="flex flex-col space-y-1">
+                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                      Висцеральный жир (1-20)
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      placeholder="Напр: 8"
+                      value={visceralFatLevel}
+                      onChange={e => setVisceralFatLevel(e.target.value)}
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                    />
+                  </div>
+
+                  <div className="flex flex-col space-y-1">
+                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                      ИМТ (BMI)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="Напр: 27.4"
+                      value={bmi}
+                      onChange={e => setBmi(e.target.value)}
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                    />
+                  </div>
+                </div>
+
+                {/* Row 5: InBody Score | Notes */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="flex flex-col space-y-1">
+                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                      Оценка InBody (1-100)
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      placeholder="Напр: 78"
+                      value={inBodyScore}
+                      onChange={e => setInBodyScore(e.target.value)}
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                    />
+                  </div>
+
+                  <div className="flex flex-col space-y-1">
+                    <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
+                      Заметка
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Напр: Утром натощак"
+                      value={notes}
+                      onChange={e => setNotes(e.target.value)}
+                      className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
+                    />
+                  </div>
+                </div>
+              </form>
             </div>
 
-            {/* Form Fields: 2 Clean Columns per row */}
-            <form onSubmit={handleSave} className="space-y-3 text-xs">
-              {/* Row 1: Date | Total Weight */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="flex flex-col space-y-1">
-                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
-                    Дата анализа
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={date}
-                    onChange={e => setDate(e.target.value)}
-                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
-                  />
-                </div>
-
-                <div className="flex flex-col space-y-1">
-                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
-                    Общий вес (кг)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    required
-                    placeholder="Напр: 90.9"
-                    value={weightKg}
-                    onChange={e => setWeightKg(e.target.value)}
-                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
-                  />
-                </div>
-              </div>
-
-              {/* Row 2: Muscle SMM | Fat-Free FFM */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="flex flex-col space-y-1">
-                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
-                    Мышцы SMM (кг)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="Напр: 38.6"
-                    value={muscleMassKg}
-                    onChange={e => setMuscleMassKg(e.target.value)}
-                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
-                  />
-                </div>
-
-                <div className="flex flex-col space-y-1">
-                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
-                    Безжировая FFM (кг)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="Напр: 67.8"
-                    value={fatFreeMassKg}
-                    onChange={e => setFatFreeMassKg(e.target.value)}
-                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
-                  />
-                </div>
-              </div>
-
-              {/* Row 3: Fat PBF (%) | Fat BFM (кг) */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="flex flex-col space-y-1">
-                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
-                    Жир PBF (%)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="Напр: 25.4"
-                    value={bodyFatPercent}
-                    onChange={e => setBodyFatPercent(e.target.value)}
-                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
-                  />
-                </div>
-
-                <div className="flex flex-col space-y-1">
-                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
-                    Масса жира BFM (кг)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="Напр: 23.1"
-                    value={fatMassKg}
-                    onChange={e => setFatMassKg(e.target.value)}
-                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
-                  />
-                </div>
-              </div>
-
-              {/* Row 4: Visceral Fat Level | BMI */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="flex flex-col space-y-1">
-                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
-                    Висцеральный жир (1-20)
-                  </label>
-                  <input
-                    type="number"
-                    step="1"
-                    placeholder="Напр: 8"
-                    value={visceralFatLevel}
-                    onChange={e => setVisceralFatLevel(e.target.value)}
-                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
-                  />
-                </div>
-
-                <div className="flex flex-col space-y-1">
-                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
-                    ИМТ (BMI)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="Напр: 27.4"
-                    value={bmi}
-                    onChange={e => setBmi(e.target.value)}
-                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
-                  />
-                </div>
-              </div>
-
-              {/* Row 5: InBody Score | Notes */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="flex flex-col space-y-1">
-                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
-                    Оценка InBody (1-100)
-                  </label>
-                  <input
-                    type="number"
-                    step="1"
-                    placeholder="Напр: 78"
-                    value={inBodyScore}
-                    onChange={e => setInBodyScore(e.target.value)}
-                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-mono font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
-                  />
-                </div>
-
-                <div className="flex flex-col space-y-1">
-                  <label className="h-5 text-[11px] font-bold text-zinc-400 flex items-end truncate">
-                    Заметка
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Напр: Утром натощак"
-                    value={notes}
-                    onChange={e => setNotes(e.target.value)}
-                    className="h-10 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs text-white font-bold focus:outline-none focus:border-zinc-500 shadow-inner"
-                  />
-                </div>
-              </div>
-
-              {/* Modal Action Controls */}
-              <div className="flex justify-end gap-2 pt-3 border-t border-zinc-800">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-zinc-400 hover:text-white text-xs font-bold"
-                >
-                  Отмена
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 font-black text-xs transition-all shadow-sm"
-                >
-                  Сохранить запись
-                </button>
-              </div>
-            </form>
+            {/* Modal Action Controls (STUCK AT BOTTOM) */}
+            <div className="flex justify-end gap-2 pt-3 mt-3 border-t border-zinc-800 shrink-0 bg-zinc-900 z-10">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl text-zinc-400 hover:text-white text-xs font-bold"
+              >
+                Отмена
+              </button>
+              <button
+                type="submit"
+                form="inbody-form"
+                className="px-5 py-2.5 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 font-black text-xs transition-all shadow-md active:scale-95 flex items-center gap-1.5"
+              >
+                <CheckCircle className="w-4 h-4 text-zinc-950" />
+                Сохранить запись
+              </button>
+            </div>
           </div>
         </div>
       )}
