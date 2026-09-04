@@ -37,6 +37,99 @@ interface ActiveWorkoutProps {
 
 const TIMER_PRESETS = [30, 60, 90, 120, 180];
 
+// Helper to build/sync session structure against current WORKOUT_PROGRAM definition
+const syncSessionWithProgram = (
+  rawSession: WorkoutSession | null,
+  wType: 'A' | 'B',
+  wDay: 'Пн' | 'Ср' | 'Пт' | 'Доп',
+  gId: string
+): WorkoutSession => {
+  const p = WORKOUT_PROGRAM[wType];
+  const loadedGyms = StorageService.getGyms();
+  const activeGym = loadedGyms.find(g => g.id === gId) || loadedGyms[0];
+  const gymBrand = activeGym?.brand || 'matrix';
+
+  const existingExercisesMap = new Map<string, { machineName?: string; sets: ExerciseSet[] }>();
+  if (rawSession && rawSession.supersets) {
+    for (const ss of rawSession.supersets) {
+      for (const ex of ss.exercises) {
+        if (ex.sets && ex.sets.length > 0) {
+          existingExercisesMap.set(ex.exerciseId, {
+            machineName: ex.machineName,
+            sets: ex.sets,
+          });
+        }
+      }
+    }
+  }
+
+  const supersets = p.supersets.map(supersetDef => ({
+    supersetId: supersetDef.id,
+    supersetTitle: supersetDef.title,
+    restIntervalSec1: supersetDef.rest1Sec,
+    restIntervalSec2: supersetDef.rest2Sec,
+    exercises: supersetDef.exercises.map(exDef => {
+      const existing = existingExercisesMap.get(exDef.id);
+      if (existing) {
+        return {
+          exerciseId: exDef.id,
+          exerciseTitle: exDef.name,
+          muscleGroup: exDef.muscleGroup,
+          machineName: existing.machineName,
+          sets: existing.sets,
+        };
+      }
+
+      const availableOptions = getOptionsForExercise(exDef.id, gymBrand);
+      const prevVariant = StorageService.getPreviousVariantUsed(exDef.id);
+
+      let selectedOption: MachineOption | undefined;
+      if (prevVariant && availableOptions.length > 1) {
+        selectedOption = availableOptions.find(opt => opt.name !== prevVariant);
+      }
+      if (!selectedOption) {
+        selectedOption = availableOptions[0];
+      }
+
+      const variantName = selectedOption ? selectedOption.name : undefined;
+      const history = StorageService.getLastExerciseLog(exDef.id, activeGym?.id, undefined, variantName);
+
+      const defaultSetsCount = exDef.targetSets;
+      const sets: ExerciseSet[] = [];
+
+      for (let i = 1; i <= defaultSetsCount; i++) {
+        const histSet = history?.sets[i - 1];
+        sets.push({
+          id: `set_${exDef.id}_${i}_${Date.now()}`,
+          setNumber: i,
+          weightKg: histSet?.weightKg || 0,
+          reps: histSet?.reps || 10,
+          completed: false,
+        });
+      }
+
+      return {
+        exerciseId: exDef.id,
+        exerciseTitle: exDef.name,
+        muscleGroup: exDef.muscleGroup,
+        machineName: variantName,
+        sets,
+      };
+    }),
+  }));
+
+  return {
+    id: rawSession?.id || 'session_' + Date.now(),
+    date: rawSession?.date || new Date().toISOString(),
+    workoutType: wType,
+    dayName: wDay,
+    gymId: activeGym?.id || gId,
+    gymName: activeGym?.name || '',
+    completed: false,
+    supersets,
+  };
+};
+
 export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   workoutType,
   dayName,
@@ -74,69 +167,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   const [timerInitialSeconds, setTimerInitialSeconds] = useState<number>(60);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
 
-  // Active session state with draft restore fallback
+  // Active session state with draft restore fallback and program structure normalization
   const [session, setSession] = useState<WorkoutSession>(() => {
     const draft = StorageService.getActiveDraft(workoutType);
-    if (draft && draft.session) {
-      return draft.session;
-    }
-
-    const loadedGyms = StorageService.getGyms();
-    const activeGym = loadedGyms.find(g => g.id === gymId) || loadedGyms[0];
-    const gymBrand = activeGym?.brand || 'matrix';
-
-    return {
-      id: 'session_' + Date.now(),
-      date: new Date().toISOString(),
-      workoutType,
-      dayName,
-      gymId: activeGym?.id || gymId,
-      gymName: activeGym?.name || '',
-      completed: false,
-      supersets: program.supersets.map(supersetDef => ({
-        supersetId: supersetDef.id,
-        supersetTitle: supersetDef.title,
-        restIntervalSec1: supersetDef.rest1Sec,
-        restIntervalSec2: supersetDef.rest2Sec,
-        exercises: supersetDef.exercises.map(exDef => {
-          const availableOptions = getOptionsForExercise(exDef.id, gymBrand);
-          const prevVariant = StorageService.getPreviousVariantUsed(exDef.id);
-
-          let selectedOption: MachineOption | undefined;
-          if (prevVariant && availableOptions.length > 1) {
-            selectedOption = availableOptions.find(opt => opt.name !== prevVariant);
-          }
-          if (!selectedOption) {
-            selectedOption = availableOptions[0];
-          }
-
-          const variantName = selectedOption ? selectedOption.name : undefined;
-          const history = StorageService.getLastExerciseLog(exDef.id, activeGym?.id, undefined, variantName);
-
-          const defaultSetsCount = exDef.targetSets;
-          const sets: ExerciseSet[] = [];
-
-          for (let i = 1; i <= defaultSetsCount; i++) {
-            const histSet = history?.sets[i - 1];
-            sets.push({
-              id: `set_${exDef.id}_${i}_${Date.now()}`,
-              setNumber: i,
-              weightKg: histSet?.weightKg || 0,
-              reps: histSet?.reps || 10,
-              completed: false,
-            });
-          }
-
-          return {
-            exerciseId: exDef.id,
-            exerciseTitle: exDef.name,
-            muscleGroup: exDef.muscleGroup,
-            machineName: variantName,
-            sets,
-          };
-        }),
-      })),
-    };
+    return syncSessionWithProgram(draft ? draft.session : null, workoutType, dayName, gymId);
   });
 
   const [expandedDetails, setExpandedDetails] = useState<Record<string, boolean>>({});
@@ -311,7 +345,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   };
 
   const toggleSetCompleted = (
-    supersetId: string,
+    _supersetId: string,
     exerciseId: string,
     setId: string,
     restSec: number,
@@ -321,25 +355,22 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
     setSession(prev => ({
       ...prev,
-      supersets: prev.supersets.map(ss => {
-        if (ss.supersetId !== supersetId) return ss;
-        return {
-          ...ss,
-          exercises: ss.exercises.map(ex => {
-            if (ex.exerciseId !== exerciseId) return ex;
-            return {
-              ...ex,
-              sets: ex.sets.map(st => {
-                if (st.id === setId) {
-                  newlyCompleted = !st.completed;
-                  return { ...st, completed: newlyCompleted };
-                }
-                return st;
-              }),
-            };
-          }),
-        };
-      }),
+      supersets: prev.supersets.map(ss => ({
+        ...ss,
+        exercises: ss.exercises.map(ex => {
+          if (ex.exerciseId !== exerciseId) return ex;
+          return {
+            ...ex,
+            sets: ex.sets.map(st => {
+              if (st.id === setId) {
+                newlyCompleted = !st.completed;
+                return { ...st, completed: newlyCompleted };
+              }
+              return st;
+            }),
+          };
+        }),
+      })),
     }));
 
     if (newlyCompleted) {
@@ -348,7 +379,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   };
 
   const updateSetField = (
-    supersetId: string,
+    _supersetId: string,
     exerciseId: string,
     setId: string,
     field: keyof ExerciseSet,
@@ -356,67 +387,58 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   ) => {
     setSession(prev => ({
       ...prev,
-      supersets: prev.supersets.map(ss => {
-        if (ss.supersetId !== supersetId) return ss;
-        return {
-          ...ss,
-          exercises: ss.exercises.map(ex => {
-            if (ex.exerciseId !== exerciseId) return ex;
-            return {
-              ...ex,
-              sets: ex.sets.map(st => {
-                if (st.id === setId) {
-                  return { ...st, [field]: value };
-                }
-                return st;
-              }),
-            };
-          }),
-        };
-      }),
+      supersets: prev.supersets.map(ss => ({
+        ...ss,
+        exercises: ss.exercises.map(ex => {
+          if (ex.exerciseId !== exerciseId) return ex;
+          return {
+            ...ex,
+            sets: ex.sets.map(st => {
+              if (st.id === setId) {
+                return { ...st, [field]: value };
+              }
+              return st;
+            }),
+          };
+        }),
+      })),
     }));
   };
 
-  const addSet = (supersetId: string, exerciseId: string) => {
+  const addSet = (_supersetId: string, exerciseId: string) => {
     setSession(prev => ({
       ...prev,
-      supersets: prev.supersets.map(ss => {
-        if (ss.supersetId !== supersetId) return ss;
-        return {
-          ...ss,
-          exercises: ss.exercises.map(ex => {
-            if (ex.exerciseId !== exerciseId) return ex;
-            const lastSet = ex.sets[ex.sets.length - 1];
-            const newSet: ExerciseSet = {
-              id: `set_${exerciseId}_${ex.sets.length + 1}_${Date.now()}`,
-              setNumber: ex.sets.length + 1,
-              weightKg: lastSet ? lastSet.weightKg : 0,
-              reps: lastSet ? lastSet.reps : 10,
-              completed: false,
-            };
-            return { ...ex, sets: [...ex.sets, newSet] };
-          }),
-        };
-      }),
+      supersets: prev.supersets.map(ss => ({
+        ...ss,
+        exercises: ss.exercises.map(ex => {
+          if (ex.exerciseId !== exerciseId) return ex;
+          const lastSet = ex.sets[ex.sets.length - 1];
+          const newSet: ExerciseSet = {
+            id: `set_${exerciseId}_${ex.sets.length + 1}_${Date.now()}`,
+            setNumber: ex.sets.length + 1,
+            weightKg: lastSet ? lastSet.weightKg : 0,
+            reps: lastSet ? lastSet.reps : 10,
+            completed: false,
+          };
+          return { ...ex, sets: [...ex.sets, newSet] };
+        }),
+      })),
     }));
   };
 
-  const removeSet = (supersetId: string, exerciseId: string, setId: string) => {
+  const removeSet = (_supersetId: string, exerciseId: string, setId: string) => {
     setSession(prev => ({
       ...prev,
-      supersets: prev.supersets.map(ss => {
-        if (ss.supersetId !== supersetId) return ss;
-        return {
-          ...ss,
-          exercises: ss.exercises.map(ex => {
-            if (ex.exerciseId !== exerciseId) return ex;
-            const updatedSets = ex.sets
-              .filter(st => st.id !== setId)
-              .map((st, idx) => ({ ...st, setNumber: idx + 1 }));
-            return { ...ex, sets: updatedSets };
-          }),
-        };
-      }),
+      supersets: prev.supersets.map(ss => ({
+        ...ss,
+        exercises: ss.exercises.map(ex => {
+          if (ex.exerciseId !== exerciseId) return ex;
+          const updatedSets = ex.sets
+            .filter(st => st.id !== setId)
+            .map((st, idx) => ({ ...st, setNumber: idx + 1 }));
+          return { ...ex, sets: updatedSets };
+        }),
+      })),
     }));
   };
 
@@ -484,7 +506,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   };
 
   const currentSupersetDef = program.supersets[activeSupersetIndex];
-  const loggedSuperset = session.supersets.find(s => s.supersetId === currentSupersetDef.id);
 
   return (
     <div className="space-y-2 pb-16 w-full max-w-md mx-auto overflow-x-hidden text-xs pt-safe">
@@ -631,7 +652,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       >
         <div className="space-y-2">
           {currentSupersetDef.exercises.map((exDef) => {
-            const loggedEx = loggedSuperset?.exercises.find(e => e.exerciseId === exDef.id);
+            const loggedEx = session.supersets.flatMap(s => s.exercises).find(e => e.exerciseId === exDef.id);
             const availableVariants = getOptionsForExercise(exDef.id, activeGymBrand);
             const prevVariantName = StorageService.getPreviousVariantUsed(exDef.id);
             const selectedVariantName = loggedEx?.machineName || availableVariants[0]?.name || '';
