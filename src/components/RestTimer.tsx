@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Timer, CheckCircle2 } from 'lucide-react';
+import { Play, Pause, X, CheckCircle2 } from 'lucide-react';
 
 interface RestTimerProps {
   initialSeconds: number;
@@ -10,9 +10,9 @@ interface RestTimerProps {
 
 export const RestTimer: React.FC<RestTimerProps> = ({
   initialSeconds,
-  label = 'Отдых между подходами',
+  label = 'Отдых',
   onFinish,
-  autoStart = false,
+  autoStart = true,
 }) => {
   const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
   const [isActive, setIsActive] = useState(autoStart);
@@ -45,102 +45,76 @@ export const RestTimer: React.FC<RestTimerProps> = ({
     };
   }, [isActive, secondsLeft, onFinish]);
 
-  const startTimer = (seconds?: number) => {
-    if (seconds) setSecondsLeft(seconds);
+  const addTime = (addedSec: number) => {
+    setSecondsLeft(prev => prev + addedSec);
     setIsActive(true);
-  };
-
-  const pauseTimer = () => {
-    setIsActive(false);
-  };
-
-  const resetTimer = (seconds: number = initialSeconds) => {
-    setIsActive(false);
-    setSecondsLeft(seconds);
   };
 
   const formatTime = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const progressPercent = Math.max(0, Math.min(100, ((initialSeconds - secondsLeft) / initialSeconds) * 100));
+  const isFinished = secondsLeft === 0;
 
   return (
-    <div className="bg-slate-900/90 border border-indigo-900/50 rounded-2xl p-4 shadow-lg">
-      <div className="flex items-center justify-between gap-3 mb-2">
-        <div className="flex items-center gap-2">
-          <Timer className={`w-5 h-5 ${isActive ? 'text-indigo-400 animate-pulse' : 'text-slate-400'}`} />
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">{label}</span>
-        </div>
-        <div className="flex gap-1">
-          <button
-            onClick={() => resetTimer(60)}
-            className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded-lg border border-slate-700 font-mono"
-          >
-            60с
-          </button>
-          <button
-            onClick={() => resetTimer(90)}
-            className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded-lg border border-slate-700 font-mono"
-          >
-            90с
-          </button>
-          <button
-            onClick={() => resetTimer(120)}
-            className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded-lg border border-slate-700 font-mono"
-          >
-            120с
-          </button>
-        </div>
-      </div>
+    <div className="fixed bottom-16 left-3 right-3 z-50 max-w-md mx-auto animate-fadeIn">
+      <div className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl shadow-2xl border backdrop-blur-md transition-all ${
+        isFinished
+          ? 'bg-emerald-950/95 border-emerald-500 text-emerald-100'
+          : 'bg-zinc-900/95 border-zinc-700 text-zinc-100'
+      }`}>
+        {/* Left: Label & Countdown */}
+        <div className="flex items-center gap-2 min-w-0">
+          <div className={`w-2 h-2 rounded-full shrink-0 ${
+            isFinished ? 'bg-emerald-400' : isActive ? 'bg-amber-400 animate-ping' : 'bg-zinc-500'
+          }`} />
+          <div className="flex items-baseline gap-1.5 min-w-0">
+            <span className="text-[11px] font-medium text-zinc-400 truncate max-w-[100px] sm:max-w-none">
+              {label}:
+            </span>
+            <span className="font-mono text-sm font-black tracking-wider text-white">
+              {formatTime(secondsLeft)}
+            </span>
+          </div>
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-extrabold text-white font-mono tracking-wider">
-            {formatTime(secondsLeft)}
-          </span>
-          {secondsLeft === 0 && (
-            <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
-              <CheckCircle2 className="w-4 h-4" /> Готов к подходу!
+          {isFinished && (
+            <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1 shrink-0">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Пора!
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          {isActive ? (
-            <button
-              onClick={pauseTimer}
-              className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all shadow-md active:scale-95"
-            >
-              <Pause className="w-4 h-4" /> Пауза
-            </button>
-          ) : (
-            <button
-              onClick={() => startTimer()}
-              className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all shadow-md active:scale-95"
-            >
-              <Play className="w-4 h-4" /> Старт
-            </button>
+        {/* Right: Quick Controls (+30s, Pause/Play, Dismiss X) */}
+        <div className="flex items-center gap-1 shrink-0 text-xs">
+          {!isFinished && (
+            <>
+              <button
+                onClick={() => addTime(30)}
+                className="px-2 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-mono text-[10px] rounded-lg border border-zinc-700 transition-colors"
+                title="+30 секунд"
+              >
+                +30s
+              </button>
+
+              <button
+                onClick={() => setIsActive(!isActive)}
+                className="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg border border-zinc-700 transition-colors"
+              >
+                {isActive ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+              </button>
+            </>
           )}
 
           <button
-            onClick={() => resetTimer()}
-            className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-xl border border-slate-700 transition-colors"
-            title="Сбросить"
+            onClick={onFinish}
+            className="p-1.5 text-zinc-400 hover:text-white bg-zinc-800/80 rounded-lg transition-colors ml-1"
+            title="Закрыть"
           >
-            <RotateCcw className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
-        <div
-          className="bg-indigo-500 h-full transition-all duration-300"
-          style={{ width: `${progressPercent}%` }}
-        />
       </div>
     </div>
   );
