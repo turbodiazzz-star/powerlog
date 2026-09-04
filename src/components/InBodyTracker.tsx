@@ -576,7 +576,7 @@ export const InBodyTracker: React.FC = () => {
 
           <form
             onSubmit={handleSave}
-            className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg sm:max-w-xl w-full shadow-2xl flex flex-col h-[68vh] max-h-[68vh] sm:h-[68vh] sm:max-h-[68vh] overflow-hidden text-xs my-auto"
+            className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg sm:max-w-xl w-full shadow-2xl flex flex-col h-[57vh] max-h-[57vh] sm:h-[57vh] sm:max-h-[57vh] overflow-hidden text-xs my-auto"
           >
             {/* Fixed Header */}
             <div className="flex justify-between items-center px-4 sm:px-5 py-3 border-b border-zinc-800 bg-zinc-900 shrink-0">

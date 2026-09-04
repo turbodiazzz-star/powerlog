@@ -31,6 +31,21 @@ export const AppDashboard: React.FC = () => {
 
   const [activeDraft, setActiveDraft] = useState<ActiveWorkoutDraft | null>(null);
 
+  // Auto-restore active draft session on initial mount if app was closed during workout
+  useEffect(() => {
+    const draft = StorageService.getActiveDraft();
+    if (draft) {
+      const timeDiffMs = Date.now() - draft.lastUpdatedTimestamp;
+      // If draft was modified in the last 12 hours, auto-resume active workout screen
+      if (timeDiffMs < 12 * 60 * 60 * 1000) {
+        setActiveSessionProps({
+          workoutType: draft.workoutType,
+          dayName: draft.dayName,
+        });
+      }
+    }
+  }, []);
+
   useEffect(() => {
     refreshDashboardData();
   }, [activeNav, activeSessionProps]);

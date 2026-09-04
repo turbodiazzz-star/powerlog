@@ -137,6 +137,12 @@ export class StorageService {
     this.saveSessions(sessions);
   }
 
+  static hasLoggedSets(session: WorkoutSession): boolean {
+    return session.supersets.some(ss =>
+      ss.exercises.some(ex => ex.sets.some(s => s.completed || (s.weightKg > 0 && s.reps > 0)))
+    );
+  }
+
   static getLastExerciseLog(
     exerciseId: string,
     _gymId?: string,
@@ -149,8 +155,8 @@ export class StorageService {
     sets: { weightKg: number; reps: number; notes?: string }[];
   } | null {
     const sessions = this.getSessions()
-      .filter(s => s.completed)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      .filter(s => s.completed || this.hasLoggedSets(s))
+      .sort((a, b) => new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime());
 
     // 1. First search for matching variantName if provided
     if (variantName) {
@@ -158,7 +164,7 @@ export class StorageService {
         for (const superset of session.supersets) {
           for (const ex of superset.exercises) {
             if (ex.exerciseId === exerciseId && ex.machineName === variantName) {
-              const validSets = ex.sets.filter(s => s.completed && s.reps > 0);
+              const validSets = ex.sets.filter(s => (s.completed || s.weightKg > 0) && s.reps > 0);
               if (validSets.length > 0) {
                 return {
                   sessionDate: session.date,
@@ -179,7 +185,7 @@ export class StorageService {
         for (const ex of superset.exercises) {
           if (ex.exerciseId === exerciseId) {
             if (machineId && ex.machineId !== machineId) continue;
-            const validSets = ex.sets.filter(s => s.completed && s.reps > 0);
+            const validSets = ex.sets.filter(s => (s.completed || s.weightKg > 0) && s.reps > 0);
             if (validSets.length > 0) {
               return {
                 sessionDate: session.date,
@@ -197,8 +203,8 @@ export class StorageService {
 
   static getPreviousVariantUsed(exerciseId: string): string | null {
     const sessions = this.getSessions()
-      .filter(s => s.completed)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      .filter(s => s.completed || this.hasLoggedSets(s))
+      .sort((a, b) => new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime());
 
     for (const session of sessions) {
       for (const superset of session.supersets) {

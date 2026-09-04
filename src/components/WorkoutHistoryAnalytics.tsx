@@ -29,8 +29,8 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
 
   const loadSessions = () => {
     const loaded = StorageService.getSessions()
-      .filter(s => s.completed)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      .filter(s => s.completed || StorageService.hasLoggedSets(s))
+      .sort((a, b) => new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime());
     setSessions(loaded);
   };
 

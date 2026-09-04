@@ -203,7 +203,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     }
   }, [workoutType]);
 
-  // Continuously save active draft to localStorage
+  // Continuously save active draft AND sync logged sets directly to main history in localStorage
   useEffect(() => {
     StorageService.saveActiveDraft({
       workoutType,
@@ -214,6 +214,16 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       lastUpdatedTimestamp: Date.now(),
       activeSupersetIndex,
     });
+
+    // Check if session has any logged sets (completed or weight/reps entered)
+    const hasAnySets = StorageService.hasLoggedSets(session);
+    if (hasAnySets) {
+      // Auto-sync session directly to main storage so data is NEVER lost even if app is closed
+      StorageService.saveSession({
+        ...session,
+        durationMinutes: Math.max(1, Math.round(elapsedSeconds / 60)),
+      });
+    }
   }, [session, elapsedSeconds, activeSupersetIndex, currentGymId, workoutType, dayName]);
 
   useEffect(() => {
