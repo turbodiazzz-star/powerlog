@@ -1,4 +1,4 @@
-const CACHE_NAME = 'powerlog-v2';
+const CACHE_NAME = 'trainings-v3';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

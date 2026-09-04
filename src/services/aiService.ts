@@ -89,7 +89,7 @@ export class AiService {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': window.location.origin,
-        'X-Title': 'PowerLog Workout Tracker',
+        'X-Title': 'Тренировки Workout Tracker',
       },
       body: JSON.stringify(payload),
     });

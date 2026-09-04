@@ -93,12 +93,12 @@ export const AppDashboard: React.FC = () => {
       <header className="bg-zinc-900/95 border-b border-zinc-800/80 backdrop-blur-md sticky top-0 z-40 pt-safe px-4 pb-2.5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center shrink-0">
-              <Dumbbell className="w-3.5 h-3.5 text-zinc-950" />
+            <div className="w-7 h-7 rounded-lg bg-emerald-400 flex items-center justify-center shrink-0 shadow-sm">
+              <Dumbbell className="w-4 h-4 text-zinc-950 stroke-[2.5]" />
             </div>
             <div>
-              <h1 className="text-xs font-black tracking-wider text-white leading-tight">
-                POWER LOG <span className="text-[9px] text-zinc-400 font-mono">A/B</span>
+              <h1 className="text-xs font-black tracking-wider text-white leading-tight uppercase">
+                ТРЕНИРОВКИ <span className="text-[9px] text-zinc-400 font-mono">A/B</span>
               </h1>
               <p className="text-[10px] text-zinc-400 font-mono leading-none">{currentDateFormatted}</p>
             </div>
