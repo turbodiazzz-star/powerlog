@@ -7,6 +7,7 @@ import type {
 import { WORKOUT_PROGRAM } from '../data/workoutProgram';
 import { StorageService } from '../services/storage';
 import { getOptionsForExercise, type MachineOption } from '../data/machineVariants';
+import { WeightScrollPicker } from './WeightScrollPicker';
 import confetti from 'canvas-confetti';
 import {
   CheckCircle2,
@@ -41,7 +42,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   dayName,
   gymId,
   onFinishWorkout,
-  onCancelWorkout,
 }) => {
   const program = WORKOUT_PROGRAM[workoutType];
   const [gyms, setGyms] = useState<Gym[]>([]);
@@ -56,9 +56,18 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   // Session duration timer
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  // Confirmation Modals State
-  const [showCancelModal, setShowCancelModal] = useState(false);
+  // Confirmation Modal State (Only Finish Modal now)
   const [showFinishModal, setShowFinishModal] = useState(false);
+
+  // Weight Scroll Picker Modal State
+  const [pickerState, setPickerState] = useState<{
+    isOpen: boolean;
+    supersetId: string;
+    exerciseId: string;
+    setId: string;
+    currentWeight: number;
+    isMatrix: boolean;
+  } | null>(null);
 
   // Rest Timer state
   const [timerSecondsLeft, setTimerSecondsLeft] = useState<number | null>(null);
@@ -216,6 +225,27 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     setTimerInitialSeconds(seconds);
     setTimerSecondsLeft(seconds);
     setIsTimerRunning(true);
+  };
+
+  const handleOpenPicker = (
+    supersetId: string,
+    exerciseId: string,
+    setId: string,
+    currentWeightKg: number,
+    historyWeightKg?: number,
+    isMatrix?: boolean
+  ) => {
+    // Starting weight: if set has weight > 0 use it, else fallback to historyWeightKg, else 0
+    const startWeight = currentWeightKg > 0 ? currentWeightKg : (historyWeightKg || 0);
+
+    setPickerState({
+      isOpen: true,
+      supersetId,
+      exerciseId,
+      setId,
+      currentWeight: startWeight,
+      isMatrix: !!isMatrix,
+    });
   };
 
   const handleGymChange = (newGymId: string) => {
@@ -458,26 +488,18 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
   return (
     <div className="space-y-2 pb-16 w-full max-w-md mx-auto overflow-x-hidden text-xs pt-safe">
-      {/* 1. Header Card (Stand-alone Rounded Block - X on the far left!) */}
+      {/* 1. Header Card (NO X button, ONLY Finish button) */}
       <header className="bg-zinc-900 border border-zinc-800 rounded-xl p-2 shadow-sm flex items-center justify-between gap-1">
-        {/* Left: Cancel X Button + Workout Type Badge + Gym Selector */}
+        {/* Left: Workout Type Badge + Gym Selector */}
         <div className="flex items-center gap-1.5 min-w-0">
-          <button
-            onClick={() => setShowCancelModal(true)}
-            className="p-1 text-zinc-400 hover:text-rose-400 bg-zinc-800 rounded-md transition-colors shrink-0"
-            title="Закрыть без сохранения"
-          >
-            <X className="w-4 h-4" />
-          </button>
-
-          <span className="bg-white text-zinc-950 font-black text-xs px-2 py-0.5 rounded-md shrink-0 shadow-sm">
+          <span className="bg-white text-zinc-950 font-black text-xs px-2.5 py-1 rounded-md shrink-0 shadow-sm">
             {workoutType} ({dayName})
           </span>
 
           <select
             value={currentGymId}
             onChange={e => handleGymChange(e.target.value)}
-            className="bg-zinc-950 text-xs text-zinc-200 font-bold rounded-md px-1.5 py-0.5 border border-zinc-700 focus:outline-none shrink-0 max-w-[100px] truncate"
+            className="bg-zinc-950 text-xs text-zinc-200 font-bold rounded-md px-2 py-1 border border-zinc-700 focus:outline-none shrink-0 max-w-[110px] truncate"
           >
             {gyms.map(g => (
               <option key={g.id} value={g.id}>
@@ -489,14 +511,14 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
         {/* Right: Duration Clock + Finish Button */}
         <div className="flex items-center gap-1.5 shrink-0">
-          <div className="flex items-center gap-1 bg-zinc-950 px-1.5 py-0.5 rounded-md border border-zinc-800 text-xs font-mono font-bold text-white">
+          <div className="flex items-center gap-1 bg-zinc-950 px-2 py-1 rounded-md border border-zinc-800 text-xs font-mono font-bold text-white">
             <Clock className="w-3.5 h-3.5 text-zinc-400" />
             <span>{formatElapsed(elapsedSeconds)}</span>
           </div>
 
           <button
             onClick={() => setShowFinishModal(true)}
-            className="flex items-center gap-1 bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-black px-2.5 py-0.5 rounded-md transition-all active:scale-95 shrink-0 shadow-sm"
+            className="flex items-center gap-1 bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-black px-3 py-1 rounded-md transition-all active:scale-95 shrink-0 shadow-sm"
           >
             <Save className="w-3.5 h-3.5" />
             <span>Готово</span>
@@ -560,7 +582,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           )}
         </div>
 
-        {/* 5 Quick Preset Buttons (Larger, Touch Friendly) */}
+        {/* 5 Quick Preset Buttons */}
         <div className="grid grid-cols-5 gap-1.5">
           {TIMER_PRESETS.map(sec => {
             const isCurrentPreset = timerInitialSeconds === sec && timerSecondsLeft !== null;
@@ -616,6 +638,11 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
             const selectedOption = availableVariants.find(opt => opt.name === selectedVariantName) || availableVariants[0];
             const techniqueNotes = selectedOption?.focusNotes || exDef.focusNotes;
+
+            const isMatrix =
+              activeGymBrand === 'matrix' ||
+              selectedOption?.brand === 'matrix' ||
+              selectedVariantName.toLowerCase().includes('matrix');
 
             const variantHistoryLog = StorageService.getLastExerciseLog(
               exDef.id,
@@ -678,12 +705,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                   </div>
                 )}
 
-                {/* Sets Table: Comfortable Row Sizes & Inputs */}
+                {/* Sets Table */}
                 <div className="overflow-x-hidden pt-0.5">
                   <table className="w-full text-left text-xs">
                     <thead>
                       <tr className="text-zinc-500 border-b border-zinc-800 text-[9px] uppercase font-bold">
-                        <th className="py-1 px-1 w-24">Сет / Прошлый</th>
+                        <th className="py-1 px-1 w-28">Сет / Прошлый</th>
                         <th className="py-1 px-1">Вес (кг)</th>
                         <th className="py-1 px-1">Повторы</th>
                         <th className="py-1 px-1 text-center w-10">Готово</th>
@@ -693,6 +720,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                     <tbody className="divide-y divide-zinc-800/40">
                       {loggedEx?.sets.map((st, idx) => {
                         const histSet = variantHistoryLog?.sets[idx];
+                        const histLbs = histSet?.weightKg ? Math.round(histSet.weightKg * 2.20462) : 0;
+
                         return (
                           <tr
                             key={st.id}
@@ -700,35 +729,44 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                               st.completed ? 'bg-emerald-950/25 text-emerald-200' : ''
                             }`}
                           >
-                            {/* Set # + Historical Weight Inline */}
+                            {/* Set # + Historical Weight Inline (Includes lbs for Matrix) */}
                             <td className="py-1 px-1 font-mono text-[10px]">
                               <span className="font-bold text-zinc-300">#{idx + 1}</span>
                               {histSet ? (
-                                <span className="text-amber-400 ml-1.5 font-bold text-xs">
+                                <span className="text-amber-400 ml-1 font-bold text-xs">
                                   {histSet.weightKg}кг
+                                  {isMatrix && histLbs > 0 && (
+                                    <span className="text-[9px] text-amber-400/80 font-normal"> ({histLbs}lb)</span>
+                                  )}
                                 </span>
                               ) : (
                                 <span className="text-zinc-600 ml-1.5 text-[9px]">—</span>
                               )}
                             </td>
 
-                            {/* Weight Input */}
+                            {/* Weight Button (Scroll Picker Trigger) */}
                             <td className="py-1 px-1">
-                              <input
-                                type="number"
-                                step="0.5"
-                                value={st.weightKg || ''}
-                                onChange={e =>
-                                  updateSetField(
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleOpenPicker(
                                     currentSupersetDef.id,
                                     exDef.id,
                                     st.id,
-                                    'weightKg',
-                                    parseFloat(e.target.value) || 0
+                                    st.weightKg,
+                                    histSet?.weightKg,
+                                    isMatrix
                                   )
                                 }
-                                className="w-14 h-8 bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-xs rounded text-center focus:outline-none focus:border-zinc-400"
-                              />
+                                className="w-16 h-8 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 rounded font-mono font-bold text-xs flex flex-col items-center justify-center text-white active:scale-95 transition-all shadow-sm"
+                              >
+                                <span>{st.weightKg || 0} кг</span>
+                                {isMatrix && st.weightKg > 0 && (
+                                  <span className="text-[9px] text-amber-400/90 font-semibold leading-none">
+                                    {Math.round(st.weightKg * 2.20462)} lbs
+                                  </span>
+                                )}
+                              </button>
                             </td>
 
                             {/* Reps Input */}
@@ -745,7 +783,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     parseInt(e.target.value, 10) || 0
                                   )
                                 }
-                                className="w-14 h-8 bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-xs rounded text-center focus:outline-none focus:border-zinc-400"
+                                className="w-13 h-8 bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-xs rounded text-center focus:outline-none focus:border-zinc-400"
                               />
                             </td>
 
@@ -834,35 +872,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         </div>
       </div>
 
-      {/* Confirmation Modal: Cancel Workout */}
-      {showCancelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fadeIn">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-xs w-full p-5 shadow-2xl space-y-3 text-center">
-            <h3 className="text-sm font-bold text-white">Точно закрыть тренировку?</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Тренировка не сохранится в историю, но все введённые веса останутся в черновике.
-            </p>
-            <div className="flex gap-2 pt-2">
-              <button
-                onClick={() => setShowCancelModal(false)}
-                className="flex-1 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs font-bold"
-              >
-                Отмена
-              </button>
-              <button
-                onClick={() => {
-                  setShowCancelModal(false);
-                  onCancelWorkout();
-                }}
-                className="flex-1 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold"
-              >
-                Закрыть
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Confirmation Modal: Finish Workout */}
       {showFinishModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fadeIn">
@@ -890,6 +899,25 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Weight Scroll Picker Modal */}
+      {pickerState && (
+        <WeightScrollPicker
+          isOpen={pickerState.isOpen}
+          initialWeight={pickerState.currentWeight}
+          isMatrix={pickerState.isMatrix}
+          onSelect={w => {
+            updateSetField(
+              pickerState.supersetId,
+              pickerState.exerciseId,
+              pickerState.setId,
+              'weightKg',
+              w
+            );
+          }}
+          onClose={() => setPickerState(null)}
+        />
       )}
     </div>
   );
