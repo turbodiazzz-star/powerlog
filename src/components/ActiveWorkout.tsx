@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type {
   WorkoutSession,
   ExerciseSet,
@@ -22,8 +22,9 @@ import {
   Clock,
   Save,
   X,
-  Calendar,
   Timer,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 interface ActiveWorkoutProps {
@@ -44,6 +45,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   const program = WORKOUT_PROGRAM[workoutType];
   const [gyms, setGyms] = useState<Gym[]>([]);
   const [currentGymId, setCurrentGymId] = useState<string>(gymId);
+
+  // Active Superset carousel index (0, 1, 2)
+  const [activeSupersetIndex, setActiveSupersetIndex] = useState(0);
+
+  // Swipe gesture ref
+  const touchStartX = useRef<number | null>(null);
 
   // Session date & elapsed timer
   const [workoutDate] = useState<string>(new Date().toISOString());
@@ -75,7 +82,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           const availableOptions = getOptionsForExercise(exDef.id, gymBrand);
           const prevVariant = StorageService.getPreviousVariantUsed(exDef.id);
 
-          // Preselect alternate variant if previous exists, else first option
           let selectedOption: MachineOption | undefined;
           if (prevVariant && availableOptions.length > 1) {
             selectedOption = availableOptions.find(opt => opt.name !== prevVariant);
@@ -364,76 +370,100 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
   const formattedDate = new Date(workoutDate).toLocaleDateString('ru-RU', {
     day: 'numeric',
-    month: 'long',
-    year: 'numeric',
+    month: 'short',
   });
 
   const activeGym = gyms.find(g => g.id === currentGymId);
   const activeGymBrand = activeGym?.brand || 'matrix';
 
+  // Swipe handlers for superset carousel
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diffX = touchStartX.current - touchEndX;
+
+    if (Math.abs(diffX) > 50) {
+      if (diffX > 0 && activeSupersetIndex < program.supersets.length - 1) {
+        setActiveSupersetIndex(prev => prev + 1);
+      } else if (diffX < 0 && activeSupersetIndex > 0) {
+        setActiveSupersetIndex(prev => prev - 1);
+      }
+    }
+    touchStartX.current = null;
+  };
+
+  const currentSupersetDef = program.supersets[activeSupersetIndex];
+  const loggedSuperset = session.supersets.find(s => s.supersetId === currentSupersetDef.id);
+
   return (
-    <div className="space-y-5 pb-20">
-      {/* Top Header Bar */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sticky top-2 z-30 shadow-md space-y-3">
-        <div className="flex justify-between items-center gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="bg-white text-zinc-950 font-black text-xs px-2.5 py-0.5 rounded-lg">
-                ТРЕНИРОВКА {workoutType}
+    <div className="space-y-3 pb-24 w-full max-w-md mx-auto overflow-x-hidden">
+      {/* Top Header Bar with Safe Area for iOS Dynamic Island / Notch */}
+      <header className="bg-zinc-900/95 border-b border-zinc-800/80 backdrop-blur-md sticky top-0 z-40 pt-safe px-3 pb-2.5 rounded-b-xl shadow-md space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          {/* Workout Title & Date */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="bg-white text-zinc-950 font-black text-[11px] px-2 py-0.5 rounded shrink-0">
+                ДЕНЬ {workoutType}
               </span>
-              <span className="text-xs font-semibold text-zinc-300 flex items-center gap-1 font-mono">
-                <Calendar className="w-3.5 h-3.5 text-zinc-400" /> {formattedDate} ({dayName})
+              <span className="text-[11px] font-bold text-zinc-300 font-mono truncate">
+                {formattedDate} ({dayName})
               </span>
             </div>
-            <h2 className="text-sm font-bold text-white mt-1">{program.subTitle}</h2>
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-zinc-950 px-3 py-1.5 rounded-xl border border-zinc-800">
-              <Clock className="w-3.5 h-3.5 text-zinc-400" />
-              <span className="font-mono text-xs font-bold text-white">
-                {formatElapsed(elapsedSeconds)}
-              </span>
+          {/* Timer & Header Action Buttons */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1 bg-zinc-950 px-2.5 py-1 rounded-lg border border-zinc-800 text-[11px] font-mono font-bold text-white">
+              <Clock className="w-3 h-3 text-zinc-400" />
+              <span>{formatElapsed(elapsedSeconds)}</span>
             </div>
 
             <button
               onClick={onCancelWorkout}
-              className="p-2 text-zinc-400 hover:text-rose-400 bg-zinc-800 rounded-xl transition-all"
+              className="p-1.5 text-zinc-400 hover:text-rose-400 bg-zinc-800 rounded-lg transition-all"
               title="Отменить"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={handleFinishWorkout}
-              className="flex items-center gap-1.5 bg-white text-zinc-950 hover:bg-zinc-200 text-xs font-extrabold px-3.5 py-2 rounded-xl transition-all active:scale-95 shrink-0"
+              className="flex items-center gap-1 bg-white hover:bg-zinc-200 text-zinc-950 text-[11px] font-black px-2.5 py-1 rounded-lg transition-all active:scale-95 shrink-0 shadow-sm"
             >
-              <Save className="w-4 h-4" />
-              Завершить
+              <Save className="w-3.5 h-3.5" />
+              <span>Завершить</span>
             </button>
           </div>
         </div>
 
         {/* Current Gym Selector */}
-        <div className="flex items-center gap-2 pt-2 border-t border-zinc-800/80 text-xs">
-          <Building2 className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-          <span className="text-zinc-400 font-medium">Спортзал:</span>
+        <div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800/80 text-[11px]">
+          <div className="flex items-center gap-1.5 text-zinc-400 min-w-0">
+            <Building2 className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
+            <span className="font-semibold text-white truncate">{activeGym?.name}</span>
+          </div>
+
           <select
             value={currentGymId}
             onChange={e => handleGymChange(e.target.value)}
-            className="bg-zinc-950 text-white font-semibold rounded-lg px-2.5 py-1 border border-zinc-700 focus:outline-none focus:border-zinc-500"
+            className="bg-zinc-950 text-[11px] text-zinc-200 font-semibold rounded-md px-2 py-0.5 border border-zinc-700 focus:outline-none shrink-0 max-w-[120px]"
           >
             {gyms.map(g => (
               <option key={g.id} value={g.id}>
-                {g.name} ({g.brand.toUpperCase()})
+                {g.name}
               </option>
             ))}
           </select>
         </div>
-      </div>
+      </header>
 
       {/* Floating Rest Timer */}
       {timerConfig && (
-        <div className="animate-fadeIn">
+        <div className="animate-fadeIn px-1">
           <RestTimer
             initialSeconds={timerConfig.seconds}
             label={timerConfig.label}
@@ -443,274 +473,302 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         </div>
       )}
 
-      {/* Supersets Rendering */}
-      <div className="space-y-5">
-        {program.supersets.map(supersetDef => {
-          const loggedSuperset = session.supersets.find(s => s.supersetId === supersetDef.id);
-
+      {/* Superset Tab Selector (Swipe or Tap) */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-1 flex items-center justify-between gap-1 text-[11px] font-bold">
+        {program.supersets.map((ss, idx) => {
+          const isActive = idx === activeSupersetIndex;
           return (
-            <div
-              key={supersetDef.id}
-              className="bg-zinc-900 border border-zinc-800/90 rounded-2xl p-4 shadow-sm space-y-4"
+            <button
+              key={ss.id}
+              onClick={() => setActiveSupersetIndex(idx)}
+              className={`flex-1 py-1.5 px-1 text-center rounded-lg transition-all truncate ${
+                isActive
+                  ? 'bg-white text-zinc-950 shadow-sm font-black'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+              }`}
             >
-              <div className="border-b border-zinc-800/80 pb-2.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                <div>
-                  <h3 className="font-bold text-white text-sm sm:text-base">{supersetDef.title}</h3>
-                  <div className="flex items-center gap-2 text-[11px] text-zinc-400 mt-0.5 font-mono">
-                    <span>Отдых 1: {supersetDef.rest1Text}</span>
-                    <span>•</span>
-                    <span>Отдых 2: {supersetDef.rest2Text}</span>
+              СУПЕРСЕТ {idx + 1}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Active Superset Display (Swipeable container) */}
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        className="bg-zinc-900 border border-zinc-800/90 rounded-xl p-3 shadow-sm space-y-3 animate-fadeIn"
+      >
+        {/* Superset Header & Timer Trigger */}
+        <div className="border-b border-zinc-800/80 pb-2 flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h3 className="font-bold text-white text-xs sm:text-sm truncate">
+              {currentSupersetDef.title}
+            </h3>
+            <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+              Отдых 1: {currentSupersetDef.rest1Text} • Отдых 2: {currentSupersetDef.rest2Text}
+            </div>
+          </div>
+
+          <button
+            onClick={() => startRestTimer(currentSupersetDef.rest1Sec, currentSupersetDef.title)}
+            className="flex items-center gap-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 text-[10px] font-semibold px-2 py-1 rounded-lg transition-all shrink-0"
+          >
+            <Timer className="w-3 h-3 text-amber-400" />
+            <span>Отдых ({currentSupersetDef.rest1Text})</span>
+          </button>
+        </div>
+
+        {/* Exercises in Current Superset */}
+        <div className="space-y-3">
+          {currentSupersetDef.exercises.map((exDef, exIndex) => {
+            const loggedEx = loggedSuperset?.exercises.find(e => e.exerciseId === exDef.id);
+            const isFirstInSuperset = exIndex === 0;
+            const restIntervalSec = isFirstInSuperset
+              ? currentSupersetDef.rest1Sec
+              : currentSupersetDef.rest2Sec;
+
+            const availableVariants = getOptionsForExercise(exDef.id, activeGymBrand);
+            const prevVariantName = StorageService.getPreviousVariantUsed(exDef.id);
+            const selectedVariantName = loggedEx?.machineName || availableVariants[0]?.name || '';
+
+            const variantHistoryLog = StorageService.getLastExerciseLog(
+              exDef.id,
+              currentGymId,
+              undefined,
+              selectedVariantName
+            );
+
+            const detailsKey = `details_${exDef.id}`;
+            const isDetailsOpen = !!expandedDetails[detailsKey];
+
+            return (
+              <div
+                key={exDef.id}
+                className="bg-zinc-950/80 border border-zinc-800/80 rounded-lg p-2.5 space-y-2 text-xs"
+              >
+                {/* Exercise Name & Muscle Group Badge */}
+                <div className="flex items-center justify-between gap-1">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="bg-zinc-800 text-zinc-200 border border-zinc-700 text-[9px] font-bold px-1.5 py-0.5 rounded shrink-0">
+                      {exDef.muscleGroup}
+                    </span>
+                    <span className="font-bold text-white text-xs truncate">{exDef.name}</span>
                   </div>
+
+                  <button
+                    onClick={() =>
+                      startRestTimer(restIntervalSec, `Отдых (${exDef.muscleGroup})`)
+                    }
+                    className="inline-flex items-center gap-1 bg-zinc-900 border border-zinc-700/80 text-zinc-300 text-[10px] font-medium px-2 py-0.5 rounded transition-colors shrink-0"
+                  >
+                    <Timer className="w-3 h-3 text-zinc-400" />
+                    <span>Отдых</span>
+                  </button>
+                </div>
+
+                {/* Machine Variant Selector */}
+                <div className="bg-zinc-900/90 border border-zinc-800 rounded-lg p-2 space-y-1">
+                  <div className="flex items-center justify-between gap-1 text-[10px]">
+                    <span className="font-semibold text-zinc-300">Вариант тренажера:</span>
+                    {prevVariantName && (
+                      <span className="text-[9px] text-amber-400 font-mono truncate max-w-[140px]">
+                        В прошлый раз: {prevVariantName}
+                      </span>
+                    )}
+                  </div>
+
+                  <select
+                    value={selectedVariantName}
+                    onChange={e => handleVariantChange(exDef.id, e.target.value)}
+                    className="w-full bg-zinc-950 text-xs text-white font-medium rounded px-2 py-1 border border-zinc-700 focus:outline-none"
+                  >
+                    {availableVariants.map(opt => {
+                      const isPrev = opt.name === prevVariantName;
+                      return (
+                        <option key={opt.id} value={opt.name}>
+                          {opt.name} {isPrev ? ' (в прошлый раз)' : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                {/* Technique toggle */}
+                <div>
+                  <button
+                    onClick={() => toggleDetails(detailsKey)}
+                    className="flex items-center gap-1 text-[10px] text-zinc-400 hover:text-zinc-200"
+                  >
+                    <Info className="w-3 h-3 text-zinc-400" />
+                    <span>Техника</span>
+                    {isDetailsOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  </button>
+
+                  {isDetailsOpen && (
+                    <div className="mt-1 bg-zinc-900 p-2 rounded border border-zinc-800 text-[11px] text-zinc-300 leading-snug">
+                      {exDef.focusNotes}
+                    </div>
+                  )}
+                </div>
+
+                {/* Historical Log for selected machine */}
+                <div className="bg-zinc-900/90 px-2.5 py-1.5 rounded-lg border border-zinc-800 text-[10px] space-y-0.5">
+                  <div className="flex items-center gap-1 text-zinc-300 font-semibold">
+                    <History className="w-3 h-3 text-amber-400 shrink-0" />
+                    <span>Последний вес:</span>
+                  </div>
+
+                  {variantHistoryLog ? (
+                    <div className="font-mono text-white font-bold text-[11px] pl-4">
+                      {variantHistoryLog.sets.map(s => `${s.weightKg}кг×${s.reps}`).join(' | ')}
+                    </div>
+                  ) : (
+                    <div className="text-zinc-500 italic pl-4">
+                      Нет сохраненных весов
+                    </div>
+                  )}
+                </div>
+
+                {/* Compact Sets Table */}
+                <div className="overflow-x-hidden pt-0.5">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="text-zinc-400 border-b border-zinc-800 text-[9px] uppercase font-bold">
+                        <th className="py-1 px-1 text-center w-8">Сет</th>
+                        <th className="py-1 px-1">Вес (кг)</th>
+                        <th className="py-1 px-1">Повторы</th>
+                        <th className="py-1 px-1 text-center w-12">Готово</th>
+                        <th className="py-1 px-0.5 text-right w-6"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-zinc-800/50">
+                      {loggedEx?.sets.map((st, idx) => (
+                        <tr
+                          key={st.id}
+                          className={`transition-all ${
+                            st.completed ? 'bg-emerald-950/20 text-emerald-200' : ''
+                          }`}
+                        >
+                          <td className="py-1.5 px-1 text-center font-bold font-mono text-zinc-400 text-[11px]">
+                            #{idx + 1}
+                          </td>
+
+                          <td className="py-1.5 px-1">
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={st.weightKg || ''}
+                              onChange={e =>
+                                updateSetField(
+                                  currentSupersetDef.id,
+                                  exDef.id,
+                                  st.id,
+                                  'weightKg',
+                                  parseFloat(e.target.value) || 0
+                                )
+                              }
+                              className="w-14 bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-xs rounded px-1.5 py-1 text-center focus:outline-none focus:border-zinc-400"
+                            />
+                          </td>
+
+                          <td className="py-1.5 px-1">
+                            <input
+                              type="number"
+                              value={st.reps || ''}
+                              onChange={e =>
+                                updateSetField(
+                                  currentSupersetDef.id,
+                                  exDef.id,
+                                  st.id,
+                                  'reps',
+                                  parseInt(e.target.value, 10) || 0
+                                )
+                              }
+                              className="w-14 bg-zinc-900 border border-zinc-700 text-white font-mono font-bold text-xs rounded px-1.5 py-1 text-center focus:outline-none focus:border-zinc-400"
+                            />
+                          </td>
+
+                          <td className="py-1.5 px-1 text-center">
+                            <button
+                              onClick={() =>
+                                toggleSetCompleted(
+                                  currentSupersetDef.id,
+                                  exDef.id,
+                                  st.id,
+                                  restIntervalSec,
+                                  exDef.muscleGroup
+                                )
+                              }
+                              className="p-0.5 rounded transition-transform active:scale-90"
+                            >
+                              {st.completed ? (
+                                <CheckCircle2 className="w-5 h-5 text-emerald-400 fill-emerald-950" />
+                              ) : (
+                                <Circle className="w-5 h-5 text-zinc-600 hover:text-zinc-300" />
+                              )}
+                            </button>
+                          </td>
+
+                          <td className="py-1.5 px-0.5 text-right">
+                            {(loggedEx?.sets.length || 0) > 1 && (
+                              <button
+                                onClick={() => removeSet(currentSupersetDef.id, exDef.id, st.id)}
+                                className="p-0.5 text-zinc-600 hover:text-rose-400"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
 
                 <button
-                  onClick={() => startRestTimer(supersetDef.rest1Sec, supersetDef.title)}
-                  className="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all"
+                  onClick={() => addSet(currentSupersetDef.id, exDef.id)}
+                  className="inline-flex items-center gap-1 text-[11px] text-zinc-400 hover:text-white font-semibold pt-0.5"
                 >
-                  <Timer className="w-3.5 h-3.5 text-amber-400" />
-                  Отдыхаю ({supersetDef.rest1Text})
+                  <Plus className="w-3 h-3" /> Добавить подход
                 </button>
               </div>
+            );
+          })}
+        </div>
 
-              {/* Exercises in Superset */}
-              <div className="space-y-5">
-                {supersetDef.exercises.map((exDef, exIndex) => {
-                  const loggedEx = loggedSuperset?.exercises.find(e => e.exerciseId === exDef.id);
-                  const isFirstInSuperset = exIndex === 0;
-                  const restIntervalSec = isFirstInSuperset
-                    ? supersetDef.rest1Sec
-                    : supersetDef.rest2Sec;
+        {/* Superset Carousel Navigation Footer (Prev / Next Step) */}
+        <div className="flex items-center justify-between pt-2 border-t border-zinc-800 text-xs font-semibold">
+          <button
+            disabled={activeSupersetIndex === 0}
+            onClick={() => setActiveSupersetIndex(prev => prev - 1)}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border transition-all ${
+              activeSupersetIndex === 0
+                ? 'opacity-30 border-transparent text-zinc-600'
+                : 'bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700'
+            }`}
+          >
+            <ChevronLeft className="w-4 h-4" />
+            <span>Пред. суперсет</span>
+          </button>
 
-                  const availableVariants = getOptionsForExercise(exDef.id, activeGymBrand);
-                  const prevVariantName = StorageService.getPreviousVariantUsed(exDef.id);
-                  const selectedVariantName = loggedEx?.machineName || availableVariants[0]?.name || '';
+          <span className="text-[10px] text-zinc-400 font-mono">
+            {activeSupersetIndex + 1} из {program.supersets.length}
+          </span>
 
-                  const variantHistoryLog = StorageService.getLastExerciseLog(
-                    exDef.id,
-                    currentGymId,
-                    undefined,
-                    selectedVariantName
-                  );
-
-                  const detailsKey = `details_${exDef.id}`;
-                  const isDetailsOpen = !!expandedDetails[detailsKey];
-
-                  return (
-                    <div
-                      key={exDef.id}
-                      className="bg-zinc-950/70 border border-zinc-800/80 rounded-xl p-3.5 sm:p-4 space-y-3"
-                    >
-                      {/* Exercise Header: Muscle Group & Machine Options */}
-                      <div className="space-y-2">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="bg-zinc-800 text-zinc-200 border border-zinc-700 text-[11px] font-bold px-2 py-0.5 rounded">
-                                {exDef.muscleGroup}
-                              </span>
-                              <span className="font-bold text-white text-sm">{exDef.name}</span>
-                            </div>
-                            <p className="text-[11px] text-zinc-400 mt-0.5 font-mono">
-                              План: {exDef.targetSets} подх. по {exDef.targetReps} повт.
-                            </p>
-                          </div>
-
-                          <button
-                            onClick={() =>
-                              startRestTimer(restIntervalSec, `Отдых (${exDef.muscleGroup})`)
-                            }
-                            className="inline-flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/80 text-zinc-200 text-xs font-medium px-2.5 py-1 rounded-lg transition-colors"
-                          >
-                            <Timer className="w-3.5 h-3.5 text-zinc-400" />
-                            Отдыхаю
-                          </button>
-                        </div>
-
-                        {/* machine variants selector */}
-                        <div className="bg-zinc-900/90 border border-zinc-800 rounded-xl p-2.5 space-y-1.5">
-                          <div className="flex flex-wrap items-center justify-between gap-1 text-[11px]">
-                            <span className="font-bold text-zinc-300">Варианты тренажеров:</span>
-                            {prevVariantName && (
-                              <span className="text-[10px] text-amber-400/90 font-mono bg-amber-950/40 px-2 py-0.5 rounded border border-amber-800/40">
-                                В прошлый раз: {prevVariantName}
-                              </span>
-                            )}
-                          </div>
-
-                          <select
-                            value={selectedVariantName}
-                            onChange={e => handleVariantChange(exDef.id, e.target.value)}
-                            className="w-full bg-zinc-950 text-xs text-white font-medium rounded-lg px-2.5 py-2 border border-zinc-700 focus:outline-none focus:border-zinc-500"
-                          >
-                            {availableVariants.map(opt => {
-                              const isPrev = opt.name === prevVariantName;
-                              return (
-                                <option key={opt.id} value={opt.name}>
-                                  {opt.name} {isPrev ? ' (в прошлый раз)' : ''}
-                                </option>
-                              );
-                            })}
-                          </select>
-                        </div>
-                      </div>
-
-                      {/* Technique details */}
-                      <div>
-                        <button
-                          onClick={() => toggleDetails(detailsKey)}
-                          className="flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-200 transition-colors"
-                        >
-                          <Info className="w-3.5 h-3.5 text-zinc-400" />
-                          <span>Техника выполнения</span>
-                          {isDetailsOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                        </button>
-
-                        {isDetailsOpen && (
-                          <div className="mt-2 bg-zinc-900 p-2.5 rounded-xl border border-zinc-800 text-xs text-zinc-300">
-                            {exDef.focusNotes}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Display last weights logged for the currently selected machine variant */}
-                      <div className="bg-zinc-900/90 px-3 py-2 rounded-xl border border-zinc-800 text-[11px] space-y-0.5">
-                        <div className="flex items-center gap-1.5 text-zinc-300 font-semibold">
-                          <History className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                          <span>
-                            Последний вес ({selectedVariantName}):
-                          </span>
-                        </div>
-
-                        {variantHistoryLog ? (
-                          <div className="font-mono text-white font-bold text-xs pl-5 pt-0.5">
-                            {variantHistoryLog.sets.map(s => `${s.weightKg}кг × ${s.reps}`).join('  |  ')}
-                            <span className="text-[10px] text-zinc-500 font-normal ml-2">
-                              ({new Date(variantHistoryLog.sessionDate).toLocaleDateString('ru-RU')})
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="text-zinc-500 text-[10px] italic pl-5">
-                            Нет записей весов для этого конкретного тренажера
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Sets table */}
-                      <div className="overflow-x-auto pt-1">
-                        <table className="w-full text-left text-xs">
-                          <thead>
-                            <tr className="text-zinc-400 border-b border-zinc-800 uppercase text-[10px] font-semibold">
-                              <th className="py-2 px-1 w-10 text-center">Сет</th>
-                              <th className="py-2 px-2">Вес (кг)</th>
-                              <th className="py-2 px-2">Повторы</th>
-                              <th className="py-2 px-2 text-center w-16">Готово</th>
-                              <th className="py-2 px-1 text-right w-10"></th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-zinc-800/60">
-                            {loggedEx?.sets.map((st, idx) => (
-                              <tr
-                                key={st.id}
-                                className={`transition-all ${
-                                  st.completed ? 'bg-emerald-950/20 text-emerald-200' : 'hover:bg-zinc-900/40'
-                                }`}
-                              >
-                                <td className="py-2 px-1 text-center font-bold font-mono text-zinc-400">
-                                  #{idx + 1}
-                                </td>
-
-                                <td className="py-2 px-2">
-                                  <div className="flex items-center gap-1">
-                                    <input
-                                      type="number"
-                                      step="0.5"
-                                      value={st.weightKg || ''}
-                                      onChange={e =>
-                                        updateSetField(
-                                          supersetDef.id,
-                                          exDef.id,
-                                          st.id,
-                                          'weightKg',
-                                          parseFloat(e.target.value) || 0
-                                        )
-                                      }
-                                      className="w-16 bg-zinc-900 border border-zinc-700 focus:border-zinc-500 text-white font-mono font-bold text-xs rounded-lg px-2 py-1 text-center"
-                                    />
-                                    <span className="text-zinc-500 font-medium">кг</span>
-                                  </div>
-                                </td>
-
-                                <td className="py-2 px-2">
-                                  <div className="flex items-center gap-1">
-                                    <input
-                                      type="number"
-                                      value={st.reps || ''}
-                                      onChange={e =>
-                                        updateSetField(
-                                          supersetDef.id,
-                                          exDef.id,
-                                          st.id,
-                                          'reps',
-                                          parseInt(e.target.value, 10) || 0
-                                        )
-                                      }
-                                      className="w-16 bg-zinc-900 border border-zinc-700 focus:border-zinc-500 text-white font-mono font-bold text-xs rounded-lg px-2 py-1 text-center"
-                                    />
-                                    <span className="text-zinc-500 font-medium">раз</span>
-                                  </div>
-                                </td>
-
-                                <td className="py-2 px-2 text-center">
-                                  <button
-                                    onClick={() =>
-                                      toggleSetCompleted(
-                                        supersetDef.id,
-                                        exDef.id,
-                                        st.id,
-                                        restIntervalSec,
-                                        exDef.muscleGroup
-                                      )
-                                    }
-                                    className="p-1 rounded-lg transition-all active:scale-90"
-                                  >
-                                    {st.completed ? (
-                                      <CheckCircle2 className="w-5 h-5 text-emerald-400 fill-emerald-950" />
-                                    ) : (
-                                      <Circle className="w-5 h-5 text-zinc-600 hover:text-zinc-300" />
-                                    )}
-                                  </button>
-                                </td>
-
-                                <td className="py-2 px-1 text-right">
-                                  {(loggedEx?.sets.length || 0) > 1 && (
-                                    <button
-                                      onClick={() => removeSet(supersetDef.id, exDef.id, st.id)}
-                                      className="p-1 text-zinc-600 hover:text-rose-400 transition-colors"
-                                      title="Удалить подход"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <button
-                        onClick={() => addSet(supersetDef.id, exDef.id)}
-                        className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white font-semibold pt-1"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Добавить подход
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+          <button
+            disabled={activeSupersetIndex === program.supersets.length - 1}
+            onClick={() => setActiveSupersetIndex(prev => prev + 1)}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg border transition-all ${
+              activeSupersetIndex === program.supersets.length - 1
+                ? 'opacity-30 border-transparent text-zinc-600'
+                : 'bg-white border-white text-zinc-950 font-bold hover:bg-zinc-200'
+            }`}
+          >
+            <span>След. суперсет</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

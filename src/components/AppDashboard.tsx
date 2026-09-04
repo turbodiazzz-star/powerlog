@@ -59,14 +59,14 @@ export const AppDashboard: React.FC = () => {
 
   const currentDateFormatted = new Date().toLocaleDateString('ru-RU', {
     day: 'numeric',
-    month: 'long',
+    month: 'short',
     year: 'numeric',
     weekday: 'short',
   });
 
   if (activeSessionProps) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="w-full max-w-lg mx-auto px-3 py-2">
         <ActiveWorkout
           workoutType={activeSessionProps.workoutType}
           dayName={activeSessionProps.dayName}
@@ -82,42 +82,36 @@ export const AppDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-24">
-      {/* Header */}
-      <header className="bg-zinc-900/90 border-b border-zinc-800/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-2xl mx-auto px-4 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center shadow-sm">
-              <Dumbbell className="w-4 h-4 text-zinc-950" />
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 pb-28 w-full max-w-md mx-auto overflow-x-hidden">
+      {/* Header with Safe Area for iOS Dynamic Island / Notch */}
+      <header className="bg-zinc-900/95 border-b border-zinc-800/80 backdrop-blur-md sticky top-0 z-40 pt-safe px-4 pb-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-white flex items-center justify-center shrink-0">
+              <Dumbbell className="w-3.5 h-3.5 text-zinc-950" />
             </div>
             <div>
-              <h1 className="text-sm font-extrabold tracking-tight text-white flex items-center gap-1.5">
-                POWER LOG <span className="text-[10px] text-zinc-400 font-mono">A/B</span>
+              <h1 className="text-xs font-black tracking-wider text-white leading-tight">
+                POWER LOG <span className="text-[9px] text-zinc-400 font-mono">A/B</span>
               </h1>
-              <p className="text-[10px] text-zinc-400 font-mono">{currentDateFormatted}</p>
+              <p className="text-[10px] text-zinc-400 font-mono leading-none">{currentDateFormatted}</p>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Main Container */}
-      <main className="max-w-2xl mx-auto px-4 pt-5 space-y-6">
-        {/* Home View */}
+      {/* Main Content */}
+      <main className="px-3 pt-3 space-y-4">
         {activeNav === 'home' && (
-          <div className="space-y-5">
-            {/* Active Gym Selector Bar */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-zinc-800 text-zinc-200 rounded-xl border border-zinc-700">
-                  <Building2 className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-[10px] uppercase font-bold text-zinc-500">Выбранный спортзал</div>
-                  <div className="font-bold text-white text-xs flex items-center gap-2">
+          <div className="space-y-3.5">
+            {/* Active Gym Bar */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 shadow-sm flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <Building2 className="w-4 h-4 text-zinc-400 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-[9px] uppercase font-bold text-zinc-500 tracking-wider">Спортзал</div>
+                  <div className="font-bold text-white text-xs truncate">
                     {currentGym?.name}
-                    <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
-                      {currentGym?.brand}
-                    </span>
                   </div>
                 </div>
               </div>
@@ -125,55 +119,52 @@ export const AppDashboard: React.FC = () => {
               <select
                 value={selectedGymId}
                 onChange={e => handleGymSelect(e.target.value)}
-                className="bg-zinc-950 text-xs text-white font-medium rounded-xl px-3 py-2 border border-zinc-700 focus:outline-none focus:border-zinc-500 w-full sm:w-auto"
+                className="bg-zinc-950 text-xs text-zinc-200 font-medium rounded-lg px-2 py-1 border border-zinc-700 focus:outline-none shrink-0 max-w-[140px]"
               >
                 {gyms.map(g => (
                   <option key={g.id} value={g.id}>
-                    {g.name} ({g.brand.toUpperCase()})
+                    {g.name}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Next Recommended Workout Card */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 shadow-sm space-y-4">
-              <div className="flex justify-between items-start gap-3">
+            {/* Next Workout Recommendation Card */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 shadow-sm space-y-3">
+              <div className="flex justify-between items-start gap-2">
                 <div>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 bg-zinc-800 px-2.5 py-0.5 rounded-full mb-1">
+                  <span className="inline-block text-[9px] font-bold uppercase tracking-wider text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded-full mb-1">
                     Следующая тренировка
                   </span>
-                  <h2 className="text-xl font-black text-white">
+                  <h2 className="text-lg font-black text-white leading-tight">
                     ТРЕНИРОВКА {recommendation.workoutType}
                   </h2>
-                  <p className="text-xs font-semibold text-zinc-400 mt-0.5">
+                  <p className="text-[11px] font-medium text-zinc-400 mt-0.5">
                     {WORKOUT_PROGRAM[recommendation.workoutType].subTitle}
                   </p>
                 </div>
 
-                <div className="text-right">
-                  <div className="text-xs font-mono font-bold text-zinc-200 bg-zinc-800 px-2.5 py-1 rounded-xl">
+                <div className="text-right shrink-0">
+                  <span className="text-xs font-mono font-bold text-zinc-200 bg-zinc-800 px-2 py-0.5 rounded-lg inline-block">
                     {recommendation.dayName}
-                  </div>
-                  <div className="text-[10px] text-zinc-500 mt-1 font-mono">
-                    Всего сессий: {recommendation.completedCount}
+                  </span>
+                  <div className="text-[9px] text-zinc-500 mt-1 font-mono">
+                    Сессий: {recommendation.completedCount}
                   </div>
                 </div>
               </div>
 
-              {/* Supersets grouped by Muscle Groups */}
-              <div className="space-y-2 pt-1 border-t border-zinc-800/80 text-xs">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-zinc-400 mb-1">
-                  Группы мышц в программе:
-                </div>
+              {/* Supersets preview list */}
+              <div className="space-y-1.5 pt-1 border-t border-zinc-800/80 text-[11px]">
                 {WORKOUT_PROGRAM[recommendation.workoutType].supersets.map(ss => (
                   <div
                     key={ss.id}
-                    className="bg-zinc-950/80 border border-zinc-800/80 rounded-xl p-2.5 flex items-center justify-between"
+                    className="bg-zinc-950/80 border border-zinc-800/60 rounded-lg px-2.5 py-1.5 flex items-center justify-between text-xs"
                   >
-                    <div className="font-medium text-zinc-300">{ss.title}</div>
-                    <div className="text-zinc-400 font-mono text-[10px] shrink-0">
+                    <span className="font-semibold text-zinc-200 truncate pr-2">{ss.title}</span>
+                    <span className="text-[10px] text-zinc-400 font-mono shrink-0">
                       {ss.exercises.map(e => e.muscleGroup).join(' + ')}
-                    </div>
+                    </span>
                   </div>
                 ))}
               </div>
@@ -183,63 +174,58 @@ export const AppDashboard: React.FC = () => {
                 onClick={() =>
                   handleStartWorkout(recommendation.workoutType, recommendation.dayName)
                 }
-                className="w-full bg-white hover:bg-zinc-200 text-zinc-950 font-black text-sm py-3 px-5 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 active:scale-98"
+                className="w-full bg-white hover:bg-zinc-200 text-zinc-950 font-black text-sm py-2.5 px-4 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 active:scale-98 mt-1"
               >
                 <Play className="w-4 h-4 fill-zinc-950" />
                 Начать Тренировку {recommendation.workoutType}
               </button>
             </div>
 
-            {/* Quick Workout Selection */}
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 shadow-sm space-y-2.5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+            {/* Manual Workout Selection */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-3 shadow-sm space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                 Запустить тренировку вручную
-              </h3>
+              </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <button
                   onClick={() => handleStartWorkout('A', 'Пн')}
-                  className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 p-3 rounded-xl text-left transition-all group"
+                  className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 p-2.5 rounded-lg text-left transition-all"
                 >
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-bold text-white group-hover:text-zinc-200">
-                      ТРЕНИРОВКА A
-                    </span>
+                  <div className="flex justify-between items-center mb-0.5">
+                    <span className="font-bold text-white text-xs">ТРЕНИРОВКА A</span>
                     <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
                   </div>
-                  <p className="text-[11px] text-zinc-500 truncate">{WORKOUT_PROGRAM.A.subTitle}</p>
+                  <p className="text-[10px] text-zinc-500 truncate">{WORKOUT_PROGRAM.A.subTitle}</p>
                 </button>
 
                 <button
                   onClick={() => handleStartWorkout('B', 'Ср')}
-                  className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 p-3 rounded-xl text-left transition-all group"
+                  className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 p-2.5 rounded-lg text-left transition-all"
                 >
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-bold text-white group-hover:text-zinc-200">
-                      ТРЕНИРОВКА B
-                    </span>
+                  <div className="flex justify-between items-center mb-0.5">
+                    <span className="font-bold text-white text-xs">ТРЕНИРОВКА B</span>
                     <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
                   </div>
-                  <p className="text-[11px] text-zinc-500 truncate">{WORKOUT_PROGRAM.B.subTitle}</p>
+                  <p className="text-[10px] text-zinc-500 truncate">{WORKOUT_PROGRAM.B.subTitle}</p>
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Progress View (Includes History, InBody & Photos) */}
         {activeNav === 'progress' && <ProgressView />}
       </main>
 
-      {/* Bottom Navigation Bar (ONLY 2 BUTTONS: Главная & Прогресс) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-zinc-900/95 border-t border-zinc-800 backdrop-blur-md z-40">
-        <div className="max-w-2xl mx-auto grid grid-cols-2 h-14 px-4 gap-2">
+      {/* Sleek Minimalist Bottom Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-zinc-900/95 border-t border-zinc-800/90 backdrop-blur-md z-40 pb-safe">
+        <div className="max-w-md mx-auto grid grid-cols-2 h-12 px-3 gap-2 py-1">
           <button
             onClick={() => setActiveTab('home')}
-            className={`flex items-center justify-center gap-2 text-xs font-bold transition-all rounded-xl my-1.5 ${
+            className={`flex items-center justify-center gap-2 text-xs font-bold transition-all rounded-lg ${
               activeNav === 'home'
-                ? 'bg-white text-zinc-950 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                ? 'bg-zinc-800 text-white border border-zinc-700'
+                : 'text-zinc-500 hover:text-zinc-300'
             }`}
           >
             <Dumbbell className="w-4 h-4" />
@@ -248,10 +234,10 @@ export const AppDashboard: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('progress')}
-            className={`flex items-center justify-center gap-2 text-xs font-bold transition-all rounded-xl my-1.5 ${
+            className={`flex items-center justify-center gap-2 text-xs font-bold transition-all rounded-lg ${
               activeNav === 'progress'
-                ? 'bg-white text-zinc-950 shadow-sm'
-                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40'
+                ? 'bg-zinc-800 text-white border border-zinc-700'
+                : 'text-zinc-500 hover:text-zinc-300'
             }`}
           >
             <TrendingUp className="w-4 h-4" />
