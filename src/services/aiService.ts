@@ -174,10 +174,6 @@ export class AiService {
 
     const isOpenRouter = apiKey.startsWith('sk-or-');
 
-// #region agent log
-fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eeecb0'},body:JSON.stringify({sessionId:'eeecb0',hypothesisId:'H3',location:'aiService.ts:175',message:'scanInBodyWithGemini start',data:{mimeType:parsedData.mimeType,dataLength:parsedData.base64Data.length,isOpenRouter},timestamp:Date.now()})}).catch(()=>{});
-// #endregion
-
     const promptText = `Ты — экспертная OCR система для точного распознавания результатов анализа состава тела InBody (распечаток, фотографий, скриншотов и PDF файлов).
 
 Изучи документ/изображение и извлеки следующие показатели.
