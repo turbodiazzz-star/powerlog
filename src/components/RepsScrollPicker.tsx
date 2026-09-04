@@ -137,10 +137,11 @@ export const RepsScrollPicker: React.FC<RepsScrollPickerProps> = ({
           </button>
         </div>
 
-        {/* Scrollable Wheel List */}
+        {/* Scrollable Wheel List with Natural Touch Inertia Physics */}
         <div
           ref={scrollRef}
-          className="h-44 overflow-y-auto bg-zinc-950 rounded-xl border border-zinc-800 p-1.5 space-y-1 snap-y snap-mandatory scrollbar-thin shadow-inner"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+          className="h-44 overflow-y-auto bg-zinc-950 rounded-xl border border-zinc-800 p-1.5 space-y-1 snap-y snap-proximity scrollbar-thin shadow-inner overscroll-contain"
         >
           {repsOptions.map(r => {
             const isSelected = r === selectedReps;

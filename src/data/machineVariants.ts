@@ -6,6 +6,7 @@ export interface MachineOption {
   brand: 'matrix' | 'technogym' | 'free_weight' | 'both';
   isBodyweight?: boolean;
   isBlockMachine?: boolean; // True for block/cable stack machines (pin-loaded tiles marked in lbs on Matrix)
+  baseTareWeight?: number; // Base starting weight of empty platform or Smith bar in kg
   focusNotes?: string;
 }
 
@@ -18,7 +19,8 @@ export const MACHINE_OPTIONS: MachineOption[] = [
     exerciseId: 'a-1.1',
     brand: 'matrix',
     isBlockMachine: false, // Plate-loaded platform
-    focusNotes: 'Стопы ставим низко на платформе (на ширине плеч). Глубокий опуск до угла 90° в коленях для мощного растяжения квадрицепса. Пауза 1 сек внизу, мощный выжим без «втыкания» коленей.',
+    baseTareWeight: 47, // Empty platform carriage tare weight ~47kg
+    focusNotes: 'Стопы ставим низко на платформе (на ширине плеч). Пустая платформа весит 47 кг (указывайте только вес навешанных блинов). Глубокий опуск до 90°, пауза 1 сек.',
   },
   {
     id: 'leg_press_technogym',
@@ -27,7 +29,26 @@ export const MACHINE_OPTIONS: MachineOption[] = [
     exerciseId: 'a-1.1',
     brand: 'technogym',
     isBlockMachine: false,
-    focusNotes: 'Опускаем платформу плавно и глубоко. Стопы чуть ниже центра платформы для акцента на квадрицепс. В коленях не блокируем вверху.',
+    baseTareWeight: 48, // Pure Strength empty sled weight ~48kg
+    focusNotes: 'Опускаем платформу плавно и глубоко. Пустая платформа весит 48 кг (указывайте только вес блинов). В коленях не блокируем вверху.',
+  },
+  {
+    id: 'leg_press_block_matrix',
+    name: 'Жим ногами блочный / стек (Matrix)',
+    muscleGroup: 'Квадрицепс',
+    exerciseId: 'a-1.1',
+    brand: 'matrix',
+    isBlockMachine: true, // Cable/pin-loaded stack
+    focusNotes: 'Блочный (стековый) жим ногами Matrix. Выбираем плитки штифтом на стеке, выжимаем платформу плавно.',
+  },
+  {
+    id: 'leg_press_block_technogym',
+    name: 'Жим ногами блочный / стек (Technogym)',
+    muscleGroup: 'Квадрицепс',
+    exerciseId: 'a-1.1',
+    brand: 'technogym',
+    isBlockMachine: true, // Cable/pin-loaded stack
+    focusNotes: 'Блочный (стековый) жим ногами Technogym (Selection/Element). Выбираем вес штифтом на стеке.',
   },
 
   // 2. Широчайшие (A - a-1.2)
@@ -104,7 +125,8 @@ export const MACHINE_OPTIONS: MachineOption[] = [
     exerciseId: 'a-2.1',
     brand: 'matrix',
     isBlockMachine: false, // Barbell & plates
-    focusNotes: 'Угол скамьи 25–30°. Опускаем штангу точно на ключичную зону груди. Угол направляет нагрузку именно в верхний пучок.',
+    baseTareWeight: 11, // Empty Smith bar starting weight ~11kg
+    focusNotes: 'Угол скамьи 25–30°. Пустой гриф весит 11 кг (указывайте только вес навешанных блинов). Опускаем штангу точно на ключичную зону груди.',
   },
   {
     id: 'smith_upper_chest_technogym',
@@ -113,7 +135,8 @@ export const MACHINE_OPTIONS: MachineOption[] = [
     exerciseId: 'a-2.1',
     brand: 'technogym',
     isBlockMachine: false,
-    focusNotes: 'Смит Technogym. Опускание до касания верхней части груди, плечи опущены, лопатки сводим.',
+    baseTareWeight: 8, // Multipower empty Smith bar starting resistance ~8kg
+    focusNotes: 'Смит Technogym Multipower. Пустой гриф весит 8 кг (указывайте только вес навешанных блинов). Опускание до касания верхней части груди.',
   },
   {
     id: 'hammer_upper_chest_matrix',
@@ -576,4 +599,10 @@ export function isBlockMachineOption(machineName?: string): boolean {
     lower.includes('сгибания ног') ||
     lower.includes('тренажер на бицепс')
   );
+}
+
+export function getMachineBaseTareWeight(machineName?: string): number {
+  if (!machineName) return 0;
+  const match = MACHINE_OPTIONS.find(opt => opt.name === machineName);
+  return match?.baseTareWeight || 0;
 }

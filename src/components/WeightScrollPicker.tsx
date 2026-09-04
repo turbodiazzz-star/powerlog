@@ -5,6 +5,7 @@ interface WeightScrollPickerProps {
   isOpen: boolean;
   initialWeight: number;
   isMatrixBlock: boolean;
+  baseTareWeight?: number;
   onSelect: (weightKg: number) => void;
   onClose: () => void;
 }
@@ -13,6 +14,7 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
   isOpen,
   initialWeight,
   isMatrixBlock,
+  baseTareWeight = 0,
   onSelect,
   onClose,
 }) => {
@@ -63,6 +65,7 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
   };
 
   const lbsValue = Math.round(selectedWeight * 2.20462);
+  const totalEffectiveWeight = selectedWeight + baseTareWeight;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fadeIn">
@@ -70,7 +73,7 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
         {/* Header */}
         <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
           <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-            Выбор рабочей массы
+            {baseTareWeight > 0 ? 'Вес навешанных блинов' : 'Выбор рабочей массы'}
           </span>
           <button onClick={onClose} className="p-1 text-zinc-400 hover:text-white">
             <X className="w-4 h-4" />
@@ -81,17 +84,20 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
         <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800/80 space-y-1 relative">
           <div className="flex items-baseline justify-center gap-1 font-mono">
             <span className="text-3xl font-black text-white">{selectedWeight}</span>
-            <span className="text-sm font-bold text-zinc-400">кг</span>
+            <span className="text-sm font-bold text-zinc-400">кг (блины)</span>
           </div>
 
+          {/* Base Platform / Smith Bar Tare Weight Calculation */}
+          {baseTareWeight > 0 && (
+            <div className="text-xs font-bold text-emerald-400 font-mono bg-emerald-950/40 py-1 px-2 rounded-lg border border-emerald-900/60 mt-1">
+              + {baseTareWeight} кг ({baseTareWeight > 20 ? 'платформа' : 'гриф'}) = <span className="text-white font-black text-sm">{totalEffectiveWeight} кг всего</span>
+            </div>
+          )}
+
           {/* lbs shown ONLY for block stack machines on Matrix */}
-          {isMatrixBlock && selectedWeight > 0 ? (
+          {isMatrixBlock && selectedWeight > 0 && (
             <div className="text-xs font-bold text-amber-400 font-mono">
               ~ {lbsValue} lbs <span className="text-[10px] text-zinc-500 font-sans">(Matrix Стек)</span>
-            </div>
-          ) : (
-            <div className="text-[10px] text-zinc-500 font-sans">
-              Только кг (свободный вес / блины)
             </div>
           )}
 
@@ -155,10 +161,11 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
           </button>
         </div>
 
-        {/* Scrollable Wheel List */}
+        {/* Scrollable Wheel List with Natural Touch Inertia Physics */}
         <div
           ref={scrollRef}
-          className="h-44 overflow-y-auto bg-zinc-950 rounded-xl border border-zinc-800 p-1.5 space-y-1 snap-y snap-mandatory scrollbar-thin shadow-inner"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+          className="h-44 overflow-y-auto bg-zinc-950 rounded-xl border border-zinc-800 p-1.5 space-y-1 snap-y snap-proximity scrollbar-thin shadow-inner overscroll-contain"
         >
           {weights.map(w => {
             const isSelected = w === selectedWeight;

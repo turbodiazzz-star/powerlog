@@ -6,7 +6,7 @@ import type {
 } from '../types/workout';
 import { WORKOUT_PROGRAM } from '../data/workoutProgram';
 import { StorageService } from '../services/storage';
-import { getOptionsForExercise, isBlockMachineOption, type MachineOption } from '../data/machineVariants';
+import { getOptionsForExercise, isBlockMachineOption, getMachineBaseTareWeight, type MachineOption } from '../data/machineVariants';
 import { WeightScrollPicker } from './WeightScrollPicker';
 import { RepsScrollPicker } from './RepsScrollPicker';
 import confetti from 'canvas-confetti';
@@ -161,6 +161,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     setId: string;
     currentWeight: number;
     isMatrixBlock: boolean;
+    baseTareWeight?: number;
   } | null>(null);
 
   // Reps Scroll Picker Modal State
@@ -277,7 +278,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     setId: string,
     currentWeightKg: number,
     historyWeightKg?: number,
-    isMatrixBlock?: boolean
+    isMatrixBlock?: boolean,
+    baseTareWeight?: number
   ) => {
     // Starting weight: if set has weight > 0 use it, else fallback to historyWeightKg, else 0
     const startWeight = currentWeightKg > 0 ? currentWeightKg : (historyWeightKg || 0);
@@ -289,6 +291,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       setId,
       currentWeight: startWeight,
       isMatrixBlock: !!isMatrixBlock,
+      baseTareWeight: baseTareWeight || 0,
     });
   };
 
@@ -698,6 +701,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             const techniqueNotes = selectedOption?.focusNotes || exDef.focusNotes;
 
             const isBlockMachine = selectedOption?.isBlockMachine ?? isBlockMachineOption(selectedVariantName);
+            const baseTareWeight = selectedOption?.baseTareWeight || getMachineBaseTareWeight(selectedVariantName);
 
             const isMatrixBlock =
               (activeGymBrand === 'matrix' ||
@@ -823,16 +827,23 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     st.id,
                                     st.weightKg,
                                     histSet?.weightKg,
-                                    isMatrixBlock
+                                    isMatrixBlock,
+                                    baseTareWeight
                                   )
                                 }
                                 className="w-16 h-8 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 rounded font-mono font-bold text-xs flex flex-col items-center justify-center text-white active:scale-95 transition-all shadow-sm"
                               >
                                 <span>{st.weightKg || 0} кг</span>
-                                {isMatrixBlock && st.weightKg > 0 && (
-                                  <span className="text-[9px] text-amber-400/90 font-semibold leading-none">
-                                    {Math.round(st.weightKg * 2.20462)} lbs
+                                {baseTareWeight > 0 ? (
+                                  <span className="text-[8.5px] text-emerald-400 font-bold leading-none truncate max-w-full px-0.5">
+                                    +{baseTareWeight}пл={(st.weightKg || 0) + baseTareWeight}к
                                   </span>
+                                ) : (
+                                  isMatrixBlock && st.weightKg > 0 && (
+                                    <span className="text-[9px] text-amber-400/90 font-semibold leading-none">
+                                      {Math.round(st.weightKg * 2.20462)} lbs
+                                    </span>
+                                  )
                                 )}
                               </button>
                             </td>
@@ -976,6 +987,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           isOpen={pickerState.isOpen}
           initialWeight={pickerState.currentWeight}
           isMatrixBlock={pickerState.isMatrixBlock}
+          baseTareWeight={pickerState.baseTareWeight}
           onSelect={w => {
             updateSetField(
               pickerState.supersetId,
