@@ -69,10 +69,6 @@ export class AiService {
   }): Promise<string> {
     const { apiKey, model, messagesContent, responseFormatJson } = params;
 
-// #region agent log
-fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eeecb0'},body:JSON.stringify({sessionId:'eeecb0',hypothesisId:'H1',location:'aiService.ts:72',message:'callOpenRouterApi starting request',data:{model,keyPrefix:apiKey?.substring(0,10),msgCount:messagesContent?.length},timestamp:Date.now()})}).catch(()=>{});
-// #endregion
-
     const payload: any = {
       model,
       messages: [
@@ -92,27 +88,18 @@ fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{metho
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'X-Title': 'Тренировки Workout Tracker',
+        'X-Title': 'Powerlog Workout Tracker',
       },
       body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
       const errJson = await response.json().catch(() => ({}));
-
-// #region agent log
-fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eeecb0'},body:JSON.stringify({sessionId:'eeecb0',hypothesisId:'H1',location:'aiService.ts:98',message:'callOpenRouterApi HTTP error',data:{status:response.status,errJson},timestamp:Date.now()})}).catch(()=>{});
-// #endregion
-
       throw new Error(errJson.error?.message || `OpenRouter HTTP ${response.status}`);
     }
 
     const data = await response.json();
     const message = data.choices?.[0]?.message?.content;
-
-// #region agent log
-fetch('http://127.0.0.1:7913/ingest/247bdf4d-81c9-4389-92ba-4ea1565702ef',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'eeecb0'},body:JSON.stringify({sessionId:'eeecb0',hypothesisId:'H3',location:'aiService.ts:106',message:'callOpenRouterApi success',data:{messageLength:message?.length,messageSnippet:typeof message==='string'?message.substring(0,100):''},timestamp:Date.now()})}).catch(()=>{});
-// #endregion
 
     if (!message) {
       throw new Error('OpenRouter вернул пустой ответ');
