@@ -570,13 +570,13 @@ export const InBodyTracker: React.FC = () => {
 
       {/* Robust & Clean Mobile-first Modal: Add InBody Record */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] bg-zinc-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
+        <div className="fixed inset-0 z-[100] bg-zinc-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
           {/* Backdrop Click */}
           <div className="absolute inset-0" onClick={() => setIsModalOpen(false)} />
 
           <form
             onSubmit={handleSave}
-            className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-2xl w-full shadow-2xl flex flex-col h-[90vh] sm:h-auto sm:max-h-[90vh] overflow-hidden text-xs my-auto"
+            className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg sm:max-w-xl w-full shadow-2xl flex flex-col h-[85vh] max-h-[85vh] overflow-hidden text-xs my-auto"
           >
             {/* Fixed Header */}
             <div className="flex justify-between items-center px-4 sm:px-5 py-3.5 border-b border-zinc-800 bg-zinc-900 shrink-0">
@@ -596,7 +596,7 @@ export const InBodyTracker: React.FC = () => {
             {/* Scrollable Body Content */}
             <div
               style={{ WebkitOverflowScrolling: 'touch' }}
-              className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5 touch-pan-y"
+              className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4 touch-pan-y"
             >
               {/* Scan Image / PDF Upload */}
               <div className="space-y-2">
