@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trainings-v3';
+const CACHE_NAME = 'trainings-v10';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -8,11 +8,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
+        cacheNames.map((cacheName) => caches.delete(cacheName))
       );
     })
   );
@@ -20,16 +16,10 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Network first strategy
+  // Always fetch fresh from network for page/js/css to ensure instant updates
   event.respondWith(
     fetch(event.request)
       .then(response => {
-        if (response.status === 200) {
-          const resClone = response.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, resClone);
-          });
-        }
         return response;
       })
       .catch(() => caches.match(event.request))

@@ -555,18 +555,18 @@ export const InBodyTracker: React.FC = () => {
 
       {/* Robust & Clean Mobile-first Modal: Add InBody Record */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] bg-zinc-950/90 backdrop-blur-md flex items-center justify-center p-2.5 sm:p-4 animate-fadeIn">
+        <div className="fixed inset-0 z-[100] bg-zinc-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
           {/* Backdrop Click */}
           <div className="absolute inset-0" onClick={() => setIsModalOpen(false)} />
 
           <form
             onSubmit={handleSave}
-            className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col h-[88vh] sm:h-auto sm:max-h-[88vh] overflow-hidden text-xs my-auto"
+            className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-2xl w-full shadow-2xl flex flex-col h-[90vh] sm:h-auto sm:max-h-[90vh] overflow-hidden text-xs my-auto"
           >
             {/* Fixed Header */}
-            <div className="flex justify-between items-center px-4 py-3 border-b border-zinc-800 bg-zinc-900 shrink-0">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <FileText className="w-4 h-4 text-emerald-400" />
+            <div className="flex justify-between items-center px-4 sm:px-5 py-3.5 border-b border-zinc-800 bg-zinc-900 shrink-0">
+              <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                <FileText className="w-4 sm:w-5 h-4 sm:h-5 text-emerald-400" />
                 Загрузка & Ввод результатов InBody
               </h3>
               <button
@@ -581,28 +581,28 @@ export const InBodyTracker: React.FC = () => {
             {/* Scrollable Body Content */}
             <div
               style={{ WebkitOverflowScrolling: 'touch' }}
-              className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4 touch-pan-y"
+              className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-5 touch-pan-y"
             >
               {/* Scan Image / PDF Upload */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-zinc-400">
                   <span>Фото / PDF скан распечатки InBody</span>
-                  <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-                    <Sparkles className="w-3 h-3 text-emerald-400" /> Gemini ИИ Vision
+                  <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-emerald-400" /> Gemini ИИ Vision
                   </span>
                 </div>
 
-                <label className="flex flex-col items-center justify-center p-3.5 border-2 border-dashed border-zinc-800 hover:border-zinc-600 rounded-xl cursor-pointer bg-zinc-950/60 transition-colors text-center active:scale-98">
-                  <Upload className="w-5 h-5 text-emerald-400 mb-1" />
-                  <span className="text-xs font-medium text-zinc-200">
-                    {imageUrl ? 'Изменить файл (фото / PDF)' : 'Выбрать фото с телефона или PDF скан InBody'}
+                <label className="flex flex-col items-center justify-center p-4 border-2 border-dashed border-zinc-800 hover:border-emerald-500/50 rounded-xl cursor-pointer bg-zinc-950/60 transition-all text-center active:scale-98">
+                  <Upload className="w-6 h-6 text-emerald-400 mb-1.5" />
+                  <span className="text-xs font-semibold text-zinc-200">
+                    {imageUrl ? 'Изменить файл (фото / PDF)' : 'Нажмите, чтобы выбрать фото с телефона или PDF скан InBody'}
                   </span>
-                  <span className="text-[10px] text-zinc-500 mt-0.5">PNG, JPG, HEIC, PDF</span>
+                  <span className="text-[11px] text-zinc-500 mt-1">Поддерживаются PNG, JPG, HEIC, PDF</span>
                   <input type="file" accept="image/*,application/pdf,.pdf" onChange={handleImageUpload} className="hidden" />
                 </label>
 
                 {isAnalyzing && (
-                  <div className="space-y-1.5 bg-emerald-950/40 border border-emerald-800/50 p-2.5 rounded-xl animate-fadeIn">
+                  <div className="space-y-2 bg-emerald-950/40 border border-emerald-800/50 p-3 rounded-xl animate-fadeIn">
                     <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold">
                       <Zap className="w-4 h-4 animate-bounce text-emerald-400" />
                       <span>{ocrStatusText || 'Gemini ИИ распознает данные...'}</span>
@@ -620,7 +620,7 @@ export const InBodyTracker: React.FC = () => {
 
                 {ocrResultMsg && (
                   <div
-                    className={`p-2.5 rounded-xl border text-xs flex items-start gap-2 animate-fadeIn ${
+                    className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 animate-fadeIn ${
                       ocrResultMsg.type === 'success'
                         ? 'bg-emerald-950/50 border-emerald-800 text-emerald-300'
                         : 'bg-amber-950/50 border-amber-800 text-amber-300'
@@ -631,34 +631,34 @@ export const InBodyTracker: React.FC = () => {
                     ) : (
                       <AlertCircle className="w-4 h-4 shrink-0 stroke-[2.5] text-amber-400 mt-0.5" />
                     )}
-                    <span className="leading-snug">{ocrResultMsg.msg}</span>
+                    <span className="leading-snug font-medium">{ocrResultMsg.msg}</span>
                   </div>
                 )}
 
                 {imageUrl && !isAnalyzing && (
-                  <div className="relative rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 flex items-center justify-center p-1.5 max-h-24">
+                  <div className="relative rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 flex items-center justify-center p-2 max-h-32">
                     {imageUrl.startsWith('data:application/pdf') ? (
-                      <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs py-1.5">
+                      <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs py-2">
                         <FileText className="w-5 h-5 text-emerald-400 shrink-0" />
                         <span>Загружен PDF документ InBody</span>
                       </div>
                     ) : (
-                      <img src={imageUrl} alt="InBody scan" className="max-h-20 object-contain rounded-lg" />
+                      <img src={imageUrl} alt="InBody scan" className="max-h-28 object-contain rounded-lg" />
                     )}
                   </div>
                 )}
               </div>
 
               {/* Form Input Fields */}
-              <div className="space-y-3 pt-1 border-t border-zinc-800/80">
-                <div className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+              <div className="space-y-4 pt-2 border-t border-zinc-800/80">
+                <div className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
                   Показатели состава тела
                 </div>
 
                 {/* Row 1: Date | Total Weight */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="flex flex-col space-y-1 min-w-0">
-                    <label className="text-[11px] font-bold text-zinc-300 flex items-center justify-between">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="flex flex-col space-y-1.5 min-w-0">
+                    <label className="text-xs font-bold text-zinc-300 flex items-center justify-between">
                       <span>Дата анализа</span>
                       <span className="text-rose-400">*</span>
                     </label>
@@ -667,12 +667,12 @@ export const InBodyTracker: React.FC = () => {
                       required
                       value={date}
                       onChange={e => setDate(e.target.value)}
-                      className="h-10.5 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
 
-                  <div className="flex flex-col space-y-1 min-w-0">
-                    <label className="text-[11px] font-bold text-zinc-300 flex items-center justify-between">
+                  <div className="flex flex-col space-y-1.5 min-w-0">
+                    <label className="text-xs font-bold text-zinc-300 flex items-center justify-between">
                       <span>Общий вес (кг)</span>
                       <span className="text-rose-400">*</span>
                     </label>
@@ -683,15 +683,15 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 90.9"
                       value={weightKg}
                       onChange={e => setWeightKg(e.target.value)}
-                      className="h-10.5 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
                 </div>
 
                 {/* Row 2: Muscle SMM | Fat-Free FFM */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="flex flex-col space-y-1 min-w-0">
-                    <label className="text-[11px] font-bold text-zinc-300">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="flex flex-col space-y-1.5 min-w-0">
+                    <label className="text-xs font-bold text-zinc-300">
                       Мышцы SMM (кг)
                     </label>
                     <input
@@ -700,12 +700,12 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 38.6"
                       value={muscleMassKg}
                       onChange={e => setMuscleMassKg(e.target.value)}
-                      className="h-10.5 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
 
-                  <div className="flex flex-col space-y-1 min-w-0">
-                    <label className="text-[11px] font-bold text-zinc-300">
+                  <div className="flex flex-col space-y-1.5 min-w-0">
+                    <label className="text-xs font-bold text-zinc-300">
                       Безжировая FFM (кг)
                     </label>
                     <input
@@ -714,15 +714,15 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 67.8"
                       value={fatFreeMassKg}
                       onChange={e => setFatFreeMassKg(e.target.value)}
-                      className="h-10.5 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
                 </div>
 
                 {/* Row 3: Fat PBF (%) | Fat BFM (кг) */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="flex flex-col space-y-1 min-w-0">
-                    <label className="text-[11px] font-bold text-zinc-300">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="flex flex-col space-y-1.5 min-w-0">
+                    <label className="text-xs font-bold text-zinc-300">
                       Жир PBF (%)
                     </label>
                     <input
@@ -731,12 +731,12 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 25.4"
                       value={bodyFatPercent}
                       onChange={e => setBodyFatPercent(e.target.value)}
-                      className="h-10.5 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
 
-                  <div className="flex flex-col space-y-1 min-w-0">
-                    <label className="text-[11px] font-bold text-zinc-300">
+                  <div className="flex flex-col space-y-1.5 min-w-0">
+                    <label className="text-xs font-bold text-zinc-300">
                       Масса жира BFM (кг)
                     </label>
                     <input
@@ -745,16 +745,16 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 23.1"
                       value={fatMassKg}
                       onChange={e => setFatMassKg(e.target.value)}
-                      className="h-10.5 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
                 </div>
 
                 {/* Row 4: Visceral Fat Level | BMI */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="flex flex-col space-y-1 min-w-0">
-                    <label className="text-[11px] font-bold text-zinc-300">
-                      Висцеральный жир
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="flex flex-col space-y-1.5 min-w-0">
+                    <label className="text-xs font-bold text-zinc-300">
+                      Висцеральный жир (1-20)
                     </label>
                     <input
                       type="number"
@@ -762,12 +762,12 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 8"
                       value={visceralFatLevel}
                       onChange={e => setVisceralFatLevel(e.target.value)}
-                      className="h-10.5 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
 
-                  <div className="flex flex-col space-y-1 min-w-0">
-                    <label className="text-[11px] font-bold text-zinc-300">
+                  <div className="flex flex-col space-y-1.5 min-w-0">
+                    <label className="text-xs font-bold text-zinc-300">
                       ИМТ (BMI)
                     </label>
                     <input
@@ -776,16 +776,16 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 27.4"
                       value={bmi}
                       onChange={e => setBmi(e.target.value)}
-                      className="h-10.5 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
                 </div>
 
                 {/* Row 5: InBody Score | Notes */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="flex flex-col space-y-1 min-w-0">
-                    <label className="text-[11px] font-bold text-zinc-300">
-                      Оценка InBody
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <div className="flex flex-col space-y-1.5 min-w-0">
+                    <label className="text-xs font-bold text-zinc-300">
+                      Оценка InBody (1-100)
                     </label>
                     <input
                       type="number"
@@ -793,20 +793,20 @@ export const InBodyTracker: React.FC = () => {
                       placeholder="Напр: 78"
                       value={inBodyScore}
                       onChange={e => setInBodyScore(e.target.value)}
-                      className="h-10.5 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 text-xs text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-mono font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
 
-                  <div className="flex flex-col space-y-1 min-w-0">
-                    <label className="text-[11px] font-bold text-zinc-300">
+                  <div className="flex flex-col space-y-1.5 min-w-0">
+                    <label className="text-xs font-bold text-zinc-300">
                       Заметка
                     </label>
                     <input
                       type="text"
-                      placeholder="Напр: Утром"
+                      placeholder="Напр: Утром натощак"
                       value={notes}
                       onChange={e => setNotes(e.target.value)}
-                      className="h-10.5 w-full min-w-0 bg-zinc-950 border border-zinc-800 rounded-xl px-2.5 text-xs text-white font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
+                      className="h-11 w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-emerald-500 shadow-inner block"
                     />
                   </div>
                 </div>
@@ -814,7 +814,7 @@ export const InBodyTracker: React.FC = () => {
             </div>
 
             {/* Fixed Footer */}
-            <div className="flex items-center justify-end gap-2.5 px-4 py-3 border-t border-zinc-800 bg-zinc-900 shrink-0">
+            <div className="flex items-center justify-end gap-3 px-4 sm:px-5 py-3.5 border-t border-zinc-800 bg-zinc-900 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
@@ -824,7 +824,7 @@ export const InBodyTracker: React.FC = () => {
               </button>
               <button
                 type="submit"
-                className="px-5 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-black text-xs transition-all shadow-lg active:scale-95 flex items-center gap-1.5"
+                className="px-6 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-black text-xs transition-all shadow-lg active:scale-95 flex items-center gap-1.5"
               >
                 <CheckCircle className="w-4 h-4 text-zinc-950 stroke-[2.5]" />
                 Сохранить запись
