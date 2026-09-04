@@ -59,7 +59,7 @@ export const RepsScrollPicker: React.FC<RepsScrollPickerProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-xs w-full p-4 shadow-2xl space-y-3 text-center my-auto">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-xs w-full p-4 shadow-2xl space-y-3 text-center">
         {/* Header */}
         <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
           <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">

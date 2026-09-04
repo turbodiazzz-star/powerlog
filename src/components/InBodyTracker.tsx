@@ -506,11 +506,11 @@ export const InBodyTracker: React.FC = () => {
 
       {/* Robust Modal: Add InBody Record */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex flex-col justify-end sm:justify-center items-center p-2 sm:p-4 bg-zinc-950/95 backdrop-blur-md pb-safe pt-safe overflow-hidden animate-fadeIn">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-zinc-950/90 backdrop-blur-md animate-fadeIn">
           {/* Entire modal container IS the form element! */}
           <form
             onSubmit={handleSave}
-            className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col max-h-[calc(100dvh-3rem)] sm:max-h-[85dvh] my-auto overflow-hidden text-xs shrink-0"
+            className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col max-h-[80vh] sm:max-h-[85vh] overflow-hidden text-xs"
           >
             {/* Header (Fixed at top) */}
             <div className="flex justify-between items-center px-4 py-3 border-b border-zinc-800 bg-zinc-900 shrink-0">
