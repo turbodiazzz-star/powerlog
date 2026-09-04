@@ -570,13 +570,13 @@ export const InBodyTracker: React.FC = () => {
 
       {/* Robust & Clean Mobile-first Modal: Add InBody Record */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] bg-zinc-950/95 backdrop-blur-md flex flex-col justify-start items-center p-3 pt-4 pb-20 animate-fadeIn overflow-y-auto">
+        <div className="fixed inset-0 z-[100] bg-zinc-950/95 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
           {/* Backdrop Click */}
           <div className="absolute inset-0" onClick={() => setIsModalOpen(false)} />
 
           <form
             onSubmit={handleSave}
-            className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg sm:max-w-xl w-full shadow-2xl flex flex-col max-h-[60vh] sm:max-h-[65vh] overflow-hidden text-xs my-auto"
+            className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg sm:max-w-xl w-full shadow-2xl flex flex-col h-[78vh] max-h-[78vh] sm:h-[80vh] sm:max-h-[80vh] overflow-hidden text-xs my-auto"
           >
             {/* Fixed Header */}
             <div className="flex justify-between items-center px-4 sm:px-5 py-3 border-b border-zinc-800 bg-zinc-900 shrink-0">

@@ -296,8 +296,8 @@ export const AiTrainerReport: React.FC = () => {
 
       {/* Modal: API Key Setup */}
       {isKeyModalOpen && (
-        <div className="fixed inset-0 z-[100] flex flex-col justify-start items-center p-3 pt-4 pb-20 bg-zinc-950/90 backdrop-blur-md animate-fadeIn overflow-y-auto">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-4 sm:p-5 shadow-2xl space-y-4 max-h-[60vh] overflow-y-auto my-auto">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-zinc-950/90 backdrop-blur-md animate-fadeIn">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-md w-full p-4 sm:p-5 shadow-2xl space-y-4 max-h-[80vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex justify-between items-center border-b border-zinc-800 pb-3">
               <h3 className="text-sm font-black text-white flex items-center gap-2">
