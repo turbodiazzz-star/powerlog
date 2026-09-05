@@ -479,12 +479,13 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         exercises: ss.exercises.map(ex => {
           if (ex.exerciseId !== exerciseId) return ex;
 
-          const isFirstSet = ex.sets[0]?.id === setId;
+          const isFirstSet = ex.sets[0]?.id === setId || ex.sets.find(s => s.id === setId)?.setNumber === 1;
           const bodyKg = StorageService.getLatestBodyWeightKg();
 
           const updatedSets = ex.sets.map((st, idx) => {
             const isTarget = st.id === setId;
-            const shouldCopyDefault = isFirstSet && idx > 0;
+            const isLaterSet = idx > 0 && (ex.sets[0]?.id === setId || ex.sets.find(s => s.id === setId)?.setNumber === 1);
+            const laterStillOpen = !(st.weightConfirmed && st.repsConfirmed) && !st.completed;
 
             let next = { ...st };
 
@@ -500,12 +501,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
               } else {
                 next = { ...next, reps: value, repsConfirmed: true };
               }
-            } else if (shouldCopyDefault) {
-              if (field === 'weightKg' && !st.weightConfirmed) {
+            } else if (isFirstSet && isLaterSet && laterStillOpen) {
+              if (field === 'weightKg') {
                 const load = calcWorkingLoad(ex.machineName, value, bodyKg);
                 next = { ...next, weightKg: value, effectiveWeightKg: load.effectiveKg };
               }
-              if (field === 'reps' && !st.repsConfirmed) {
+              if (field === 'reps') {
                 next = { ...next, reps: value };
               }
             }
@@ -668,7 +669,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             className="flex items-center gap-1 bg-white hover:bg-zinc-200 text-zinc-950 text-xs font-black px-3 py-1 rounded-md transition-all active:scale-95 shrink-0 shadow-sm"
           >
             <Save className="w-3.5 h-3.5" />
-            <span>Готово</span>
+            <span>Финиш</span>
           </button>
         </div>
       </header>
@@ -920,13 +921,13 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                             key={st.id}
                             className={`transition-all ${
                               setDone
-                                ? 'bg-emerald-950/40 text-emerald-100'
-                                : 'bg-amber-950/20'
+                                ? 'bg-emerald-500 text-zinc-950'
+                                : 'bg-zinc-900/80'
                             }`}
                           >
                             {/* Set # + Historical Weight Inline (Includes lbs ONLY for Matrix Block machines) */}
                             <td className="py-1 px-1 font-mono text-[10px]">
-                              <span className="font-bold text-zinc-300">#{idx + 1}</span>
+                              <span className={`font-bold ${setDone ? 'text-zinc-950' : 'text-zinc-300'}`}>#{idx + 1}</span>
                               {histSet ? (
                                 <span className="text-amber-400 ml-1 font-bold text-[10px] leading-tight">
                                   {assisted
@@ -958,8 +959,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                 }
                                 className={`w-[4.6rem] h-9 rounded font-mono font-bold text-xs flex flex-col items-center justify-center active:scale-95 transition-all shadow-sm ${
                                   weightConfirmed
-                                    ? 'bg-emerald-950 border border-emerald-500 text-emerald-100'
-                                    : 'bg-zinc-900 border border-dashed border-amber-500/70 text-white'
+                                    ? 'bg-zinc-950 border-2 border-zinc-950 text-emerald-300'
+                                    : 'bg-zinc-950 border border-zinc-500 text-white'
                                 }`}
                               >
                                 <span>
@@ -988,8 +989,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                 }
                                 className={`w-13 h-8 rounded font-mono font-bold text-xs flex items-center justify-center active:scale-95 transition-all shadow-sm ${
                                   repsConfirmed
-                                    ? 'bg-emerald-950 border border-emerald-500 text-emerald-100'
-                                    : 'bg-zinc-900 border border-dashed border-amber-500/70 text-white'
+                                    ? 'bg-zinc-950 border-2 border-zinc-950 text-emerald-300'
+                                    : 'bg-zinc-950 border border-zinc-500 text-white'
                                 }`}
                               >
                                 <span>{st.reps || 0}</span>

@@ -212,7 +212,11 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
                   else itemRefs.current.delete(w);
                 }}
                 type="button"
-                onClick={() => setSelectedWeight(w)}
+                onClick={() => {
+                  setSelectedWeight(w);
+                  onSelect(w);
+                  onClose();
+                }}
                 className={`w-full py-2 px-3 rounded-lg text-xs font-mono font-bold transition-all snap-center flex items-center justify-between ${
                   isSelected
                     ? 'bg-white text-zinc-950 font-black scale-100 shadow-sm'

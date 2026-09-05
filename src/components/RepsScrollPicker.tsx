@@ -153,7 +153,11 @@ export const RepsScrollPicker: React.FC<RepsScrollPickerProps> = ({
                   else itemRefs.current.delete(r);
                 }}
                 type="button"
-                onClick={() => setSelectedReps(r)}
+                onClick={() => {
+                  setSelectedReps(r);
+                  onSelect(r);
+                  onClose();
+                }}
                 className={`w-full py-2 px-3 rounded-lg text-xs font-mono font-bold transition-all snap-center flex items-center justify-between ${
                   isSelected
                     ? 'bg-white text-zinc-950 font-black scale-100 shadow-sm'
