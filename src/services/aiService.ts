@@ -518,4 +518,95 @@ export class AiService {
       throw e;
     }
   }
+
+  static async recommendSessionLoads(params: {
+    workoutType: 'A' | 'B';
+    bodyWeightKg: number;
+    items: Array<{
+      exerciseId: string;
+      muscleGroup: string;
+      machineName: string;
+      targetSets: number;
+      targetReps: string;
+      lastSets: { weightKg: number; reps: number; effectiveKg?: number }[];
+    }>;
+  }): Promise<
+    Record<
+      string,
+      { inputKg: number; sets: number; reps: string; note: string }
+    >
+  > {
+    const apiKey = this.getApiKey();
+    if (!apiKey) return {};
+
+    const prompt = `Ты силовой тренер. Вес тела спортсмена: ${params.bodyWeightKg || 'неизвестен'} кг.
+Тренировка ${params.workoutType}. Для КАЖДОГО упражнения дай вес, который вводить в приложение (для гравитрона это РАЗГРУЗКА/противовес, не нагрузка; для Смита/жима ногами — только блины).
+Подходы и диапазон повторов.
+
+Данные:
+${params.items
+  .map(
+    it =>
+      `- id=${it.exerciseId}; ${it.muscleGroup}; тренажёр: ${it.machineName}; план ${it.targetSets}×${it.targetReps}; прошлые подходы: ${
+        it.lastSets.length
+          ? it.lastSets.map(s => `${s.weightKg}кг×${s.reps}`).join(', ')
+          : 'нет'
+      }`
+  )
+  .join('\n')}
+
+Верни ТОЛЬКО JSON вида:
+{"recs":[{"exerciseId":"a-1.1","inputKg":80,"sets":4,"reps":"8-12","note":"коротко"}]}`;
+
+    const isOpenRouter = apiKey.startsWith('sk-or-');
+    let raw = '';
+
+    try {
+      if (isOpenRouter) {
+        const models = ['google/gemini-2.5-flash-lite', 'google/gemini-2.5-flash'];
+        for (const model of models) {
+          try {
+            raw = await this.callOpenRouterApi({
+              apiKey,
+              model,
+              messagesContent: [{ type: 'text', text: prompt }],
+              responseFormatJson: true,
+            });
+            break;
+          } catch {
+            // try next
+          }
+        }
+      } else {
+        raw = await this.callGoogleGeminiApi({
+          apiKey,
+          model: 'gemini-2.5-flash',
+          contentsParts: [{ text: prompt }],
+          responseFormatJson: true,
+        });
+      }
+    } catch {
+      return {};
+    }
+
+    if (!raw) return {};
+    try {
+      const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+      const list = parsed.recs || parsed.recommendations || [];
+      const map: Record<string, { inputKg: number; sets: number; reps: string; note: string }> = {};
+      for (const row of list) {
+        if (row.exerciseId) {
+          map[row.exerciseId] = {
+            inputKg: Number(row.inputKg) || 0,
+            sets: Number(row.sets) || 3,
+            reps: String(row.reps || ''),
+            note: String(row.note || 'ИИ'),
+          };
+        }
+      }
+      return map;
+    } catch {
+      return {};
+    }
+  }
 }

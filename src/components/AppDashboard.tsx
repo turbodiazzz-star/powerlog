@@ -132,7 +132,7 @@ export const AppDashboard: React.FC = () => {
                   <div className="w-2 h-2 rounded-full bg-amber-400 animate-ping shrink-0" />
                   <div className="min-w-0">
                     <span className="font-bold text-amber-200 block truncate">
-                      Незавершённая тренировка {activeDraft.workoutType} ({activeDraft.dayName})
+                      Незавершённая тренировка {activeDraft.workoutType}
                     </span>
                     <span className="text-amber-400/80 text-[11px] block truncate">
                       Все веса и повторы сохранены в черновике
@@ -191,7 +191,7 @@ export const AppDashboard: React.FC = () => {
 
                 <div className="text-right shrink-0">
                   <span className="text-xs font-mono font-bold text-zinc-200 bg-zinc-800 px-2 py-0.5 rounded-lg inline-block">
-                    {recommendation.dayName}
+                    {new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
                   </span>
                   <div className="text-[9px] text-zinc-500 mt-1 font-mono">
                     Сессий: {recommendation.completedCount}

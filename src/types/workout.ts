@@ -127,4 +127,8 @@ export interface ActiveWorkoutDraft {
   elapsedSeconds: number;
   lastUpdatedTimestamp: number;
   activeSupersetIndex: number;
+  workoutStartedAt?: number;
+  restEndsAt?: number | null;
+  timerInitialSeconds?: number;
+  isTimerRunning?: boolean;
 }

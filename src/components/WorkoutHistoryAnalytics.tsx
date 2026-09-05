@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import type { WorkoutSession, ExerciseDefinition } from '../types/workout';
 import { StorageService } from '../services/storage';
 import { WORKOUT_PROGRAM } from '../data/workoutProgram';
-import { isBlockMachineOption } from '../data/machineVariants';
+import { isBlockMachineOption, getMachineOption } from '../data/machineVariants';
+import { calcWorkingLoad } from '../utils/loadMath';
 import {
   History,
   TrendingUp,
@@ -133,7 +134,7 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
                           ДЕНЬ {session.workoutType}
                         </span>
                         <span className="text-xs font-bold text-zinc-200 font-mono">
-                          {formattedDate} ({session.dayName})
+                          {formattedDate}
                         </span>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 text-[11px] text-zinc-400">
@@ -172,33 +173,43 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
                             (ex.machineName && ex.machineName.toLowerCase().includes('matrix'))) &&
                           isBlockMachine;
 
+                        const bodyKg = StorageService.getLatestBodyWeightKg();
+                        const opt = getMachineOption(ex.machineName);
+
                         return (
                           <div
-                            key={ex.exerciseId}
+                            key={ex.exerciseId + (ex.machineName || '')}
                             className="bg-zinc-950/70 border border-zinc-800/80 rounded-xl p-2.5 space-y-1 text-xs"
                           >
-                            <div className="flex justify-between items-center gap-2">
-                              <span className="font-bold text-white text-[11px]">
+                            <div className="space-y-1">
+                              <span className="font-bold text-white text-[11px] block">
                                 [{ex.muscleGroup}] {ex.exerciseTitle}
                               </span>
                               {ex.machineName && (
-                                <span className="text-[10px] bg-zinc-800 text-zinc-300 px-1.5 py-0.5 rounded font-mono">
+                                <span className="text-[10px] bg-zinc-800 text-zinc-200 px-1.5 py-0.5 rounded font-bold inline-block">
                                   {ex.machineName}
                                 </span>
                               )}
                             </div>
                             <div className="flex flex-wrap gap-1 text-[11px] font-mono">
                               {completedSets.map((st, idx) => {
+                                const load = calcWorkingLoad(ex.machineName, st.weightKg, bodyKg);
                                 const lbs = Math.round(st.weightKg * 2.20462);
                                 return (
                                   <span
                                     key={st.id}
                                     className="bg-zinc-900 border border-zinc-800 text-zinc-200 px-1.5 py-0.5 rounded"
                                   >
-                                    #{idx + 1}: <strong className="text-white">{st.weightKg}</strong>кг
-                                    {isMatrixBlock && st.weightKg > 0 && (
+                                    #{idx + 1}:{' '}
+                                    <strong className="text-white">
+                                      {opt?.isAssisted || (ex.machineName || '').toLowerCase().includes('гравитрон')
+                                        ? load.formula
+                                        : `${load.effectiveKg}кг`}
+                                    </strong>
+                                    {isMatrixBlock && st.weightKg > 0 && !opt?.isAssisted && (
                                       <span className="text-[10px] text-amber-400 font-normal"> ({lbs}lb)</span>
-                                    )} x {st.reps}
+                                    )}{' '}
+                                    × {st.reps}
                                   </span>
                                 );
                               })}

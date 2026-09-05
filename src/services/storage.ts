@@ -203,21 +203,35 @@ export class StorageService {
     return null;
   }
 
-  static getPreviousVariantUsed(exerciseId: string): string | null {
+  static getPenultimateVariantUsed(exerciseId: string): string | null {
     const sessions = this.getSessions()
       .filter(s => s.completed || this.hasLoggedSets(s))
       .sort((a, b) => new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime());
 
+    const names: string[] = [];
     for (const session of sessions) {
+      let found: string | null = null;
       for (const superset of session.supersets) {
         for (const ex of superset.exercises) {
           if (ex.exerciseId === exerciseId && ex.machineName) {
-            return ex.machineName;
+            found = ex.machineName;
           }
         }
       }
+      if (found && names[names.length - 1] !== found) {
+        names.push(found);
+      }
     }
-    return null;
+    return names[1] || names[0] || null;
+  }
+
+  static getLatestBodyWeightKg(): number {
+    const recs = this.getInBodyRecords();
+    return recs[0]?.weightKg || 0;
+  }
+
+  static getPreviousVariantUsed(exerciseId: string): string | null {
+    return this.getPenultimateVariantUsed(exerciseId);
   }
 
   static getNextWorkoutRecommendation(): {

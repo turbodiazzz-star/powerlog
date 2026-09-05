@@ -6,9 +6,11 @@ import type {
 } from '../types/workout';
 import { WORKOUT_PROGRAM } from '../data/workoutProgram';
 import { StorageService } from '../services/storage';
-import { getOptionsForExercise, isBlockMachineOption, getMachineBaseTareWeight, type MachineOption } from '../data/machineVariants';
+import { getOptionsForExercise, isBlockMachineOption, getMachineBaseTareWeight, isAssistedMachine, type MachineOption } from '../data/machineVariants';
 import { WeightScrollPicker } from './WeightScrollPicker';
 import { RepsScrollPicker } from './RepsScrollPicker';
+import { calcWorkingLoad, localLoadRecommendation } from '../utils/loadMath';
+import { AiService } from '../services/aiService';
 import confetti from 'canvas-confetti';
 import {
   CheckCircle2,
@@ -82,12 +84,9 @@ const syncSessionWithProgram = (
       }
 
       const availableOptions = getOptionsForExercise(exDef.id, gymBrand);
-      const prevVariant = StorageService.getPreviousVariantUsed(exDef.id);
+      const defaultVariant = StorageService.getPenultimateVariantUsed(exDef.id);
 
-      let selectedOption: MachineOption | undefined;
-      if (prevVariant && availableOptions.length > 1) {
-        selectedOption = availableOptions.find(opt => opt.name !== prevVariant);
-      }
+      let selectedOption: MachineOption | undefined = availableOptions.find(opt => opt.name === defaultVariant);
       if (!selectedOption) {
         selectedOption = availableOptions[0];
       }
@@ -162,6 +161,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     currentWeight: number;
     isMatrixBlock: boolean;
     baseTareWeight?: number;
+    isAssisted?: boolean;
+    isBodyweight?: boolean;
   } | null>(null);
 
   // Reps Scroll Picker Modal State
@@ -177,6 +178,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   const [timerSecondsLeft, setTimerSecondsLeft] = useState<number | null>(null);
   const [timerInitialSeconds, setTimerInitialSeconds] = useState<number>(60);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const workoutStartedAtRef = useRef<number>(Date.now());
+  const restEndsAtRef = useRef<number | null>(null);
+  const [aiRecs, setAiRecs] = useState<
+    Record<string, { inputKg: number; sets: number; reps: string; note: string }>
+  >({});
+  const bodyWeightKg = StorageService.getLatestBodyWeightKg();
 
   // Active session state with draft restore fallback and program structure normalization
   const [session, setSession] = useState<WorkoutSession>(() => {
@@ -186,13 +193,22 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
   const [expandedDetails, setExpandedDetails] = useState<Record<string, boolean>>({});
 
-  // Restore draft details on mount
+  // Restore draft details on mount (wall-clock timers survive lock screen)
   useEffect(() => {
     const draft = StorageService.getActiveDraft(workoutType);
     if (draft) {
-      const timeDiffSec = Math.floor((Date.now() - draft.lastUpdatedTimestamp) / 1000);
-      const addedTime = timeDiffSec > 0 && timeDiffSec < 43200 ? timeDiffSec : 0;
-      setElapsedSeconds(draft.elapsedSeconds + addedTime);
+      const started =
+        draft.workoutStartedAt || Date.now() - Math.max(0, draft.elapsedSeconds) * 1000;
+      workoutStartedAtRef.current = started;
+      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - started) / 1000)));
+
+      if (draft.timerInitialSeconds) setTimerInitialSeconds(draft.timerInitialSeconds);
+      if (draft.restEndsAt && draft.isTimerRunning) {
+        restEndsAtRef.current = draft.restEndsAt;
+        const left = Math.max(0, Math.ceil((draft.restEndsAt - Date.now()) / 1000));
+        setTimerSecondsLeft(left);
+        setIsTimerRunning(left > 0);
+      }
 
       if (draft.activeSupersetIndex !== undefined) {
         setActiveSupersetIndex(draft.activeSupersetIndex);
@@ -200,8 +216,42 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       if (draft.gymId) {
         setCurrentGymId(draft.gymId);
       }
+    } else {
+      workoutStartedAtRef.current = Date.now();
     }
   }, [workoutType]);
+
+  useEffect(() => {
+    const items = program.supersets.flatMap(ss =>
+      ss.exercises.map(exDef => {
+        const logged = session.supersets.flatMap(s => s.exercises).find(e => e.exerciseId === exDef.id);
+        const history = StorageService.getLastExerciseLog(
+          exDef.id,
+          currentGymId,
+          undefined,
+          logged?.machineName
+        );
+        return {
+          exerciseId: exDef.id,
+          muscleGroup: exDef.muscleGroup,
+          machineName: logged?.machineName || '',
+          targetSets: exDef.targetSets,
+          targetReps: exDef.targetReps,
+          lastSets: (history?.sets || []).map(s => ({ weightKg: s.weightKg, reps: s.reps })),
+        };
+      })
+    );
+
+    void AiService.recommendSessionLoads({
+      workoutType,
+      bodyWeightKg,
+      items,
+    }).then(recs => {
+      if (recs && Object.keys(recs).length) setAiRecs(recs);
+    });
+    // only once when workout screen opens
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Continuously save active draft AND sync logged sets directly to main history in localStorage
   useEffect(() => {
@@ -213,6 +263,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       elapsedSeconds,
       lastUpdatedTimestamp: Date.now(),
       activeSupersetIndex,
+      workoutStartedAt: workoutStartedAtRef.current,
+      restEndsAt: restEndsAtRef.current,
+      timerInitialSeconds,
+      isTimerRunning,
     });
 
     // Check if session has any logged sets (completed or weight/reps entered)
@@ -224,7 +278,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         durationMinutes: Math.max(1, Math.round(elapsedSeconds / 60)),
       });
     }
-  }, [session, elapsedSeconds, activeSupersetIndex, currentGymId, workoutType, dayName]);
+  }, [session, elapsedSeconds, activeSupersetIndex, currentGymId, workoutType, dayName, timerInitialSeconds, isTimerRunning]);
 
   useEffect(() => {
     const loadedGyms = StorageService.getGyms();
@@ -240,44 +294,44 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     }
   }, [currentGymId]);
 
-  // Workout duration counter
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setElapsedSeconds(prev => prev + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Rest Timer countdown ticker
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
-
-    if (isTimerRunning && timerSecondsLeft !== null && timerSecondsLeft > 0) {
-      interval = setInterval(() => {
-        setTimerSecondsLeft(prev => {
-          if (prev === null || prev <= 1) {
-            setIsTimerRunning(false);
-            if ('vibrate' in navigator) {
-              try {
-                navigator.vibrate([200, 100, 200, 100, 300]);
-              } catch {
-                // ignore
-              }
-            }
-            return 0;
+  const syncTimersFromClock = () => {
+    setElapsedSeconds(Math.max(0, Math.floor((Date.now() - workoutStartedAtRef.current) / 1000)));
+    if (isTimerRunning && restEndsAtRef.current) {
+      const left = Math.max(0, Math.ceil((restEndsAtRef.current - Date.now()) / 1000));
+      setTimerSecondsLeft(left);
+      if (left <= 0) {
+        setIsTimerRunning(false);
+        restEndsAtRef.current = null;
+        if ('vibrate' in navigator) {
+          try {
+            navigator.vibrate([200, 100, 200, 100, 300]);
+          } catch {
+            // ignore
           }
-          return prev - 1;
-        });
-      }, 1000);
+        }
+      }
     }
+  };
 
-    return () => {
-      if (interval) clearInterval(interval);
+  useEffect(() => {
+    const interval = setInterval(syncTimersFromClock, 1000);
+    const onVis = () => {
+      if (document.visibilityState === 'visible') syncTimersFromClock();
     };
-  }, [isTimerRunning, timerSecondsLeft]);
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('focus', syncTimersFromClock);
+    window.addEventListener('pageshow', syncTimersFromClock);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('focus', syncTimersFromClock);
+      window.removeEventListener('pageshow', syncTimersFromClock);
+    };
+  }, [isTimerRunning]);
 
   const startQuickTimer = (seconds: number) => {
     setTimerInitialSeconds(seconds);
+    restEndsAtRef.current = Date.now() + seconds * 1000;
     setTimerSecondsLeft(seconds);
     setIsTimerRunning(true);
   };
@@ -289,9 +343,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     currentWeightKg: number,
     historyWeightKg?: number,
     isMatrixBlock?: boolean,
-    baseTareWeight?: number
+    baseTareWeight?: number,
+    isAssisted?: boolean,
+    isBodyweight?: boolean
   ) => {
-    // Starting weight: if set has weight > 0 use it, else fallback to historyWeightKg, else 0
     const startWeight = currentWeightKg > 0 ? currentWeightKg : (historyWeightKg || 0);
 
     setPickerState({
@@ -302,6 +357,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       currentWeight: startWeight,
       isMatrixBlock: !!isMatrixBlock,
       baseTareWeight: baseTareWeight || 0,
+      isAssisted: !!isAssisted,
+      isBodyweight: !!isBodyweight,
     });
   };
 
@@ -345,14 +402,11 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         ...ss,
         exercises: ss.exercises.map(ex => {
           const availableOptions = getOptionsForExercise(ex.exerciseId, gymBrand);
-          const prevVariant = StorageService.getPreviousVariantUsed(ex.exerciseId);
+          const defaultVariant = StorageService.getPenultimateVariantUsed(ex.exerciseId);
 
           let selectedOption = availableOptions.find(opt => opt.name === ex.machineName);
           if (!selectedOption) {
-            if (prevVariant && availableOptions.length > 1) {
-              selectedOption = availableOptions.find(opt => opt.name !== prevVariant);
-            }
-            if (!selectedOption) selectedOption = availableOptions[0];
+            selectedOption = availableOptions.find(opt => opt.name === defaultVariant) || availableOptions[0];
           }
 
           return {
@@ -444,10 +498,13 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           return {
             ...ex,
             sets: ex.sets.map(st => {
-              if (st.id === setId) {
-                return { ...st, [field]: value };
+              if (st.id !== setId) return st;
+              const next = { ...st, [field]: value };
+              if (field === 'weightKg' && typeof value === 'number') {
+                const load = calcWorkingLoad(ex.machineName, value, StorageService.getLatestBodyWeightKg());
+                next.effectiveWeightKg = load.effectiveKg;
               }
-              return st;
+              return next;
             }),
           };
         }),
@@ -564,7 +621,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         {/* Left: Workout Type Badge + Gym Selector */}
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="bg-white text-zinc-950 font-black text-xs px-2.5 py-1 rounded-md shrink-0 shadow-sm">
-            {workoutType} ({dayName})
+            {workoutType} · {new Date(session.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
           </span>
 
           <select
@@ -620,7 +677,15 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           {timerSecondsLeft !== null && timerSecondsLeft > 0 && (
             <div className="flex items-center gap-1 shrink-0 text-xs">
               <button
-                onClick={() => setIsTimerRunning(!isTimerRunning)}
+                onClick={() => {
+                  if (isTimerRunning) {
+                    setIsTimerRunning(false);
+                    restEndsAtRef.current = null;
+                  } else if (timerSecondsLeft && timerSecondsLeft > 0) {
+                    restEndsAtRef.current = Date.now() + timerSecondsLeft * 1000;
+                    setIsTimerRunning(true);
+                  }
+                }}
                 className="p-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded border border-zinc-700"
                 title={isTimerRunning ? 'Пауза' : 'Старт'}
               >
@@ -629,6 +694,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
               <button
                 onClick={() => {
+                  restEndsAtRef.current = Date.now() + timerInitialSeconds * 1000;
                   setTimerSecondsLeft(timerInitialSeconds);
                   setIsTimerRunning(true);
                 }}
@@ -641,6 +707,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
               <button
                 onClick={() => {
+                  restEndsAtRef.current = null;
                   setTimerSecondsLeft(null);
                   setIsTimerRunning(false);
                 }}
@@ -704,7 +771,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           {currentSupersetDef.exercises.map((exDef) => {
             const loggedEx = session.supersets.flatMap(s => s.exercises).find(e => e.exerciseId === exDef.id);
             const availableVariants = getOptionsForExercise(exDef.id, activeGymBrand);
-            const prevVariantName = StorageService.getPreviousVariantUsed(exDef.id);
+            const prevVariantName = StorageService.getPenultimateVariantUsed(exDef.id);
             const selectedVariantName = loggedEx?.machineName || availableVariants[0]?.name || '';
 
             const selectedOption = availableVariants.find(opt => opt.name === selectedVariantName) || availableVariants[0];
@@ -712,6 +779,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
             const isBlockMachine = selectedOption?.isBlockMachine ?? isBlockMachineOption(selectedVariantName);
             const baseTareWeight = selectedOption?.baseTareWeight || getMachineBaseTareWeight(selectedVariantName);
+            const assisted = isAssistedMachine(selectedVariantName);
+            const bodyMove = !!selectedOption?.isBodyweight;
 
             const isMatrixBlock =
               (activeGymBrand === 'matrix' ||
@@ -728,13 +797,27 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
             const detailsKey = `details_${exDef.id}`;
             const isDetailsOpen = !!expandedDetails[detailsKey];
+            const aiRec = aiRecs[exDef.id];
+            const localRec = localLoadRecommendation({
+              lastSets: (variantHistoryLog?.sets || []).map(s => ({ weightKg: s.weightKg, reps: s.reps })),
+              targetSets: exDef.targetSets,
+              targetReps: exDef.targetReps,
+              option: selectedOption,
+            });
+            const rec = aiRec || localRec;
 
             return (
               <div
                 key={exDef.id}
                 className="bg-zinc-950 border border-zinc-800/80 rounded-lg p-2 space-y-1.5 shadow-sm"
               >
-                {/* Single Row Exercise Bar: Muscle (Left) | Machine Selector (Center) | Technique (Right) */}
+                {rec && rec.inputKg > 0 && (
+                  <div className="px-1.5 py-1 rounded-md bg-emerald-950/50 border border-emerald-900/70 text-[10px] text-emerald-300 leading-tight">
+                    <span className="font-black text-emerald-400">{aiRec ? 'ИИ' : 'План'}:</span>{' '}
+                    {assisted ? `разгрузка ${rec.inputKg} кг` : `${rec.inputKg} кг`} · {rec.sets} подх. × {rec.reps}
+                    {rec.note ? ` · ${rec.note}` : ''}
+                  </div>
+                )}
                 <div className="flex items-center justify-between gap-1.5 bg-zinc-900/60 p-1.5 rounded-lg border border-zinc-800/80">
                   {/* Left: Muscle badge */}
                   <span className="bg-zinc-800 text-zinc-200 border border-zinc-700 text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0">
@@ -751,7 +834,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                       const isPrev = opt.name === prevVariantName;
                       return (
                         <option key={opt.id} value={opt.name}>
-                          {opt.name} {isPrev ? ' (в прошлый раз)' : ''}
+                          {opt.name} {isPrev ? ' (предпоследний)' : ''}
                         </option>
                       );
                     })}
@@ -784,6 +867,9 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                 <div className="flex items-center justify-between px-1 text-[10px] text-zinc-400 font-mono pt-0.5">
                   <span>
                     План: <strong className="text-zinc-200 font-sans">{exDef.targetSets} подх. по {exDef.targetReps} повт.</strong>
+                    {assisted && bodyWeightKg > 0 && (
+                      <span className="text-amber-400/90 ml-1">тело {bodyWeightKg} кг</span>
+                    )}
                   </span>
                 </div>
 
@@ -802,7 +888,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                     <tbody className="divide-y divide-zinc-800/40">
                       {loggedEx?.sets.map((st, idx) => {
                         const histSet = variantHistoryLog?.sets[idx];
-                        const histLbs = histSet?.weightKg ? Math.round(histSet.weightKg * 2.20462) : 0;
+                        const histLoad = histSet
+                          ? calcWorkingLoad(selectedVariantName, histSet.weightKg, bodyWeightKg)
+                          : null;
+                        const nowLoad = calcWorkingLoad(selectedVariantName, st.weightKg || 0, bodyWeightKg);
 
                         return (
                           <tr
@@ -815,11 +904,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                             <td className="py-1 px-1 font-mono text-[10px]">
                               <span className="font-bold text-zinc-300">#{idx + 1}</span>
                               {histSet ? (
-                                <span className="text-amber-400 ml-1 font-bold text-xs">
-                                  {histSet.weightKg}кг
-                                  {isMatrixBlock && histLbs > 0 && (
-                                    <span className="text-[9px] text-amber-400/80 font-normal"> ({histLbs}lb)</span>
-                                  )}
+                                <span className="text-amber-400 ml-1 font-bold text-[10px] leading-tight">
+                                  {assisted
+                                    ? histLoad?.formula
+                                    : `${histLoad?.effectiveKg ?? histSet.weightKg}кг`}
                                 </span>
                               ) : (
                                 <span className="text-zinc-600 ml-1.5 text-[9px]">—</span>
@@ -838,23 +926,20 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     st.weightKg,
                                     histSet?.weightKg,
                                     isMatrixBlock,
-                                    baseTareWeight
+                                    baseTareWeight,
+                                    assisted,
+                                    bodyMove
                                   )
                                 }
-                                className="w-16 h-8 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 rounded font-mono font-bold text-xs flex flex-col items-center justify-center text-white active:scale-95 transition-all shadow-sm"
+                                className="w-[4.6rem] h-9 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 rounded font-mono font-bold text-xs flex flex-col items-center justify-center text-white active:scale-95 transition-all shadow-sm"
                               >
-                                <span>{st.weightKg || 0} кг</span>
-                                {baseTareWeight > 0 ? (
-                                  <span className="text-[8.5px] text-emerald-400 font-bold leading-none truncate max-w-full px-0.5">
-                                    +{baseTareWeight}пл={(st.weightKg || 0) + baseTareWeight}к
-                                  </span>
-                                ) : (
-                                  isMatrixBlock && st.weightKg > 0 && (
-                                    <span className="text-[9px] text-amber-400/90 font-semibold leading-none">
-                                      {Math.round(st.weightKg * 2.20462)} lbs
-                                    </span>
-                                  )
-                                )}
+                                <span>
+                                  {assisted ? '−' : ''}
+                                  {st.weightKg || 0} кг
+                                </span>
+                                <span className="text-[8px] text-emerald-400 font-bold leading-none truncate max-w-full px-0.5">
+                                  {nowLoad.shortHint}
+                                </span>
                               </button>
                             </td>
 
@@ -998,6 +1083,9 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           initialWeight={pickerState.currentWeight}
           isMatrixBlock={pickerState.isMatrixBlock}
           baseTareWeight={pickerState.baseTareWeight}
+          isAssisted={pickerState.isAssisted}
+          isBodyweight={pickerState.isBodyweight}
+          bodyWeightKg={bodyWeightKg}
           onSelect={w => {
             updateSetField(
               pickerState.supersetId,

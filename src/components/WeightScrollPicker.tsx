@@ -6,6 +6,9 @@ interface WeightScrollPickerProps {
   initialWeight: number;
   isMatrixBlock: boolean;
   baseTareWeight?: number;
+  isAssisted?: boolean;
+  isBodyweight?: boolean;
+  bodyWeightKg?: number;
   onSelect: (weightKg: number) => void;
   onClose: () => void;
 }
@@ -15,6 +18,9 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
   initialWeight,
   isMatrixBlock,
   baseTareWeight = 0,
+  isAssisted = false,
+  isBodyweight = false,
+  bodyWeightKg = 0,
   onSelect,
   onClose,
 }) => {
@@ -65,7 +71,17 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
   };
 
   const lbsValue = Math.round(selectedWeight * 2.20462);
+  const assistedEffective = Math.max(0, Math.round((bodyWeightKg - selectedWeight) * 10) / 10);
+  const bodyPlusExtra = Math.round((bodyWeightKg + selectedWeight) * 10) / 10;
   const totalEffectiveWeight = selectedWeight + baseTareWeight;
+
+  const headerLabel = isAssisted
+    ? 'Разгрузка гравитрона'
+    : isBodyweight
+      ? 'Доп. вес (0 = свой вес)'
+      : baseTareWeight > 0
+        ? 'Вес навешанных блинов'
+        : 'Выбор рабочей массы';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm animate-fadeIn">
@@ -73,7 +89,7 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
         {/* Header */}
         <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
           <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-            {baseTareWeight > 0 ? 'Вес навешанных блинов' : 'Выбор рабочей массы'}
+            {headerLabel}
           </span>
           <button onClick={onClose} className="p-1 text-zinc-400 hover:text-white">
             <X className="w-4 h-4" />
@@ -84,11 +100,30 @@ export const WeightScrollPicker: React.FC<WeightScrollPickerProps> = ({
         <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800/80 space-y-1 relative">
           <div className="flex items-baseline justify-center gap-1 font-mono">
             <span className="text-3xl font-black text-white">{selectedWeight}</span>
-            <span className="text-sm font-bold text-zinc-400">кг (блины)</span>
+            <span className="text-sm font-bold text-zinc-400">
+              кг {isAssisted ? '(разгрузка)' : isBodyweight ? '(доп.)' : baseTareWeight > 0 ? '(блины)' : ''}
+            </span>
           </div>
 
-          {/* Base Platform / Smith Bar Tare Weight Calculation */}
-          {baseTareWeight > 0 && (
+          {isAssisted && (
+            <div className="text-xs font-bold text-amber-400 font-mono bg-amber-950/40 py-1 px-2 rounded-lg border border-amber-900/60 mt-1">
+              {bodyWeightKg > 0
+                ? `${bodyWeightKg} − ${selectedWeight} = ${assistedEffective} кг рабочих`
+                : `−${selectedWeight} кг разгрузки (добавьте InBody, чтобы учесть вес тела)`}
+            </div>
+          )}
+
+          {isBodyweight && !isAssisted && (
+            <div className="text-xs font-bold text-emerald-400 font-mono bg-emerald-950/40 py-1 px-2 rounded-lg border border-emerald-900/60 mt-1">
+              {bodyWeightKg > 0
+                ? selectedWeight > 0
+                  ? `${bodyWeightKg} + ${selectedWeight} = ${bodyPlusExtra} кг`
+                  : `${bodyWeightKg} кг (свой вес)`
+                : 'Свой вес (нет записи InBody)'}
+            </div>
+          )}
+
+          {baseTareWeight > 0 && !isAssisted && (
             <div className="text-xs font-bold text-emerald-400 font-mono bg-emerald-950/40 py-1 px-2 rounded-lg border border-emerald-900/60 mt-1">
               + {baseTareWeight} кг ({baseTareWeight > 20 ? 'платформа' : 'гриф'}) = <span className="text-white font-black text-sm">{totalEffectiveWeight} кг всего</span>
             </div>
