@@ -1,10 +1,56 @@
 {
-  "version": 3,
-  "updatedAt": "2026-09-05T00:00:00.000Z",
-  "gyms": [],
+  "version": 4,
+  "updatedAt": "2026-09-05T16:14:45.400Z",
+  "gyms": [
+    {
+      "id": "gym-matrix",
+      "name": "Зал Matrix",
+      "brand": "matrix",
+      "notes": "Стандартные блоки.",
+      "isDefault": true
+    },
+    {
+      "id": "gym-technogym",
+      "name": "Зал Technogym",
+      "brand": "technogym",
+      "notes": "Кабели с редукцией."
+    }
+  ],
   "machines": [],
   "sessions": [],
-  "inbody": [],
+  "inbody": [
+    {
+      "date": "2026-08-15",
+      "weightKg": 90.9,
+      "muscleMassKg": 38.6,
+      "fatMassKg": 23.1,
+      "bodyFatPercent": 25.4,
+      "fatFreeMassKg": 67.8,
+      "visceralFatLevel": 10,
+      "bmi": 27.4,
+      "inBodyScore": 75,
+      "notes": "",
+      "id": "inbody_1788552343954_hczm"
+    },
+    {
+      "date": "2026-01-22",
+      "weightKg": 91.1,
+      "muscleMassKg": 40.1,
+      "fatMassKg": 20.9,
+      "bodyFatPercent": 22.9,
+      "fatFreeMassKg": 70.2,
+      "visceralFatLevel": 9,
+      "bmi": 27.5,
+      "inBodyScore": 80,
+      "notes": "",
+      "id": "inbody_1788552440209_4x1z"
+    }
+  ],
   "photos": [],
+  "selectedGymId": "gym-matrix",
+  "profile": {
+    "gender": "male"
+  },
+  "draft": null,
   "aiReports": []
 }
