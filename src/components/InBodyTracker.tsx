@@ -3,7 +3,7 @@ import type { InBodyRecord } from '../types/workout';
 import { StorageService } from '../services/storage';
 import { AiService, type AiReport } from '../services/aiService';
 import { InBodyInfographic } from './InBodyInfographic';
-import type { BodyGender, BodyProfile } from '../utils/inBodyNorms';
+import type { BodyProfile } from '../utils/inBodyNorms';
 import {
   FileText,
   Plus,
@@ -60,7 +60,10 @@ export const InBodyTracker: React.FC = () => {
   const [records, setRecords] = useState<InBodyRecord[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRecordImage, setSelectedRecordImage] = useState<string | null>(null);
-  const [profile, setProfile] = useState<BodyProfile>(() => StorageService.getBodyProfile());
+  const [profile] = useState<BodyProfile>(() => ({
+    ...StorageService.getBodyProfile(),
+    gender: 'male',
+  }));
   const [autoReport, setAutoReport] = useState<AiReport | null>(null);
   const [autoReportStatus, setAutoReportStatus] = useState<'idle' | 'start' | 'done' | 'error'>('idle');
   const [autoReportError, setAutoReportError] = useState<string | null>(null);
@@ -270,11 +273,6 @@ export const InBodyTracker: React.FC = () => {
     }
   };
 
-  const setGender = (gender: BodyGender) => {
-    StorageService.setBodyGender(gender);
-    setProfile(StorageService.getBodyProfile());
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center bg-zinc-900 border border-zinc-800 p-3 rounded-2xl shadow-md gap-2">
@@ -283,26 +281,6 @@ export const InBodyTracker: React.FC = () => {
           <p className="text-[11px] text-zinc-400">Норма / недостаток / превышение · 4 параметра</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <div className="flex bg-zinc-950 border border-zinc-800 rounded-lg p-0.5">
-            <button
-              type="button"
-              onClick={() => setGender('male')}
-              className={`px-2 py-1 rounded-md text-[10px] font-black ${
-                profile.gender === 'male' ? 'bg-white text-zinc-950' : 'text-zinc-500'
-              }`}
-            >
-              М
-            </button>
-            <button
-              type="button"
-              onClick={() => setGender('female')}
-              className={`px-2 py-1 rounded-md text-[10px] font-black ${
-                profile.gender === 'female' ? 'bg-white text-zinc-950' : 'text-zinc-500'
-              }`}
-            >
-              Ж
-            </button>
-          </div>
           <button
             onClick={() => setIsModalOpen(true)}
             className="px-3 py-2 bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-black rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95"

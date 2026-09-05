@@ -12,6 +12,8 @@ import {
   Dumbbell,
   Clock,
   Filter,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 
 const ALL_EXERCISES: ExerciseDefinition[] = [
@@ -23,6 +25,7 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>(ALL_EXERCISES[0]?.id || '');
   const [activeTab, setActiveTab] = useState<'sessions' | 'progression'>('sessions');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     loadSessions();
@@ -77,12 +80,11 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
     .reverse();
 
   return (
-    <div className="space-y-6">
-      {/* Sub Tabs */}
-      <div className="flex bg-zinc-900 border border-zinc-800 p-1 rounded-2xl max-w-sm">
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 bg-zinc-900 border border-zinc-800 p-1 rounded-xl w-full">
         <button
           onClick={() => setActiveTab('sessions')}
-          className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+          className={`py-2 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ${
             activeTab === 'sessions'
               ? 'bg-white text-zinc-950 shadow-sm'
               : 'text-zinc-400 hover:text-white'
@@ -92,13 +94,13 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('progression')}
-          className={`flex-1 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+          className={`py-2 rounded-lg text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ${
             activeTab === 'progression'
               ? 'bg-white text-zinc-950 shadow-sm'
               : 'text-zinc-400 hover:text-white'
           }`}
         >
-          <TrendingUp className="w-3.5 h-3.5" /> Динамика Весов
+          <TrendingUp className="w-3.5 h-3.5" /> Динамика
         </button>
       </div>
 
@@ -116,26 +118,37 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
           ) : (
             sessions.map(session => {
               const formattedDate = new Date(session.date).toLocaleDateString('ru-RU', {
-                weekday: 'short',
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
               });
+              const isOpen = expandedId === session.id;
+              const exerciseCount = session.supersets.reduce(
+                (n, ss) => n + ss.exercises.filter(ex => ex.sets.some(s => s.completed)).length,
+                0
+              );
 
               return (
                 <div
                   key={session.id}
-                  className="bg-zinc-900 border border-zinc-800/90 rounded-2xl p-4 shadow-sm space-y-3"
+                  className="bg-zinc-900 border border-zinc-800/90 rounded-2xl p-3 shadow-sm space-y-2"
                 >
-                  <div className="flex justify-between items-start gap-2 border-b border-zinc-800/80 pb-2.5">
-                    <div className="space-y-0.5">
+                  <div className="flex justify-between items-start gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedId(isOpen ? null : session.id)}
+                      className="flex-1 min-w-0 text-left space-y-0.5"
+                    >
                       <div className="flex items-center gap-2">
                         <span className="bg-white text-zinc-950 text-[10px] font-black px-2 py-0.5 rounded">
                           ДЕНЬ {session.workoutType}
                         </span>
-                        <span className="text-xs font-bold text-zinc-200 font-mono">
-                          {formattedDate}
-                        </span>
+                        <span className="text-xs font-bold text-zinc-200 font-mono">{formattedDate}</span>
+                        {isOpen ? (
+                          <ChevronUp className="w-4 h-4 text-zinc-500 shrink-0" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-zinc-500 shrink-0" />
+                        )}
                       </div>
                       <div className="flex flex-wrap items-center gap-2 text-[11px] text-zinc-400">
                         {session.gymName && (
@@ -148,20 +161,23 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
                             <Clock className="w-3 h-3 text-zinc-500" /> {session.durationMinutes} мин
                           </span>
                         )}
+                        {!isOpen && (
+                          <span className="text-zinc-500">{exerciseCount} упр.</span>
+                        )}
                       </div>
-                    </div>
+                    </button>
 
                     <button
                       onClick={() => handleDeleteSession(session.id)}
-                      className="p-1 text-zinc-500 hover:text-rose-400 rounded-lg transition-colors"
+                      className="p-1 text-zinc-500 hover:text-rose-400 rounded-lg transition-colors shrink-0"
                       title="Удалить"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
-                  {/* Exercises Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {isOpen && (
+                  <div className="grid grid-cols-1 gap-2 pt-1 border-t border-zinc-800/80">
                     {session.supersets.map(ss =>
                       ss.exercises.map(ex => {
                         const completedSets = ex.sets.filter(s => s.completed);
@@ -219,6 +235,7 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
                       })
                     )}
                   </div>
+                  )}
                 </div>
               );
             })
