@@ -25,6 +25,8 @@ export interface ExerciseSet {
   effectiveWeightKg?: number;
   reps: number;
   completed: boolean;
+  weightConfirmed?: boolean;
+  repsConfirmed?: boolean;
   notes?: string;
 }
 

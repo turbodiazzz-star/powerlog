@@ -13,8 +13,6 @@ import { calcWorkingLoad, localLoadRecommendation } from '../utils/loadMath';
 import { AiService } from '../services/aiService';
 import confetti from 'canvas-confetti';
 import {
-  CheckCircle2,
-  Circle,
   Plus,
   Trash2,
   ChevronDown,
@@ -79,7 +77,11 @@ const syncSessionWithProgram = (
           exerciseTitle: exDef.name,
           muscleGroup: exDef.muscleGroup,
           machineName: existing.machineName,
-          sets: existing.sets,
+          sets: existing.sets.map(st => ({
+            ...st,
+            weightConfirmed: st.weightConfirmed ?? st.completed,
+            repsConfirmed: st.repsConfirmed ?? st.completed,
+          })),
         };
       }
 
@@ -93,18 +95,21 @@ const syncSessionWithProgram = (
 
       const variantName = selectedOption ? selectedOption.name : undefined;
       const history = StorageService.getLastExerciseLog(exDef.id, activeGym?.id, undefined, variantName);
+      const lastWeight = history?.sets[0]?.weightKg || 0;
+      const lastReps = history?.sets[0]?.reps || 10;
 
       const defaultSetsCount = exDef.targetSets;
       const sets: ExerciseSet[] = [];
 
       for (let i = 1; i <= defaultSetsCount; i++) {
-        const histSet = history?.sets[i - 1];
         sets.push({
           id: `set_${exDef.id}_${i}_${Date.now()}`,
           setNumber: i,
-          weightKg: histSet?.weightKg || 0,
-          reps: histSet?.reps || 10,
+          weightKg: lastWeight,
+          reps: lastReps,
           completed: false,
+          weightConfirmed: false,
+          repsConfirmed: false,
         });
       }
 
@@ -163,6 +168,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     baseTareWeight?: number;
     isAssisted?: boolean;
     isBodyweight?: boolean;
+    restSec: number;
   } | null>(null);
 
   // Reps Scroll Picker Modal State
@@ -172,6 +178,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     exerciseId: string;
     setId: string;
     currentReps: number;
+    restSec: number;
   } | null>(null);
 
   // Rest Timer state
@@ -345,7 +352,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     isMatrixBlock?: boolean,
     baseTareWeight?: number,
     isAssisted?: boolean,
-    isBodyweight?: boolean
+    isBodyweight?: boolean,
+    restSec?: number
   ) => {
     const startWeight = currentWeightKg > 0 ? currentWeightKg : (historyWeightKg || 0);
 
@@ -359,6 +367,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       baseTareWeight: baseTareWeight || 0,
       isAssisted: !!isAssisted,
       isBodyweight: !!isBodyweight,
+      restSec: restSec || 90,
     });
   };
 
@@ -367,7 +376,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     exerciseId: string,
     setId: string,
     currentReps: number,
-    targetRepsStr?: string
+    targetRepsStr?: string,
+    restSec?: number
   ) => {
     let startReps = currentReps;
     if (!startReps || startReps === 0) {
@@ -386,6 +396,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       exerciseId,
       setId,
       currentReps: startReps,
+      restSec: restSec || 90,
     });
   };
 
@@ -427,12 +438,16 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         ...ss,
         exercises: ss.exercises.map(ex => {
           if (ex.exerciseId === exerciseId) {
-            const updatedSets = ex.sets.map((st, idx) => {
-              const histSet = history?.sets[idx];
+            const updatedSets = ex.sets.map(st => {
+              const lastWeight = history?.sets[0]?.weightKg;
+              const lastReps = history?.sets[0]?.reps;
               return {
                 ...st,
-                weightKg: histSet?.weightKg !== undefined ? histSet.weightKg : st.weightKg,
-                reps: histSet?.reps !== undefined ? histSet.reps : st.reps,
+                weightKg: lastWeight !== undefined ? lastWeight : st.weightKg,
+                reps: lastReps !== undefined ? lastReps : st.reps,
+                completed: false,
+                weightConfirmed: false,
+                repsConfirmed: false,
               };
             });
 
@@ -448,14 +463,14 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     }));
   };
 
-  const toggleSetCompleted = (
-    _supersetId: string,
+  const confirmSetValue = (
     exerciseId: string,
     setId: string,
-    restSec: number,
-    _muscleGroup: string
+    field: 'weightKg' | 'reps',
+    value: number,
+    restSec: number
   ) => {
-    let newlyCompleted = false;
+    let justCompleted = false;
 
     setSession(prev => ({
       ...prev,
@@ -463,53 +478,55 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         ...ss,
         exercises: ss.exercises.map(ex => {
           if (ex.exerciseId !== exerciseId) return ex;
-          return {
-            ...ex,
-            sets: ex.sets.map(st => {
-              if (st.id === setId) {
-                newlyCompleted = !st.completed;
-                return { ...st, completed: newlyCompleted };
+
+          const isFirstSet = ex.sets[0]?.id === setId;
+          const bodyKg = StorageService.getLatestBodyWeightKg();
+
+          const updatedSets = ex.sets.map((st, idx) => {
+            const isTarget = st.id === setId;
+            const shouldCopyDefault = isFirstSet && idx > 0;
+
+            let next = { ...st };
+
+            if (isTarget) {
+              if (field === 'weightKg') {
+                const load = calcWorkingLoad(ex.machineName, value, bodyKg);
+                next = {
+                  ...next,
+                  weightKg: value,
+                  effectiveWeightKg: load.effectiveKg,
+                  weightConfirmed: true,
+                };
+              } else {
+                next = { ...next, reps: value, repsConfirmed: true };
               }
-              return st;
-            }),
-          };
+            } else if (shouldCopyDefault) {
+              if (field === 'weightKg' && !st.weightConfirmed) {
+                const load = calcWorkingLoad(ex.machineName, value, bodyKg);
+                next = { ...next, weightKg: value, effectiveWeightKg: load.effectiveKg };
+              }
+              if (field === 'reps' && !st.repsConfirmed) {
+                next = { ...next, reps: value };
+              }
+            }
+
+            const wasCompleted = !!st.completed;
+            const nowCompleted = !!(next.weightConfirmed && next.repsConfirmed);
+            next.completed = nowCompleted;
+            if (isTarget && nowCompleted && !wasCompleted) {
+              justCompleted = true;
+            }
+            return next;
+          });
+
+          return { ...ex, sets: updatedSets };
         }),
       })),
     }));
 
-    if (newlyCompleted) {
+    if (justCompleted) {
       startQuickTimer(restSec);
     }
-  };
-
-  const updateSetField = (
-    _supersetId: string,
-    exerciseId: string,
-    setId: string,
-    field: keyof ExerciseSet,
-    value: number | string
-  ) => {
-    setSession(prev => ({
-      ...prev,
-      supersets: prev.supersets.map(ss => ({
-        ...ss,
-        exercises: ss.exercises.map(ex => {
-          if (ex.exerciseId !== exerciseId) return ex;
-          return {
-            ...ex,
-            sets: ex.sets.map(st => {
-              if (st.id !== setId) return st;
-              const next = { ...st, [field]: value };
-              if (field === 'weightKg' && typeof value === 'number') {
-                const load = calcWorkingLoad(ex.machineName, value, StorageService.getLatestBodyWeightKg());
-                next.effectiveWeightKg = load.effectiveKg;
-              }
-              return next;
-            }),
-          };
-        }),
-      })),
-    }));
   };
 
   const addSet = (_supersetId: string, exerciseId: string) => {
@@ -526,6 +543,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             weightKg: lastSet ? lastSet.weightKg : 0,
             reps: lastSet ? lastSet.reps : 10,
             completed: false,
+            weightConfirmed: false,
+            repsConfirmed: false,
           };
           return { ...ex, sets: [...ex.sets, newSet] };
         }),
@@ -881,7 +900,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                         <th className="py-1 px-1 w-28">Сет / Прошлый</th>
                         <th className="py-1 px-1">Вес (кг)</th>
                         <th className="py-1 px-1">Повторы</th>
-                        <th className="py-1 px-1 text-center w-10">Готово</th>
                         <th className="py-1 px-0.5 text-right w-5"></th>
                       </tr>
                     </thead>
@@ -893,11 +911,17 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                           : null;
                         const nowLoad = calcWorkingLoad(selectedVariantName, st.weightKg || 0, bodyWeightKg);
 
+                        const weightConfirmed = !!st.weightConfirmed;
+                        const repsConfirmed = !!st.repsConfirmed;
+                        const setDone = !!st.completed || (weightConfirmed && repsConfirmed);
+
                         return (
                           <tr
                             key={st.id}
                             className={`transition-all ${
-                              st.completed ? 'bg-emerald-950/25 text-emerald-200' : ''
+                              setDone
+                                ? 'bg-emerald-950/40 text-emerald-100'
+                                : 'bg-amber-950/20'
                             }`}
                           >
                             {/* Set # + Historical Weight Inline (Includes lbs ONLY for Matrix Block machines) */}
@@ -928,10 +952,15 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     isMatrixBlock,
                                     baseTareWeight,
                                     assisted,
-                                    bodyMove
+                                    bodyMove,
+                                    currentSupersetDef.rest1Sec
                                   )
                                 }
-                                className="w-[4.6rem] h-9 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 rounded font-mono font-bold text-xs flex flex-col items-center justify-center text-white active:scale-95 transition-all shadow-sm"
+                                className={`w-[4.6rem] h-9 rounded font-mono font-bold text-xs flex flex-col items-center justify-center active:scale-95 transition-all shadow-sm ${
+                                  weightConfirmed
+                                    ? 'bg-emerald-950 border border-emerald-500 text-emerald-100'
+                                    : 'bg-zinc-900 border border-dashed border-amber-500/70 text-white'
+                                }`}
                               >
                                 <span>
                                   {assisted ? '−' : ''}
@@ -953,34 +982,17 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     exDef.id,
                                     st.id,
                                     st.reps,
-                                    exDef.targetReps
+                                    exDef.targetReps,
+                                    currentSupersetDef.rest1Sec
                                   )
                                 }
-                                className="w-13 h-8 bg-zinc-900 border border-zinc-700 hover:border-zinc-500 rounded font-mono font-bold text-xs flex items-center justify-center text-white active:scale-95 transition-all shadow-sm"
+                                className={`w-13 h-8 rounded font-mono font-bold text-xs flex items-center justify-center active:scale-95 transition-all shadow-sm ${
+                                  repsConfirmed
+                                    ? 'bg-emerald-950 border border-emerald-500 text-emerald-100'
+                                    : 'bg-zinc-900 border border-dashed border-amber-500/70 text-white'
+                                }`}
                               >
                                 <span>{st.reps || 0}</span>
-                              </button>
-                            </td>
-
-                            {/* Checkbox */}
-                            <td className="py-1 px-1 text-center">
-                              <button
-                                onClick={() =>
-                                  toggleSetCompleted(
-                                    currentSupersetDef.id,
-                                    exDef.id,
-                                    st.id,
-                                    currentSupersetDef.rest1Sec,
-                                    exDef.muscleGroup
-                                  )
-                                }
-                                className="p-1 rounded transition-transform active:scale-90"
-                              >
-                                {st.completed ? (
-                                  <CheckCircle2 className="w-4 h-4 text-emerald-400 fill-emerald-950" />
-                                ) : (
-                                  <Circle className="w-4 h-4 text-zinc-600 hover:text-zinc-300" />
-                                )}
                               </button>
                             </td>
 
@@ -1087,12 +1099,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           isBodyweight={pickerState.isBodyweight}
           bodyWeightKg={bodyWeightKg}
           onSelect={w => {
-            updateSetField(
-              pickerState.supersetId,
+            confirmSetValue(
               pickerState.exerciseId,
               pickerState.setId,
               'weightKg',
-              w
+              w,
+              pickerState.restSec
             );
           }}
           onClose={() => setPickerState(null)}
@@ -1105,12 +1117,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           isOpen={repsPickerState.isOpen}
           initialReps={repsPickerState.currentReps}
           onSelect={r => {
-            updateSetField(
-              repsPickerState.supersetId,
+            confirmSetValue(
               repsPickerState.exerciseId,
               repsPickerState.setId,
               'reps',
-              r
+              r,
+              repsPickerState.restSec
             );
           }}
           onClose={() => setRepsPickerState(null)}
