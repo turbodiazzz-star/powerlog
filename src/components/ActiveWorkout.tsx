@@ -10,6 +10,7 @@ import { getOptionsForExercise, isBlockMachineOption, getMachineBaseTareWeight, 
 import { WeightScrollPicker } from './WeightScrollPicker';
 import { RepsScrollPicker } from './RepsScrollPicker';
 import { calcWorkingLoad, localLoadRecommendation } from '../utils/loadMath';
+import { formatDateDot } from '../utils/dates';
 import { AiService } from '../services/aiService';
 import confetti from 'canvas-confetti';
 import {
@@ -637,11 +638,11 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   return (
     <div className="space-y-2 pb-16 w-full max-w-md mx-auto overflow-x-hidden text-xs pt-safe">
       {/* 1. Header Card (NO X button, ONLY Finish button) */}
-      <header className="bg-zinc-900 border border-zinc-800 rounded-xl p-2 shadow-sm flex items-center justify-between gap-1">
+      <header className="bg-zinc-900/90 border border-zinc-700/70 rounded-2xl p-2 shadow-sm flex items-center justify-between gap-1">
         {/* Left: Workout Type Badge + Gym Selector */}
         <div className="flex items-center gap-1.5 min-w-0">
           <span className="bg-white text-zinc-950 font-black text-xs px-2.5 py-1 rounded-md shrink-0 shadow-sm">
-            {workoutType} · {new Date(session.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+            {workoutType} · {formatDateDot(session.date)}
           </span>
 
           <select
@@ -675,7 +676,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       </header>
 
       {/* 2. Quick Rest Timer Row (With Reset Timer Button) */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-2 shadow-sm space-y-1.5">
+      <div className="bg-zinc-900/90 border border-zinc-700/70 rounded-2xl p-2 shadow-sm space-y-1.5">
         <div className="flex items-center justify-between gap-1 text-xs">
           <div className="flex items-center gap-1.5 shrink-0">
             <span className="font-bold text-zinc-400 text-xs shrink-0">
@@ -762,14 +763,14 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       </div>
 
       {/* 3. Superset Tabs Carousel Header */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-0.5 flex items-center justify-between gap-1 text-[11px] font-bold shadow-sm">
+      <div className="bg-zinc-900/90 border border-zinc-700/70 rounded-2xl p-1 flex items-center justify-between gap-1 text-[11px] font-bold shadow-sm">
         {program.supersets.map((_, idx) => {
           const isActive = idx === activeSupersetIndex;
           return (
             <button
               key={idx}
               onClick={() => setActiveSupersetIndex(idx)}
-              className={`flex-1 py-1 px-1.5 text-center rounded-lg transition-all uppercase ${
+              className={`flex-1 py-1.5 px-1.5 text-center rounded-xl transition-all uppercase ${
                 isActive
                   ? 'bg-white text-zinc-950 font-black shadow-sm'
                   : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
@@ -785,7 +786,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="bg-zinc-900 border border-zinc-800/90 rounded-xl p-2 shadow-sm space-y-2 animate-fadeIn"
+        className="bg-zinc-900/90 border border-zinc-700/80 rounded-3xl p-2.5 shadow-lg space-y-2.5 animate-fadeIn"
       >
         <div className="space-y-2">
           {currentSupersetDef.exercises.map((exDef) => {
@@ -829,18 +830,18 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             return (
               <div
                 key={exDef.id}
-                className="bg-zinc-950 border border-zinc-800/80 rounded-lg p-2 space-y-1.5 shadow-sm"
+                className="bg-zinc-950/80 border border-zinc-700/70 rounded-2xl p-2.5 space-y-2 shadow-inner"
               >
                 {rec && rec.inputKg > 0 && (
-                  <div className="px-1.5 py-1 rounded-md bg-emerald-950/50 border border-emerald-900/70 text-[10px] text-emerald-300 leading-tight">
+                  <div className="px-2.5 py-1.5 rounded-2xl bg-emerald-950/60 border border-emerald-800/80 text-[10px] text-emerald-300 leading-tight">
                     <span className="font-black text-emerald-400">{aiRec ? 'ИИ' : 'План'}:</span>{' '}
                     {assisted ? `разгрузка ${rec.inputKg} кг` : `${rec.inputKg} кг`} · {rec.sets} подх. × {rec.reps}
                     {rec.note ? ` · ${rec.note}` : ''}
                   </div>
                 )}
-                <div className="flex items-center justify-between gap-1.5 bg-zinc-900/60 p-1.5 rounded-lg border border-zinc-800/80">
+                <div className="flex items-center justify-between gap-1.5 bg-zinc-900/80 p-1.5 rounded-2xl border border-zinc-700/60">
                   {/* Left: Muscle badge */}
-                  <span className="bg-zinc-800 text-zinc-200 border border-zinc-700 text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0">
+                  <span className="bg-zinc-800 text-zinc-200 border border-zinc-700 text-[10px] font-bold px-1.5 py-0.5 rounded-lg shrink-0">
                     {exDef.muscleGroup}
                   </span>
 
@@ -848,7 +849,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                   <select
                     value={selectedVariantName}
                     onChange={e => handleVariantChange(exDef.id, e.target.value)}
-                    className="flex-1 min-w-0 bg-zinc-950 text-xs text-white font-bold rounded-md px-1.5 py-1 border border-zinc-700 focus:outline-none truncate"
+                    className="flex-1 min-w-0 bg-zinc-950 text-xs text-white font-bold rounded-xl px-1.5 py-1.5 border border-zinc-700 focus:outline-none truncate"
                   >
                     {availableVariants.map(opt => {
                       const isPrev = opt.name === prevVariantName;
@@ -893,19 +894,14 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                   </span>
                 </div>
 
-                {/* Sets Table */}
-                <div className="overflow-x-hidden pt-0.5">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="text-zinc-500 border-b border-zinc-800 text-[9px] uppercase font-bold">
-                        <th className="py-1 px-1 w-28">Сет / Прошлый</th>
-                        <th className="py-1 px-1">Вес (кг)</th>
-                        <th className="py-1 px-1">Повторы</th>
-                        <th className="py-1 px-0.5 text-right w-5"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-zinc-800/40">
-                      {loggedEx?.sets.map((st, idx) => {
+                <div className="space-y-1.5 pt-0.5">
+                  <div className="grid grid-cols-[minmax(0,1fr)_4.6rem_3.2rem_1.25rem] gap-1.5 px-1 text-[9px] uppercase font-bold text-zinc-500 tracking-wide">
+                    <span>Сет / прошлый</span>
+                    <span className="text-center">Вес</span>
+                    <span className="text-center">Повт.</span>
+                    <span />
+                  </div>
+                  {loggedEx?.sets.map((st, idx) => {
                         const histSet = variantHistoryLog?.sets[idx];
                         const histLoad = histSet
                           ? calcWorkingLoad(selectedVariantName, histSet.weightKg, bodyWeightKg)
@@ -917,31 +913,28 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                         const setDone = !!st.completed || (weightConfirmed && repsConfirmed);
 
                         return (
-                          <tr
+                          <div
                             key={st.id}
-                            className={`transition-all ${
+                            className={`grid grid-cols-[minmax(0,1fr)_4.6rem_3.2rem_1.25rem] items-center gap-1.5 rounded-2xl px-2 py-1.5 border transition-all ${
                               setDone
-                                ? 'bg-emerald-500 text-zinc-950'
-                                : 'bg-zinc-900/80'
+                                ? 'bg-emerald-500 border-emerald-400 text-zinc-950 shadow-sm'
+                                : 'bg-zinc-900/90 border-zinc-700/80'
                             }`}
                           >
-                            {/* Set # + Historical Weight Inline (Includes lbs ONLY for Matrix Block machines) */}
-                            <td className="py-1 px-1 font-mono text-[10px]">
-                              <span className={`font-bold ${setDone ? 'text-zinc-950' : 'text-zinc-300'}`}>#{idx + 1}</span>
+                            <div className="min-w-0 font-mono text-[10px] leading-tight">
+                              <span className={`font-black ${setDone ? 'text-zinc-950' : 'text-zinc-200'}`}>#{idx + 1}</span>
                               {histSet ? (
-                                <span className="text-amber-400 ml-1 font-bold text-[10px] leading-tight">
+                                <span className={`ml-1 font-bold ${setDone ? 'text-zinc-800' : 'text-amber-400'}`}>
                                   {assisted
                                     ? histLoad?.formula
                                     : `${histLoad?.effectiveKg ?? histSet.weightKg}кг`}
                                 </span>
                               ) : (
-                                <span className="text-zinc-600 ml-1.5 text-[9px]">—</span>
+                                <span className={`ml-1 text-[9px] ${setDone ? 'text-zinc-700' : 'text-zinc-600'}`}>—</span>
                               )}
-                            </td>
+                            </div>
 
-                            {/* Weight Button (Scroll Picker Trigger) */}
-                            <td className="py-1 px-1">
-                              <button
+                            <button
                                 type="button"
                                 onClick={() =>
                                   handleOpenPicker(
@@ -957,25 +950,22 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     currentSupersetDef.rest1Sec
                                   )
                                 }
-                                className={`w-[4.6rem] h-9 rounded font-mono font-bold text-xs flex flex-col items-center justify-center active:scale-95 transition-all shadow-sm ${
+                                className={`h-9 w-full rounded-2xl font-mono font-bold text-xs flex flex-col items-center justify-center active:scale-95 transition-all ${
                                   weightConfirmed
-                                    ? 'bg-zinc-950 border-2 border-zinc-950 text-emerald-300'
-                                    : 'bg-zinc-950 border border-zinc-500 text-white'
+                                    ? 'bg-zinc-950 text-emerald-300 border border-zinc-800'
+                                    : 'bg-zinc-950 text-white border border-zinc-600'
                                 }`}
                               >
                                 <span>
                                   {assisted ? '−' : ''}
-                                  {st.weightKg || 0} кг
+                                  {st.weightKg || 0}
                                 </span>
                                 <span className="text-[8px] text-emerald-400 font-bold leading-none truncate max-w-full px-0.5">
                                   {nowLoad.shortHint}
                                 </span>
                               </button>
-                            </td>
 
-                            {/* Reps Button (Scroll Picker Trigger) */}
-                            <td className="py-1 px-1">
-                              <button
+                            <button
                                 type="button"
                                 onClick={() =>
                                   handleOpenRepsPicker(
@@ -987,37 +977,33 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     currentSupersetDef.rest1Sec
                                   )
                                 }
-                                className={`w-13 h-8 rounded font-mono font-bold text-xs flex items-center justify-center active:scale-95 transition-all shadow-sm ${
+                                className={`h-9 w-full rounded-2xl font-mono font-bold text-xs flex items-center justify-center active:scale-95 transition-all ${
                                   repsConfirmed
-                                    ? 'bg-zinc-950 border-2 border-zinc-950 text-emerald-300'
-                                    : 'bg-zinc-950 border border-zinc-500 text-white'
+                                    ? 'bg-zinc-950 text-emerald-300 border border-zinc-800'
+                                    : 'bg-zinc-950 text-white border border-zinc-600'
                                 }`}
                               >
                                 <span>{st.reps || 0}</span>
                               </button>
-                            </td>
 
-                            {/* Delete Set */}
-                            <td className="py-1 px-0.5 text-right">
+                            <div className="flex justify-center">
                               {(loggedEx?.sets.length || 0) > 1 && (
                                 <button
                                   onClick={() => removeSet(currentSupersetDef.id, exDef.id, st.id)}
-                                  className="p-0.5 text-zinc-600 hover:text-rose-400"
+                                  className={`p-0.5 rounded-lg ${setDone ? 'text-zinc-700 hover:text-rose-700' : 'text-zinc-600 hover:text-rose-400'}`}
                                 >
                                   <Trash2 className="w-3 h-3" />
                                 </button>
                               )}
-                            </td>
-                          </tr>
+                            </div>
+                          </div>
                         );
                       })}
-                    </tbody>
-                  </table>
                 </div>
 
                 <button
                   onClick={() => addSet(currentSupersetDef.id, exDef.id)}
-                  className="inline-flex items-center gap-1 text-[10px] text-zinc-400 hover:text-white font-bold pt-0.5"
+                  className="inline-flex items-center gap-1 text-[10px] text-zinc-400 hover:text-white font-bold pt-0.5 px-1"
                 >
                   <Plus className="w-3 h-3 text-indigo-400" /> Добавить подход
                 </button>
@@ -1031,7 +1017,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           <button
             disabled={activeSupersetIndex === 0}
             onClick={() => setActiveSupersetIndex(prev => prev - 1)}
-            className={`flex items-center gap-0.5 px-2 py-1 rounded border transition-all ${
+            className={`flex items-center gap-0.5 px-2 py-1 rounded-xl border transition-all ${
               activeSupersetIndex === 0
                 ? 'opacity-20 border-transparent text-zinc-600'
                 : 'bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700'
@@ -1048,7 +1034,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           <button
             disabled={activeSupersetIndex === program.supersets.length - 1}
             onClick={() => setActiveSupersetIndex(prev => prev + 1)}
-            className={`flex items-center gap-0.5 px-2 py-1 rounded border transition-all ${
+            className={`flex items-center gap-0.5 px-2 py-1 rounded-xl border transition-all ${
               activeSupersetIndex === program.supersets.length - 1
                 ? 'opacity-20 border-transparent text-zinc-600'
                 : 'bg-white border-white text-zinc-950 font-black hover:bg-zinc-200 shadow-sm'

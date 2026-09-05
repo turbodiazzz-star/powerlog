@@ -1,4 +1,5 @@
 import type { InBodyRecord, ProgressPhotoRecord, WorkoutSession } from '../types/workout';
+import { formatDateDot } from '../utils/dates';
 
 export interface AiReport {
   id: string;
@@ -327,7 +328,7 @@ export class AiService {
       contextText += `Записей InBody пока нет.\n`;
     } else {
       inBodyRecords.slice(0, 5).forEach((rec, idx) => {
-        contextText += `Запись ${idx + 1} (${rec.date}):
+        contextText += `Запись ${idx + 1} (${formatDateDot(rec.date)}):
 - Общий вес: ${rec.weightKg} кг
 - Скелетно-мышечная масса (SMM): ${rec.muscleMassKg ? rec.muscleMassKg + ' кг' : 'не указано'}
 - Масса жира (BFM): ${rec.fatMassKg ? rec.fatMassKg + ' кг' : 'не указано'}
@@ -343,12 +344,12 @@ export class AiService {
 
     contextText += `\n--- ФОТОГРАФИИ ФОРМЫ (${photos.length} шт.) ---\n`;
     photos.slice(0, 4).forEach((p, idx) => {
-      contextText += `Фото ${idx + 1}: дата ${p.date}, ракурс ${p.pose}, вес ${p.weightKg ? p.weightKg + 'кг' : 'не указан'}\n`;
+      contextText += `Фото ${idx + 1}: дата ${formatDateDot(p.date)}, ракурс ${p.pose}, вес ${p.weightKg ? p.weightKg + 'кг' : 'не указан'}\n`;
     });
 
     contextText += `\n--- ТРЕНИРОВОЧНАЯ ДИНАМИКА (${recentSessions.length} последних тренировок) ---\n`;
     recentSessions.slice(0, 4).forEach((s, idx) => {
-      contextText += `Тренировка ${idx + 1} (${s.workoutType}, ${s.date.split('T')[0]}, Зал: ${s.gymName || 'Matrix'}):
+      contextText += `Тренировка ${idx + 1} (${s.workoutType}, ${formatDateDot(s.date)}, Зал: ${s.gymName || 'Matrix'}):
 `;
       s.supersets.forEach(ss => {
         ss.exercises.forEach(ex => {

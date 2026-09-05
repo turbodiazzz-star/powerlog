@@ -21,7 +21,7 @@
           navigator.serviceWorker.getRegistrations().then(regs => {
             return Promise.all(regs.map(reg => reg.unregister()));
           }).then(() => {
-            return navigator.serviceWorker.register('./sw.js?v=31');
+            return navigator.serviceWorker.register('./sw.js?v=32');
           }).catch(() => undefined);
         });
       }

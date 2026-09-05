@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { InBodyRecord } from '../types/workout';
 import { StorageService } from '../services/storage';
 import { AiService, type AiReport } from '../services/aiService';
+import { formatDateDot } from '../utils/dates';
 import { InBodyInfographic } from './InBodyInfographic';
 import type { BodyProfile } from '../utils/inBodyNorms';
 import {
@@ -163,7 +164,7 @@ export const InBodyTracker: React.FC = () => {
         const foundItems: string[] = [];
         if (extracted.date) {
           setDate(extracted.date);
-          foundItems.push(`дата ${extracted.date}`);
+          foundItems.push(`дата ${formatDateDot(extracted.date)}`);
         }
         if (extracted.weightKg) {
           setWeightKg(extracted.weightKg.toString());
@@ -308,7 +309,7 @@ export const InBodyTracker: React.FC = () => {
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-emerald-400" />
             <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Автоотчёт ИИ</span>
-            <span className="text-[10px] font-mono text-zinc-500">{autoReport.date}</span>
+            <span className="text-[10px] font-mono text-zinc-500">{formatDateDot(autoReport.date)}</span>
           </div>
           <p className="text-xs font-black text-white">{autoReport.verdictTitle}</p>
           <div className="text-[11px] text-zinc-300 leading-relaxed whitespace-pre-line max-h-48 overflow-y-auto bg-zinc-950 border border-zinc-800 rounded-xl p-2.5">

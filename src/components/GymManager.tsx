@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Gym, MachineEquipment } from '../types/workout';
 import { StorageService } from '../services/storage';
+import { formatDateDot } from '../utils/dates';
 import { WORKOUT_PROGRAM } from '../data/workoutProgram';
 import { Building2, Plus, Edit2, Trash2, Dumbbell, AlertCircle, Settings2, Download, Upload } from 'lucide-react';
 
@@ -107,7 +108,7 @@ export const GymManager: React.FC<GymManagerProps> = ({ onSelectGym, selectedGym
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `fit_tracker_backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `fit_tracker_backup_${formatDateDot(new Date())}.json`;
     a.click();
     URL.revokeObjectURL(url);
     setExportNotice('Данные экспортированы');

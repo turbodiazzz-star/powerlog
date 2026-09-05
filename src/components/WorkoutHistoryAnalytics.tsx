@@ -4,6 +4,7 @@ import { StorageService } from '../services/storage';
 import { WORKOUT_PROGRAM } from '../data/workoutProgram';
 import { isBlockMachineOption, getMachineOption } from '../data/machineVariants';
 import { calcWorkingLoad } from '../utils/loadMath';
+import { formatDateDot } from '../utils/dates';
 import {
   History,
   TrendingUp,
@@ -121,11 +122,7 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
             </div>
           ) : (
             sessions.map(session => {
-              const formattedDate = new Date(session.date).toLocaleDateString('ru-RU', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-              });
+              const formattedDate = formatDateDot(session.date);
               const isOpen = expandedId === session.id;
               const exerciseCount = session.supersets.reduce(
                 (n, ss) => n + ss.exercises.filter(ex => ex.sets.some(s => s.completed)).length,
@@ -282,11 +279,7 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
 
               <div className="relative border-l border-zinc-800 ml-2 pl-3 space-y-3">
                 {exerciseProgression.map((item, index) => {
-                  const dateStr = new Date(item.date).toLocaleDateString('ru-RU', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  });
+                  const dateStr = formatDateDot(item.date);
 
                   const prevItem = exerciseProgression[index - 1];
                   const weightDiff = prevItem ? item.maxWeight - prevItem.maxWeight : 0;

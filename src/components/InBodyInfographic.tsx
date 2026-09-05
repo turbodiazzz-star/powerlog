@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { InBodyRecord } from '../types/workout';
+import { formatDateDot } from '../utils/dates';
 import {
   buildInBodyBars,
   deriveHeightCm,
@@ -165,7 +166,7 @@ function MetricRow({
 
       {sel && (
         <div className="text-[10px] font-mono text-zinc-300 bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1">
-          {sel.date}: <span className="text-white font-black">{sel.value} {unit}</span>
+          {formatDateDot(sel.date)}: <span className="text-white font-black">{sel.value} {unit}</span>
         </div>
       )}
 
@@ -223,7 +224,7 @@ export const InBodyInfographic: React.FC<{
             <div className="text-[9px] font-black uppercase tracking-[0.18em] text-zinc-500">InBody</div>
             <h3 className="text-sm font-black leading-tight">Анализ состава тела</h3>
             <p className="text-[10px] text-zinc-500 font-mono mt-0.5">
-              {latest.date}
+              {formatDateDot(latest.date)}
               {heightCm ? ` · рост ≈ ${heightCm} см` : ''}
               {latest.bmi ? ` · ИМТ ${latest.bmi}` : ''}
             </p>
@@ -251,7 +252,7 @@ export const InBodyInfographic: React.FC<{
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3 space-y-0.5">
         <div className="text-[10px] font-black uppercase tracking-wider text-zinc-400 pb-1">
-          Динамика от {baseline.date}
+          Динамика от {formatDateDot(baseline.date)}
         </div>
         {KEY_METRICS.map(m => (
           <MetricRow
@@ -286,7 +287,7 @@ export const InBodyInfographic: React.FC<{
               >
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-black font-mono text-white">
-                    {rec.date}
+                    {formatDateDot(rec.date)}
                     {isLatest ? ' · актуальный' : ''}
                   </span>
                   <div className="flex items-center gap-1">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { ProgressPhotoRecord, PhotoPose } from '../types/workout';
 import { StorageService } from '../services/storage';
 import { AiService, type AiReport } from '../services/aiService';
+import { formatDateDot } from '../utils/dates';
 import {
   Camera,
   Plus,
@@ -201,7 +202,7 @@ export const ProgressPhotoTracker: React.FC = () => {
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-emerald-400" />
             <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Автоотчёт ИИ</span>
-            <span className="text-[10px] font-mono text-zinc-500">{autoReport.date}</span>
+            <span className="text-[10px] font-mono text-zinc-500">{formatDateDot(autoReport.date)}</span>
           </div>
           <p className="text-xs font-black text-white">{autoReport.verdictTitle}</p>
           <div className="text-[11px] text-zinc-300 leading-relaxed whitespace-pre-line max-h-40 overflow-y-auto bg-zinc-950 border border-zinc-800 rounded-xl p-2.5">
@@ -267,11 +268,7 @@ export const ProgressPhotoTracker: React.FC = () => {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
             {photos.map(p => {
-              const dateStr = new Date(p.date).toLocaleDateString('ru-RU', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              });
+              const dateStr = formatDateDot(p.date);
 
               return (
                 <div

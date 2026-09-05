@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { WORKOUT_PROGRAM } from '../data/workoutProgram';
 import { StorageService } from '../services/storage';
+import { formatDateDot } from '../utils/dates';
 import { ActiveWorkout } from './ActiveWorkout';
 import { ProgressView } from './ProgressView';
 import type { Gym, ActiveWorkoutDraft } from '../types/workout';
@@ -78,12 +79,7 @@ export const AppDashboard: React.FC = () => {
 
   const currentGym = gyms.find(g => g.id === selectedGymId) || gyms[0];
 
-  const currentDateFormatted = new Date().toLocaleDateString('ru-RU', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    weekday: 'short',
-  });
+  const currentDateFormatted = formatDateDot(new Date());
 
   if (activeSessionProps) {
     return (
@@ -191,7 +187,7 @@ export const AppDashboard: React.FC = () => {
 
                 <div className="text-right shrink-0">
                   <span className="text-xs font-mono font-bold text-zinc-200 bg-zinc-800 px-2 py-0.5 rounded-lg inline-block">
-                    {new Date().toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })}
+                    {formatDateDot(new Date())}
                   </span>
                   <div className="text-[9px] text-zinc-500 mt-1 font-mono">
                     Сессий: {recommendation.completedCount}

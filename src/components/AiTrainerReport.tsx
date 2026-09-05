@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AiService, type AiReport } from '../services/aiService';
 import { StorageService } from '../services/storage';
+import { formatDateDot } from '../utils/dates';
 import {
   Sparkles,
   Key,
@@ -258,7 +259,7 @@ export const AiTrainerReport: React.FC = () => {
                   <div className="space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[10px] font-mono font-bold text-zinc-400 bg-zinc-950 px-2 py-0.5 rounded-lg border border-zinc-800">
-                        {rep.date}
+                        {formatDateDot(rep.date)}
                       </span>
                       <span className="text-xs font-black text-emerald-400 bg-emerald-950/60 border border-emerald-900/80 px-2.5 py-0.5 rounded-full">
                         {rep.verdictTitle || 'ИИ-Анализ формы'}
