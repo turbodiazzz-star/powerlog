@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updatedAt": "2026-09-05T17:49:38.787Z",
+  "updatedAt": "2026-09-05T17:53:57.198Z",
   "gyms": [
     {
       "id": "gym-matrix",
@@ -17,7 +17,323 @@
     }
   ],
   "machines": [],
-  "sessions": [],
+  "sessions": [
+    {
+      "id": "session_1788630583008",
+      "date": "2026-09-05T17:49:43.008Z",
+      "workoutType": "A",
+      "dayName": "Пн",
+      "gymId": "gym-technogym",
+      "gymName": "Зал Technogym",
+      "completed": true,
+      "supersets": [
+        {
+          "supersetId": "superset-a1",
+          "supersetTitle": "СУПЕРСЕТ 1: Квадрицепс + Широчайшие",
+          "restIntervalSec1": 75,
+          "restIntervalSec2": 105,
+          "exercises": [
+            {
+              "exerciseId": "a-1.1",
+              "exerciseTitle": "Жим ногами платформой (глубокий)",
+              "muscleGroup": "Квадрицепс",
+              "machineName": "Жим ногами платформой (Technogym)",
+              "sets": [
+                {
+                  "id": "set_a-1.1_1_1788630583008",
+                  "setNumber": 1,
+                  "weightKg": 180,
+                  "reps": 12,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 227
+                },
+                {
+                  "id": "set_a-1.1_2_1788630583008",
+                  "setNumber": 2,
+                  "weightKg": 180,
+                  "reps": 12,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 228
+                },
+                {
+                  "id": "set_a-1.1_3_1788630583008",
+                  "setNumber": 3,
+                  "weightKg": 180,
+                  "reps": 12,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 228
+                },
+                {
+                  "id": "set_a-1.1_4_1788630583008",
+                  "setNumber": 4,
+                  "weightKg": 180,
+                  "reps": 12,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 228
+                }
+              ]
+            },
+            {
+              "exerciseId": "a-1.2",
+              "exerciseTitle": "Пуловер на верхнем блоке с канатной рукоятью",
+              "muscleGroup": "Широчайшие",
+              "machineName": "Пуловер на верхнем блоке (Technogym)",
+              "sets": [
+                {
+                  "id": "set_a-1.2_1_1788630583008",
+                  "setNumber": 1,
+                  "weightKg": 32.5,
+                  "reps": 15,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 32.5
+                },
+                {
+                  "id": "set_a-1.2_2_1788630583008",
+                  "setNumber": 2,
+                  "weightKg": 32.5,
+                  "reps": 18,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 32.5
+                },
+                {
+                  "id": "set_a-1.2_3_1788630583008",
+                  "setNumber": 3,
+                  "weightKg": 32.5,
+                  "reps": 18,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 32.5
+                },
+                {
+                  "id": "set_a-1.2_4_1788630583008",
+                  "setNumber": 4,
+                  "weightKg": 32.5,
+                  "reps": 18,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 32.5
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "supersetId": "superset-a2",
+          "supersetTitle": "СУПЕРСЕТ 2: Верх груди + Низ груди",
+          "restIntervalSec1": 75,
+          "restIntervalSec2": 105,
+          "exercises": [
+            {
+              "exerciseId": "a-2.1",
+              "exerciseTitle": "Жим в Смите на наклонной скамье (25–30°)",
+              "muscleGroup": "Верх груди",
+              "machineName": "Жим в Смите на наклонной скамье (Technogym)",
+              "sets": [
+                {
+                  "id": "set_a-2.1_1_1788630583008",
+                  "setNumber": 1,
+                  "weightKg": 65,
+                  "reps": 10,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 73
+                },
+                {
+                  "id": "set_a-2.1_2_1788630583008",
+                  "setNumber": 2,
+                  "weightKg": 60,
+                  "reps": 10,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 68
+                },
+                {
+                  "id": "set_a-2.1_3_1788630583008",
+                  "setNumber": 3,
+                  "weightKg": 60,
+                  "reps": 10,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 68
+                },
+                {
+                  "id": "set_a-2.1_4_1788630583008",
+                  "setNumber": 4,
+                  "weightKg": 60,
+                  "reps": 10,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 68
+                }
+              ]
+            },
+            {
+              "exerciseId": "a-3.1",
+              "exerciseTitle": "Отжимания на брусьях (или Жим в Хаммере)",
+              "muscleGroup": "Низ груди / Трицепс",
+              "machineName": "Отжимания в гравитроне (Technogym)",
+              "sets": [
+                {
+                  "id": "set_a-3.1_1_1788630583008",
+                  "setNumber": 1,
+                  "weightKg": 7,
+                  "reps": 10,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 83.9
+                },
+                {
+                  "id": "set_a-3.1_2_1788630583008",
+                  "setNumber": 2,
+                  "weightKg": 7,
+                  "reps": 10,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 83.9
+                },
+                {
+                  "id": "set_a-3.1_3_1788630583008",
+                  "setNumber": 3,
+                  "weightKg": 7,
+                  "reps": 10,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 83.9
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "supersetId": "superset-a3",
+          "supersetTitle": "СУПЕРСЕТ 3: Середина спины + Средняя дельта",
+          "restIntervalSec1": 60,
+          "restIntervalSec2": 75,
+          "exercises": [
+            {
+              "exerciseId": "a-2.2",
+              "exerciseTitle": "Тяга гантели к поясу в наклоне с упором",
+              "muscleGroup": "Середина спины",
+              "machineName": "Тяга гантелей к поясу в наклоне",
+              "sets": [
+                {
+                  "id": "set_a-2.2_1_1788630583008",
+                  "setNumber": 1,
+                  "weightKg": 30,
+                  "reps": 12,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 30
+                },
+                {
+                  "id": "set_a-2.2_2_1788630583008",
+                  "setNumber": 2,
+                  "weightKg": 30,
+                  "reps": 12,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 30
+                },
+                {
+                  "id": "set_a-2.2_3_1788630583008",
+                  "setNumber": 3,
+                  "weightKg": 30,
+                  "reps": 12,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 30
+                },
+                {
+                  "id": "set_a-2.2_4_1788630583008",
+                  "setNumber": 4,
+                  "weightKg": 30,
+                  "reps": 12,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 30
+                }
+              ]
+            },
+            {
+              "exerciseId": "a-3.2",
+              "exerciseTitle": "Махи гантелями в стороны (или в кроссовере)",
+              "muscleGroup": "Средняя дельта",
+              "machineName": "Махи гантелями в стороны",
+              "sets": [
+                {
+                  "id": "set_a-3.2_1_1788630583008",
+                  "setNumber": 1,
+                  "weightKg": 12,
+                  "reps": 15,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 12
+                },
+                {
+                  "id": "set_a-3.2_2_1788630583008",
+                  "setNumber": 2,
+                  "weightKg": 12,
+                  "reps": 18,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 12
+                },
+                {
+                  "id": "set_a-3.2_3_1788630583008",
+                  "setNumber": 3,
+                  "weightKg": 12,
+                  "reps": 20,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 12
+                },
+                {
+                  "id": "set_a-3.2_4_1788630583008",
+                  "setNumber": 4,
+                  "weightKg": 12,
+                  "reps": 15,
+                  "completed": true,
+                  "weightConfirmed": true,
+                  "repsConfirmed": true,
+                  "effectiveWeightKg": 12
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "durationMinutes": 4,
+      "completedAt": "2026-09-05T17:53:55.983Z"
+    }
+  ],
   "inbody": [
     {
       "date": "2026-08-15",
