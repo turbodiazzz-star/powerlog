@@ -32,8 +32,9 @@ export class StorageService {
     }
   }
 
-  static saveGyms(gyms: Gym[]): void {
+  static saveGyms(gyms: Gym[], silent = false): void {
     localStorage.setItem(STORAGE_KEYS.GYMS, JSON.stringify(gyms));
+    if (!silent) StorageService.touchCloud();
   }
 
   static addGym(gym: Omit<Gym, 'id'>): Gym {
@@ -64,8 +65,9 @@ export class StorageService {
     return gyms[0]?.id || '';
   }
 
-  static setSelectedGymId(id: string): void {
+  static setSelectedGymId(id: string, silent = false): void {
     localStorage.setItem(STORAGE_KEYS.SELECTED_GYM, id);
+    if (!silent) StorageService.touchCloud();
   }
 
   // Machines / Equipment
@@ -78,8 +80,9 @@ export class StorageService {
     }
   }
 
-  static saveMachines(machines: MachineEquipment[]): void {
+  static saveMachines(machines: MachineEquipment[], silent = false): void {
     localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(machines));
+    if (!silent) StorageService.touchCloud();
   }
 
   static saveMachine(machine: Omit<MachineEquipment, 'id'> & { id?: string }): MachineEquipment {
@@ -119,8 +122,9 @@ export class StorageService {
     }
   }
 
-  static saveSessions(sessions: WorkoutSession[]): void {
+  static saveSessions(sessions: WorkoutSession[], silent = false): void {
     localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+    if (!silent) StorageService.touchCloud();
   }
 
   static saveSession(session: WorkoutSession): void {
@@ -277,6 +281,7 @@ export class StorageService {
   static saveActiveDraft(draft: ActiveWorkoutDraft): void {
     try {
       localStorage.setItem(STORAGE_KEYS.ACTIVE_DRAFT, JSON.stringify(draft));
+      StorageService.touchCloud();
     } catch (e) {
       console.error('Failed to save draft', e);
     }
@@ -284,9 +289,9 @@ export class StorageService {
 
   static clearActiveDraft(): void {
     localStorage.removeItem(STORAGE_KEYS.ACTIVE_DRAFT);
+    StorageService.touchCloud();
   }
 
-  // InBody Records
   static getInBodyRecords(): InBodyRecord[] {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.INBODY);
@@ -294,6 +299,10 @@ export class StorageService {
     } catch {
       return [];
     }
+  }
+
+  static replaceInBodyRecords(records: InBodyRecord[]): void {
+    localStorage.setItem(STORAGE_KEYS.INBODY, JSON.stringify(records));
   }
 
   static saveInBodyRecord(record: Omit<InBodyRecord, 'id'> & { id?: string }): InBodyRecord {
@@ -313,15 +322,16 @@ export class StorageService {
     }
     records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     localStorage.setItem(STORAGE_KEYS.INBODY, JSON.stringify(records));
+    StorageService.touchCloud();
     return saved;
   }
 
   static deleteInBodyRecord(id: string): void {
     const records = this.getInBodyRecords().filter(r => r.id !== id);
     localStorage.setItem(STORAGE_KEYS.INBODY, JSON.stringify(records));
+    StorageService.touchCloud();
   }
 
-  // Progress Photos
   static getProgressPhotos(): ProgressPhotoRecord[] {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.PHOTOS);
@@ -329,6 +339,10 @@ export class StorageService {
     } catch {
       return [];
     }
+  }
+
+  static replaceProgressPhotos(photos: ProgressPhotoRecord[]): void {
+    localStorage.setItem(STORAGE_KEYS.PHOTOS, JSON.stringify(photos));
   }
 
   static saveProgressPhoto(photo: Omit<ProgressPhotoRecord, 'id'> & { id?: string }): ProgressPhotoRecord {
@@ -348,12 +362,14 @@ export class StorageService {
     }
     photos.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     localStorage.setItem(STORAGE_KEYS.PHOTOS, JSON.stringify(photos));
+    StorageService.touchCloud();
     return saved;
   }
 
   static deleteProgressPhoto(id: string): void {
     const photos = this.getProgressPhotos().filter(p => p.id !== id);
     localStorage.setItem(STORAGE_KEYS.PHOTOS, JSON.stringify(photos));
+    StorageService.touchCloud();
   }
 
   static getBodyProfile(): BodyProfile {
@@ -372,8 +388,13 @@ export class StorageService {
     return { gender: 'male' };
   }
 
-  static saveBodyProfile(profile: BodyProfile): void {
+  static saveBodyProfile(profile: BodyProfile, silent = false): void {
     localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
+    if (!silent) StorageService.touchCloud();
+  }
+
+  static touchCloud() {
+    void import('./cloudSync').then(({ CloudSync }) => CloudSync.schedulePush());
   }
 
   static setBodyGender(gender: BodyGender): void {
@@ -401,8 +422,9 @@ export class StorageService {
       if (Array.isArray(data.gyms)) this.saveGyms(data.gyms);
       if (Array.isArray(data.machines)) this.saveMachines(data.machines);
       if (Array.isArray(data.sessions)) this.saveSessions(data.sessions);
-      if (Array.isArray(data.inbody)) localStorage.setItem(STORAGE_KEYS.INBODY, JSON.stringify(data.inbody));
-      if (Array.isArray(data.photos)) localStorage.setItem(STORAGE_KEYS.PHOTOS, JSON.stringify(data.photos));
+      if (Array.isArray(data.inbody)) this.replaceInBodyRecords(data.inbody);
+      if (Array.isArray(data.photos)) this.replaceProgressPhotos(data.photos);
+      StorageService.touchCloud();
       return true;
     } catch (e) {
       console.error('Import failed', e);

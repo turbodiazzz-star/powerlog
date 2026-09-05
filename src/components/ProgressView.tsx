@@ -3,6 +3,7 @@ import { WorkoutHistoryAnalytics } from './WorkoutHistoryAnalytics';
 import { InBodyTracker } from './InBodyTracker';
 import { ProgressPhotoTracker } from './ProgressPhotoTracker';
 import { AiTrainerReport } from './AiTrainerReport';
+import { CloudSyncBar } from './CloudSyncBar';
 import { BarChart3, Activity, Camera, Sparkles } from 'lucide-react';
 
 export const ProgressView: React.FC = () => {
@@ -10,6 +11,7 @@ export const ProgressView: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      <CloudSyncBar />
       {/* Sub-tab Navigation Header with safe area padding */}
       <div className="bg-zinc-900/95 border border-zinc-800 rounded-xl p-1 shadow-md flex items-center justify-between gap-1 text-[11px] backdrop-blur-md">
         <button
