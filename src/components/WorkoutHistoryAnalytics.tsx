@@ -36,6 +36,7 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
       .filter(s => s.completed || StorageService.hasLoggedSets(s))
       .sort((a, b) => new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime());
     setSessions(loaded);
+    setExpandedId(prev => prev || loaded[0]?.id || null);
   };
 
   const handleDeleteSession = (sessionId: string) => {
@@ -107,6 +108,9 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
       {activeTab === 'sessions' ? (
         /* Sessions History List */
         <div className="space-y-4">
+          <p className="text-[11px] text-zinc-500 px-0.5">
+            Все тренировки: {sessions.length}. Нажмите карточку, чтобы увидеть подходы и тренажёры.
+          </p>
           {sessions.length === 0 ? (
             <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-2xl p-8 text-center text-zinc-500 space-y-2">
               <History className="w-10 h-10 text-zinc-700 mx-auto" />
@@ -161,9 +165,9 @@ export const WorkoutHistoryAnalytics: React.FC = () => {
                             <Clock className="w-3 h-3 text-zinc-500" /> {session.durationMinutes} мин
                           </span>
                         )}
-                        {!isOpen && (
-                          <span className="text-zinc-500">{exerciseCount} упр.</span>
-                        )}
+                        <span className="text-zinc-500">
+                          {exerciseCount} упр. · {isOpen ? 'свернуть' : 'открыть подходы'}
+                        </span>
                       </div>
                     </button>
 

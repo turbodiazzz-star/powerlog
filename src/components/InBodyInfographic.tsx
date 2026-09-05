@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import type { InBodyRecord } from '../types/workout';
 import {
   buildInBodyBars,
@@ -214,12 +214,6 @@ export const InBodyInfographic: React.FC<{
   const bars = buildInBodyBars(latest, previous, profile);
   const heightCm = profile.heightCm || deriveHeightCm(latest);
   const baseline = recordsAsc[0];
-  const historyRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = historyRef.current;
-    if (el) el.scrollLeft = el.scrollWidth;
-  }, [recordsAsc.length]);
 
   return (
     <div className="space-y-3">
@@ -271,18 +265,14 @@ export const InBodyInfographic: React.FC<{
         ))}
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <div className="flex items-center justify-between px-0.5">
           <h3 className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
-            История состава тела
+            История состава тела · {recordsAsc.length} зам.
           </h3>
-          <span className="text-[9px] text-zinc-600 font-mono">← раньше · актуальнее →</span>
+          <span className="text-[9px] text-zinc-600 font-mono">сверху старые · снизу актуальный</span>
         </div>
-        <div
-          ref={historyRef}
-          className="flex gap-2.5 overflow-x-auto pb-2 snap-x snap-mandatory touch-pan-x"
-          style={{ WebkitOverflowScrolling: 'touch' }}
-        >
+        <div className="space-y-2">
           {recordsAsc.map(rec => {
             const prev = recordsAsc[recordsAsc.findIndex(r => r.id === rec.id) - 1];
             const recBars = buildInBodyBars(rec, prev, profile);
@@ -290,14 +280,14 @@ export const InBodyInfographic: React.FC<{
             return (
               <div
                 key={rec.id}
-                className={`snap-start shrink-0 w-[78%] max-w-[280px] rounded-2xl p-3 space-y-2 border ${
-                  isLatest ? 'bg-zinc-900 border-emerald-800' : 'bg-zinc-900 border-zinc-800'
+                className={`rounded-2xl p-3 space-y-2 border ${
+                  isLatest ? 'bg-zinc-900 border-emerald-700' : 'bg-zinc-900 border-zinc-800'
                 }`}
               >
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-black font-mono text-white">
                     {rec.date}
-                    {isLatest ? ' · сейчас' : ''}
+                    {isLatest ? ' · актуальный' : ''}
                   </span>
                   <div className="flex items-center gap-1">
                     {rec.inBodyScore !== undefined && (
