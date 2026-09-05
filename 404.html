@@ -11,8 +11,8 @@
     <link rel="apple-touch-icon" href="./favicon.svg" />
     <link rel="manifest" href="./manifest.json" />
     <title>Тренировки — Мобильный Дневник A/B</title>
-    <script type="module" crossorigin src="/powerlog/assets/index-BLvWZnxZ.js"></script>
-    <link rel="stylesheet" crossorigin href="/powerlog/assets/index-D3QhgdJ9.css">
+    <script type="module" crossorigin src="/powerlog/assets/index-BQS9xZtY.js"></script>
+    <link rel="stylesheet" crossorigin href="/powerlog/assets/index-BZeKPljl.css">
   </head>
   <body class="bg-slate-950 text-slate-100 antialiased min-h-screen">
     <div id="root"></div>
@@ -22,7 +22,7 @@
           navigator.serviceWorker.getRegistrations().then(regs => {
             return Promise.all(regs.map(reg => reg.unregister()));
           }).then(() => {
-            return navigator.serviceWorker.register('./sw.js?v=31');
+            return navigator.serviceWorker.register('./sw.js?v=32');
           }).catch(() => undefined);
         });
       }
