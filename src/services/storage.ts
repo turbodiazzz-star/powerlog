@@ -1,5 +1,6 @@
 import type { Gym, MachineEquipment, WorkoutSession, InBodyRecord, ProgressPhotoRecord, ActiveWorkoutDraft } from '../types/workout';
 import { INITIAL_GYMS } from '../data/workoutProgram';
+import type { BodyGender, BodyProfile } from '../utils/inBodyNorms';
 
 const STORAGE_KEYS = {
   GYMS: 'fit_tracker_gyms_v1',
@@ -9,6 +10,7 @@ const STORAGE_KEYS = {
   INBODY: 'fit_tracker_inbody_v1',
   PHOTOS: 'fit_tracker_photos_v1',
   ACTIVE_DRAFT: 'fit_tracker_active_draft_v2',
+  PROFILE: 'fit_tracker_body_profile_v1',
 };
 
 export class StorageService {
@@ -338,6 +340,31 @@ export class StorageService {
   static deleteProgressPhoto(id: string): void {
     const photos = this.getProgressPhotos().filter(p => p.id !== id);
     localStorage.setItem(STORAGE_KEYS.PHOTOS, JSON.stringify(photos));
+  }
+
+  static getBodyProfile(): BodyProfile {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.PROFILE);
+      if (data) {
+        const parsed = JSON.parse(data) as BodyProfile;
+        return {
+          gender: parsed.gender === 'female' ? 'female' : 'male',
+          heightCm: parsed.heightCm,
+        };
+      }
+    } catch {
+      // ignore
+    }
+    return { gender: 'male' };
+  }
+
+  static saveBodyProfile(profile: BodyProfile): void {
+    localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(profile));
+  }
+
+  static setBodyGender(gender: BodyGender): void {
+    const current = this.getBodyProfile();
+    this.saveBodyProfile({ ...current, gender });
   }
 
   // Backup / Export

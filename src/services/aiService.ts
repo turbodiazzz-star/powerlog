@@ -478,4 +478,44 @@ export class AiService {
     this.saveReport(newReport);
     return newReport;
   }
+
+  static AUTO_REPORT_EVENT = 'fit-auto-report';
+
+  static emitAutoReport(detail: {
+    status: 'start' | 'done' | 'error';
+    trigger: 'inbody' | 'photo';
+    report?: AiReport;
+    error?: string;
+  }) {
+    window.dispatchEvent(new CustomEvent(this.AUTO_REPORT_EVENT, { detail }));
+  }
+
+  static async generateAutoReport(params: {
+    trigger: 'inbody' | 'photo';
+    inBodyRecords: InBodyRecord[];
+    photos: ProgressPhotoRecord[];
+    recentSessions: WorkoutSession[];
+  }): Promise<AiReport> {
+    const { trigger, inBodyRecords, photos, recentSessions } = params;
+    this.emitAutoReport({ status: 'start', trigger });
+
+    const customQuestion =
+      trigger === 'inbody'
+        ? 'Только что добавлен новый замер InBody. Сравни с предыдущим ТОЛЬКО по 4 параметрам: вес кг, мышцы кг, жир %, жир кг. Укажи норму / недостаток / превышение как в бланке InBody. Дай короткий вердикт и что делать дальше.'
+        : 'Только что добавлено прогресс-фото. Сопоставь визуал с последним InBody и динамикой веса, мышц и жира. Дай короткий вердикт по форме.';
+
+    try {
+      const report = await this.analyzeProgressWithGemini({
+        inBodyRecords,
+        photos,
+        recentSessions,
+        customQuestion,
+      });
+      this.emitAutoReport({ status: 'done', trigger, report });
+      return report;
+    } catch (e: any) {
+      this.emitAutoReport({ status: 'error', trigger, error: e?.message || 'Ошибка ИИ-отчёта' });
+      throw e;
+    }
+  }
 }

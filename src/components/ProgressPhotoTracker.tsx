@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { ProgressPhotoRecord, PhotoPose } from '../types/workout';
 import { StorageService } from '../services/storage';
+import { AiService, type AiReport } from '../services/aiService';
 import {
   Camera,
   Plus,
@@ -9,6 +10,9 @@ import {
   Bell,
   X,
   Info,
+  Sparkles,
+  Zap,
+  AlertCircle,
 } from 'lucide-react';
 
 const POSE_LABELS: Record<PhotoPose, { title: string; hint: string }> = {
@@ -34,6 +38,9 @@ export const ProgressPhotoTracker: React.FC = () => {
   const [photos, setPhotos] = useState<ProgressPhotoRecord[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPose, setSelectedPose] = useState<PhotoPose>('front');
+  const [autoReport, setAutoReport] = useState<AiReport | null>(null);
+  const [autoReportStatus, setAutoReportStatus] = useState<'idle' | 'start' | 'done' | 'error'>('idle');
+  const [autoReportError, setAutoReportError] = useState<string | null>(null);
 
   // Form State
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -42,6 +49,21 @@ export const ProgressPhotoTracker: React.FC = () => {
 
   useEffect(() => {
     loadPhotos();
+  }, []);
+
+  useEffect(() => {
+    const onAuto = (e: Event) => {
+      const detail = (e as CustomEvent).detail as {
+        status: 'start' | 'done' | 'error';
+        report?: AiReport;
+        error?: string;
+      };
+      setAutoReportStatus(detail.status);
+      if (detail.report) setAutoReport(detail.report);
+      if (detail.error) setAutoReportError(detail.error);
+    };
+    window.addEventListener(AiService.AUTO_REPORT_EVENT, onAuto);
+    return () => window.removeEventListener(AiService.AUTO_REPORT_EVENT, onAuto);
   }, []);
 
   const loadPhotos = () => {
@@ -107,6 +129,13 @@ export const ProgressPhotoTracker: React.FC = () => {
     setIsModalOpen(false);
     resetForm();
     loadPhotos();
+
+    void AiService.generateAutoReport({
+      trigger: 'photo',
+      inBodyRecords: StorageService.getInBodyRecords(),
+      photos: StorageService.getProgressPhotos(),
+      recentSessions: StorageService.getSessions().filter(s => s.completed),
+    }).catch(() => undefined);
   };
 
   const resetForm = () => {
@@ -154,6 +183,32 @@ export const ProgressPhotoTracker: React.FC = () => {
           <Plus className="w-4 h-4" /> Добавить Фото
         </button>
       </div>
+
+      {autoReportStatus === 'start' && (
+        <div className="bg-emerald-950/50 border border-emerald-800 rounded-xl p-3 flex items-center gap-2 text-xs text-emerald-200">
+          <Zap className="w-4 h-4 animate-bounce text-emerald-400 shrink-0" />
+          <span className="font-bold">Gemini анализирует новое фото и состав тела...</span>
+        </div>
+      )}
+      {autoReportStatus === 'error' && autoReportError && (
+        <div className="bg-rose-950/50 border border-rose-800 rounded-xl p-3 flex items-start gap-2 text-xs text-rose-200">
+          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+          <span>{autoReportError}</span>
+        </div>
+      )}
+      {autoReport && (autoReportStatus === 'done' || autoReportStatus === 'idle') && (
+        <div className="bg-zinc-900 border border-emerald-900/60 rounded-2xl p-3.5 space-y-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-emerald-400" />
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Автоотчёт ИИ</span>
+            <span className="text-[10px] font-mono text-zinc-500">{autoReport.date}</span>
+          </div>
+          <p className="text-xs font-black text-white">{autoReport.verdictTitle}</p>
+          <div className="text-[11px] text-zinc-300 leading-relaxed whitespace-pre-line max-h-40 overflow-y-auto bg-zinc-950 border border-zinc-800 rounded-xl p-2.5">
+            {autoReport.fullMarkdown}
+          </div>
+        </div>
+      )}
 
       {/* Photo Reminder Card if >14 days */}
       {showReminder && (

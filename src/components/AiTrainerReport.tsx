@@ -42,6 +42,12 @@ export const AiTrainerReport: React.FC = () => {
     loadReports();
   }, []);
 
+  useEffect(() => {
+    const onAuto = () => loadReports();
+    window.addEventListener(AiService.AUTO_REPORT_EVENT, onAuto);
+    return () => window.removeEventListener(AiService.AUTO_REPORT_EVENT, onAuto);
+  }, []);
+
   const loadReports = () => {
     const saved = AiService.getSavedReports();
     setReports(saved);

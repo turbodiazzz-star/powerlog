@@ -1,51 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import type { InBodyRecord } from '../types/workout';
 import { StorageService } from '../services/storage';
-import { AiService } from '../services/aiService';
+import { AiService, type AiReport } from '../services/aiService';
+import { InBodyInfographic } from './InBodyInfographic';
+import type { BodyGender, BodyProfile } from '../utils/inBodyNorms';
 import {
   FileText,
   Plus,
   Upload,
-  Calendar,
-  Trash2,
-  Image as ImageIcon,
-  Activity,
   X,
   Zap,
   CheckCircle,
   AlertCircle,
-  TrendingUp,
   Sparkles,
 } from 'lucide-react';
-
-// Chart Metric Type
-type MetricKey =
-  | 'weightKg'
-  | 'muscleMassKg'
-  | 'fatMassKg'
-  | 'bodyFatPercent'
-  | 'fatFreeMassKg'
-  | 'visceralFatLevel'
-  | 'bmi'
-  | 'inBodyScore';
-
-interface MetricConfig {
-  key: MetricKey;
-  label: string;
-  unit: string;
-  color: string;
-}
-
-const METRICS_CONFIG: MetricConfig[] = [
-  { key: 'weightKg', label: 'Общий вес', unit: 'кг', color: '#38bdf8' }, // sky blue
-  { key: 'muscleMassKg', label: 'Мышцы SMM', unit: 'кг', color: '#34d399' }, // emerald
-  { key: 'bodyFatPercent', label: 'Жир PBF', unit: '%', color: '#fbbf24' }, // amber
-  { key: 'fatMassKg', label: 'Масса жира BFM', unit: 'кг', color: '#f87171' }, // rose
-  { key: 'fatFreeMassKg', label: 'Безжировая масса FFM', unit: 'кг', color: '#a78bfa' }, // purple
-  { key: 'visceralFatLevel', label: 'Висцеральный жир', unit: 'ур.', color: '#f43f5e' }, // pink
-  { key: 'bmi', label: 'ИМТ (BMI)', unit: '', color: '#9ca3af' }, // gray
-  { key: 'inBodyScore', label: 'Оценка InBody', unit: 'балл', color: '#60a5fa' }, // blue
-];
 
 const compressImageForOcr = (dataUrl: string, maxDim = 1000, quality = 0.7): Promise<string> => {
   return new Promise((resolve) => {
@@ -92,7 +60,10 @@ export const InBodyTracker: React.FC = () => {
   const [records, setRecords] = useState<InBodyRecord[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRecordImage, setSelectedRecordImage] = useState<string | null>(null);
-  const [activeChartMetric, setActiveChartMetric] = useState<MetricKey>('weightKg');
+  const [profile, setProfile] = useState<BodyProfile>(() => StorageService.getBodyProfile());
+  const [autoReport, setAutoReport] = useState<AiReport | null>(null);
+  const [autoReportStatus, setAutoReportStatus] = useState<'idle' | 'start' | 'done' | 'error'>('idle');
+  const [autoReportError, setAutoReportError] = useState<string | null>(null);
 
   // Form State
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -115,6 +86,21 @@ export const InBodyTracker: React.FC = () => {
 
   useEffect(() => {
     loadRecords();
+  }, []);
+
+  useEffect(() => {
+    const onAuto = (e: Event) => {
+      const detail = (e as CustomEvent).detail as {
+        status: 'start' | 'done' | 'error';
+        report?: AiReport;
+        error?: string;
+      };
+      setAutoReportStatus(detail.status);
+      if (detail.report) setAutoReport(detail.report);
+      if (detail.error) setAutoReportError(detail.error);
+    };
+    window.addEventListener(AiService.AUTO_REPORT_EVENT, onAuto);
+    return () => window.removeEventListener(AiService.AUTO_REPORT_EVENT, onAuto);
   }, []);
 
   // Auto-calculate derived fat mass if missing
@@ -256,7 +242,6 @@ export const InBodyTracker: React.FC = () => {
     loadRecords();
     setIsModalOpen(false);
 
-    // Reset Form
     setDate(new Date().toISOString().split('T')[0]);
     setWeightKg('');
     setMuscleMassKg('');
@@ -269,6 +254,13 @@ export const InBodyTracker: React.FC = () => {
     setImageUrl('');
     setNotes('');
     setOcrResultMsg(null);
+
+    void AiService.generateAutoReport({
+      trigger: 'inbody',
+      inBodyRecords: StorageService.getInBodyRecords(),
+      photos: StorageService.getProgressPhotos(),
+      recentSessions: StorageService.getSessions().filter(s => s.completed),
+    }).catch(() => undefined);
   };
 
   const handleDelete = (id: string) => {
@@ -278,294 +270,88 @@ export const InBodyTracker: React.FC = () => {
     }
   };
 
-  // Calculations for current active chart metric
-  const currentMetricCfg = METRICS_CONFIG.find(m => m.key === activeChartMetric) || METRICS_CONFIG[0];
-  const chartData = records
-    .filter(r => r[activeChartMetric] !== undefined)
-    .map(r => ({
-      dateStr: r.date,
-      value: r[activeChartMetric] as number,
-    }));
-
-  const metricValues = chartData.map(d => d.value);
-  const minVal = metricValues.length ? Math.min(...metricValues) : 0;
-  const maxVal = metricValues.length ? Math.max(...metricValues) : 100;
-  const valRange = maxVal === minVal ? 1 : maxVal - minVal;
+  const setGender = (gender: BodyGender) => {
+    StorageService.setBodyGender(gender);
+    setProfile(StorageService.getBodyProfile());
+  };
 
   return (
     <div className="space-y-4">
-      {/* Header Controls */}
-      <div className="flex justify-between items-center bg-zinc-900 border border-zinc-800 p-3 rounded-2xl shadow-md">
-        <div>
-          <h2 className="text-sm font-black text-white flex items-center gap-2">
-            <Activity className="w-4 h-4 text-emerald-400" />
-            Анализатор состава тела (InBody)
-          </h2>
-          <p className="text-[11px] text-zinc-400">Динамика веса, мышц, жира и висцеральных показателей</p>
+      <div className="flex justify-between items-center bg-zinc-900 border border-zinc-800 p-3 rounded-2xl shadow-md gap-2">
+        <div className="min-w-0">
+          <h2 className="text-sm font-black text-white truncate">Состав тела · InBody</h2>
+          <p className="text-[11px] text-zinc-400">Норма / недостаток / превышение · 4 параметра</p>
         </div>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="px-3 py-2 bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-black rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Добавить</span>
-        </button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex bg-zinc-950 border border-zinc-800 rounded-lg p-0.5">
+            <button
+              type="button"
+              onClick={() => setGender('male')}
+              className={`px-2 py-1 rounded-md text-[10px] font-black ${
+                profile.gender === 'male' ? 'bg-white text-zinc-950' : 'text-zinc-500'
+              }`}
+            >
+              М
+            </button>
+            <button
+              type="button"
+              onClick={() => setGender('female')}
+              className={`px-2 py-1 rounded-md text-[10px] font-black ${
+                profile.gender === 'female' ? 'bg-white text-zinc-950' : 'text-zinc-500'
+              }`}
+            >
+              Ж
+            </button>
+          </div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-3 py-2 bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-black rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Добавить</span>
+          </button>
+        </div>
       </div>
 
-      {/* Dynamic Progression Charts */}
-      {records.length > 0 && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3.5 space-y-3 shadow-lg">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-              График динамики
-            </span>
-            <span className="text-xs font-mono font-bold text-emerald-400">
-              {currentMetricCfg.label}: {chartData.length > 0 ? chartData[chartData.length - 1].value : 0} {currentMetricCfg.unit}
-            </span>
+      {autoReportStatus === 'start' && (
+        <div className="bg-emerald-950/50 border border-emerald-800 rounded-xl p-3 flex items-center gap-2 text-xs text-emerald-200">
+          <Zap className="w-4 h-4 animate-bounce text-emerald-400 shrink-0" />
+          <span className="font-bold">Gemini готовит отчёт по замеру и фото...</span>
+        </div>
+      )}
+      {autoReportStatus === 'error' && autoReportError && (
+        <div className="bg-rose-950/50 border border-rose-800 rounded-xl p-3 flex items-start gap-2 text-xs text-rose-200">
+          <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+          <span>{autoReportError}</span>
+        </div>
+      )}
+      {autoReport && (autoReportStatus === 'done' || autoReportStatus === 'idle') && (
+        <div className="bg-zinc-900 border border-emerald-900/60 rounded-2xl p-3.5 space-y-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-emerald-400" />
+            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">Автоотчёт ИИ</span>
+            <span className="text-[10px] font-mono text-zinc-500">{autoReport.date}</span>
           </div>
-
-          {/* Metric Selector Pills */}
-          <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
-            {METRICS_CONFIG.map(m => {
-              const isActive = m.key === activeChartMetric;
-              const hasData = records.some(r => r[m.key] !== undefined);
-
-              return (
-                <button
-                  key={m.key}
-                  disabled={!hasData}
-                  onClick={() => setActiveChartMetric(m.key)}
-                  className={`py-1 px-2.5 rounded-lg text-xs font-bold shrink-0 transition-all ${
-                    isActive
-                      ? 'bg-white text-zinc-950 shadow-sm font-black'
-                      : hasData
-                      ? 'bg-zinc-950 text-zinc-300 border border-zinc-800 hover:border-zinc-700'
-                      : 'bg-zinc-950/40 text-zinc-600 border border-zinc-900 cursor-not-allowed'
-                  }`}
-                >
-                  {m.label}
-                </button>
-              );
-            })}
+          <p className="text-xs font-black text-white">{autoReport.verdictTitle}</p>
+          <div className="text-[11px] text-zinc-300 leading-relaxed whitespace-pre-line max-h-48 overflow-y-auto bg-zinc-950 border border-zinc-800 rounded-xl p-2.5">
+            {autoReport.fullMarkdown}
           </div>
-
-          {/* SVG Visual Chart */}
-          {chartData.length === 0 ? (
-            <div className="h-36 bg-zinc-950/60 rounded-xl border border-zinc-800/80 flex items-center justify-center text-xs text-zinc-500">
-              Нет данных для {currentMetricCfg.label}
-            </div>
-          ) : chartData.length === 1 ? (
-            <div className="h-36 bg-zinc-950/60 rounded-xl border border-zinc-800/80 flex flex-col items-center justify-center gap-1">
-              <span className="text-2xl font-black text-white font-mono">
-                {chartData[0].value} {currentMetricCfg.unit}
-              </span>
-              <span className="text-xs text-zinc-500 font-mono">{chartData[0].dateStr} (1-я запись)</span>
-            </div>
-          ) : (
-            <div className="bg-zinc-950 p-3 rounded-xl border border-zinc-800/80 space-y-2">
-              <div className="h-40 w-full relative">
-                <svg className="w-full h-full overflow-visible" viewBox="0 0 500 120" preserveAspectRatio="none">
-                  {/* Grid Lines */}
-                  <line x1="0" y1="10" x2="500" y2="10" stroke="#27272a" strokeDasharray="3 3" />
-                  <line x1="0" y1="60" x2="500" y2="60" stroke="#27272a" strokeDasharray="3 3" />
-                  <line x1="0" y1="110" x2="500" y2="110" stroke="#27272a" strokeDasharray="3 3" />
-
-                  {/* Gradient Area under line */}
-                  <defs>
-                    <linearGradient id={`grad_${activeChartMetric}`} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={currentMetricCfg.color} stopOpacity="0.35" />
-                      <stop offset="100%" stopColor={currentMetricCfg.color} stopOpacity="0.0" />
-                    </linearGradient>
-                  </defs>
-
-                  {/* Line points calculation */}
-                  {(() => {
-                    const coords = chartData.map((d, idx) => {
-                      const x = (idx / (chartData.length - 1)) * 480 + 10;
-                      const normY = (d.value - minVal) / valRange;
-                      const y = 100 - normY * 85 + 10; // 10..95 range
-                      return { x, y, val: d.value, date: d.dateStr };
-                    });
-
-                    const pathD = coords.reduce(
-                      (acc, pt, i) => (i === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`),
-                      ''
-                    );
-
-                    const areaD = `${pathD} L ${coords[coords.length - 1].x} 115 L ${coords[0].x} 115 Z`;
-
-                    return (
-                      <>
-                        <path d={areaD} fill={`url(#grad_${activeChartMetric})`} />
-                        <path
-                          d={pathD}
-                          fill="none"
-                          stroke={currentMetricCfg.color}
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        {coords.map((pt, idx) => (
-                          <g key={idx}>
-                            <circle
-                              cx={pt.x}
-                              cy={pt.y}
-                              r="4.5"
-                              fill="#09090b"
-                              stroke={currentMetricCfg.color}
-                              strokeWidth="2.5"
-                            />
-                            <text
-                              x={pt.x}
-                              y={pt.y - 8}
-                              textAnchor="middle"
-                              fill="#f4f4f5"
-                              fontSize="10"
-                              fontWeight="bold"
-                              fontFamily="monospace"
-                            >
-                              {pt.val}
-                            </text>
-                          </g>
-                        ))}
-                      </>
-                    );
-                  })()}
-                </svg>
-              </div>
-
-              {/* X-Axis Dates */}
-              <div className="flex justify-between text-[10px] font-mono text-zinc-500 pt-1 px-1 border-t border-zinc-900">
-                <span>{chartData[0].dateStr}</span>
-                {chartData.length > 2 && (
-                  <span>{chartData[Math.floor(chartData.length / 2)].dateStr}</span>
-                )}
-                <span>{chartData[chartData.length - 1].dateStr}</span>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
-      {/* Main Records List */}
       {records.length === 0 ? (
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center text-zinc-500 text-xs space-y-2">
           <FileText className="w-8 h-8 text-zinc-700 mx-auto" />
           <p>Записи InBody пока отсутствуют.</p>
-          <p className="text-[11px] text-zinc-600">Нажмите «Добавить», чтобы занести результаты замера.</p>
+          <p className="text-[11px] text-zinc-600">После замера появится бланк как в отчёте InBody и динамика по 4 параметрам.</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 px-1">
-            Записи за все время ({records.length})
-          </h3>
-          <div className="space-y-3">
-            {[...records].reverse().map(rec => {
-              return (
-                <div
-                  key={rec.id}
-                  className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3.5 space-y-3 shadow-md"
-                >
-                  {/* Record Header */}
-                  <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-xs font-bold font-mono text-white">{rec.date}</span>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      {rec.imageUrl && (
-                        <button
-                          onClick={() => setSelectedRecordImage(rec.imageUrl!)}
-                          className="px-2 py-1 text-zinc-300 hover:text-emerald-400 bg-zinc-950 border border-zinc-800 rounded-lg transition-colors text-[11px] font-bold flex items-center gap-1"
-                        >
-                          <ImageIcon className="w-3.5 h-3.5 text-emerald-400" /> Скан
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleDelete(rec.id)}
-                        className="p-1 text-zinc-500 hover:text-rose-400 rounded-lg transition-colors"
-                        title="Удалить"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* All 8 Tracked Indicators Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
-                    {/* Weight */}
-                    <div className="bg-zinc-950 p-2 rounded-xl border border-zinc-800/80">
-                      <div className="text-[9px] uppercase font-bold text-zinc-500 truncate">Вес</div>
-                      <div className="text-sm font-black text-sky-400 font-mono mt-0.5">
-                        {rec.weightKg} <span className="text-[10px] text-zinc-400 font-normal">кг</span>
-                      </div>
-                    </div>
-
-                    {/* Muscle Mass SMM */}
-                    <div className="bg-zinc-950 p-2 rounded-xl border border-zinc-800/80">
-                      <div className="text-[9px] uppercase font-bold text-zinc-500 truncate">Мышцы SMM</div>
-                      <div className="text-sm font-black text-emerald-400 font-mono mt-0.5">
-                        {rec.muscleMassKg ? `${rec.muscleMassKg} кг` : '—'}
-                      </div>
-                    </div>
-
-                    {/* PBF Fat % */}
-                    <div className="bg-zinc-950 p-2 rounded-xl border border-zinc-800/80">
-                      <div className="text-[9px] uppercase font-bold text-zinc-500 truncate">Жир PBF</div>
-                      <div className="text-sm font-black text-amber-400 font-mono mt-0.5">
-                        {rec.bodyFatPercent ? `${rec.bodyFatPercent}%` : '—'}
-                      </div>
-                    </div>
-
-                    {/* BFM Fat Mass */}
-                    <div className="bg-zinc-950 p-2 rounded-xl border border-zinc-800/80">
-                      <div className="text-[9px] uppercase font-bold text-zinc-500 truncate">Масса жира BFM</div>
-                      <div className="text-sm font-black text-rose-400 font-mono mt-0.5">
-                        {rec.fatMassKg ? `${rec.fatMassKg} кг` : '—'}
-                      </div>
-                    </div>
-
-                    {/* FFM Fat-Free Mass */}
-                    <div className="bg-zinc-950 p-2 rounded-xl border border-zinc-800/80">
-                      <div className="text-[9px] uppercase font-bold text-zinc-500 truncate">Безжировая FFM</div>
-                      <div className="text-sm font-black text-purple-400 font-mono mt-0.5">
-                        {rec.fatFreeMassKg ? `${rec.fatFreeMassKg} кг` : '—'}
-                      </div>
-                    </div>
-
-                    {/* Visceral Fat */}
-                    <div className="bg-zinc-950 p-2 rounded-xl border border-zinc-800/80">
-                      <div className="text-[9px] uppercase font-bold text-zinc-500 truncate">Висцеральный</div>
-                      <div className="text-sm font-black text-pink-400 font-mono mt-0.5">
-                        {rec.visceralFatLevel ? `${rec.visceralFatLevel} ур.` : '—'}
-                      </div>
-                    </div>
-
-                    {/* BMI */}
-                    <div className="bg-zinc-950 p-2 rounded-xl border border-zinc-800/80">
-                      <div className="text-[9px] uppercase font-bold text-zinc-500 truncate">ИМТ (BMI)</div>
-                      <div className="text-sm font-black text-zinc-300 font-mono mt-0.5">
-                        {rec.bmi || '—'}
-                      </div>
-                    </div>
-
-                    {/* InBody Score */}
-                    <div className="bg-zinc-950 p-2 rounded-xl border border-zinc-800/80">
-                      <div className="text-[9px] uppercase font-bold text-zinc-500 truncate">Оценка InBody</div>
-                      <div className="text-sm font-black text-blue-400 font-mono mt-0.5">
-                        {rec.inBodyScore ? `${rec.inBodyScore} балл` : '—'}
-                      </div>
-                    </div>
-                  </div>
-
-                  {rec.notes && <p className="text-xs text-zinc-400 italic pt-1">{rec.notes}</p>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <InBodyInfographic
+          recordsAsc={records}
+          profile={profile}
+          onDelete={handleDelete}
+          onOpenScan={url => setSelectedRecordImage(url)}
+        />
       )}
 
       {/* Robust & Clean Mobile-first Modal: Add InBody Record */}
