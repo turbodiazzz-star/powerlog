@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trainings-v29';
+const CACHE_NAME = 'trainings-v30';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
