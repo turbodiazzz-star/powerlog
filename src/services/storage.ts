@@ -393,7 +393,9 @@ export class StorageService {
     if (!silent) StorageService.touchCloud();
   }
 
-  static touchCloud() {}
+  static touchCloud() {
+    void import('./cloudSync').then(({ CloudSync }) => CloudSync.schedulePush());
+  }
 
   static setBodyGender(gender: BodyGender): void {
     const current = this.getBodyProfile();
