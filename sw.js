@@ -1,5 +1,3 @@
-const CACHE_NAME = 'trainings-v32';
-
 self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
@@ -16,12 +14,10 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Always fetch fresh from network for page/js/css to ensure instant updates
+  // Always fetch fresh from network. Never pass an undefined cache match to
+  // respondWith: browsers treat that as a service-worker failure.
   event.respondWith(
     fetch(event.request)
-      .then(response => {
-        return response;
-      })
-      .catch(() => caches.match(event.request))
+      .catch(() => new Response('', { status: 503, statusText: 'Offline' }))
   );
 });
