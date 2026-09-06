@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { InBodyRecord } from '../types/workout';
 import { formatDateDot } from '../utils/dates';
 import {
@@ -115,10 +115,19 @@ function MetricRow({
   color: string;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
+  const historyRef = useRef<HTMLDivElement>(null);
   const points = [...records]
     .filter(r => typeof r[metricKey] === 'number')
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .map(r => ({ id: r.id, date: r.date, value: r[metricKey] as number }));
+
+  useEffect(() => {
+    const el = historyRef.current;
+    if (!el) return;
+    // Newest values are on the right; start there whenever the chart mounts
+    // or its data set changes, while preserving normal finger scrolling.
+    el.scrollLeft = el.scrollWidth;
+  }, [points.length, metricKey]);
 
   if (points.length === 0) {
     return (
@@ -173,6 +182,7 @@ function MetricRow({
       )}
 
       <div
+        ref={historyRef}
         className="max-w-full overflow-x-auto overscroll-x-contain touch-pan-x"
         aria-label={`История: ${label}. Прокручивайте по горизонтали`}
         style={{ WebkitOverflowScrolling: 'touch' }}
