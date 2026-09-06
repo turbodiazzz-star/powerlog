@@ -9,6 +9,7 @@ import {
   type InBodyBarModel,
   type InBodyZone,
 } from '../utils/inBodyNorms';
+import { Trash2 } from 'lucide-react';
 
 const ZONE_COLOR: Record<InBodyZone, string> = {
   under: 'text-sky-300',
@@ -304,8 +305,8 @@ export const InBodyInfographic: React.FC<{
                       </button>
                     )}
                     {onDelete && (
-                      <button type="button" onClick={() => onDelete(rec.id)} className="p-0.5 text-zinc-600 hover:text-rose-400 text-sm leading-none">
-                        ×
+                      <button type="button" onClick={() => onDelete(rec.id)} aria-label={`Удалить запись InBody от ${formatDateDot(rec.date)}`} className="inline-flex items-center gap-1 text-[9px] font-bold text-zinc-400 hover:text-rose-400 px-1.5 py-0.5 rounded bg-zinc-950 border border-zinc-800">
+                        <Trash2 className="w-3 h-3" /> Удалить
                       </button>
                     )}
                   </div>

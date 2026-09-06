@@ -341,7 +341,7 @@ export const InBodyTracker: React.FC = () => {
 
           <form
             onSubmit={handleSave}
-            className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg sm:max-w-xl w-full shadow-2xl flex flex-col h-[57vh] max-h-[57vh] sm:h-[57vh] sm:max-h-[57vh] overflow-hidden text-xs my-auto"
+            className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg sm:max-w-xl w-full shadow-2xl flex flex-col h-[calc(100dvh-1.5rem)] max-h-[calc(100dvh-1.5rem)] overflow-hidden text-xs my-auto"
           >
             {/* Fixed Header */}
             <div className="flex justify-between items-center px-4 sm:px-5 py-3 border-b border-zinc-800 bg-zinc-900 shrink-0">
@@ -370,7 +370,7 @@ export const InBodyTracker: React.FC = () => {
             {/* Scrollable Body Content */}
             <div
               style={{ WebkitOverflowScrolling: 'touch' }}
-              className="flex-1 min-h-0 overflow-y-auto p-3.5 sm:p-5 space-y-3.5 touch-pan-y"
+              className="flex-1 min-h-0 overflow-y-auto p-3.5 sm:p-5 pb-8 space-y-3.5 touch-pan-y overscroll-contain"
             >
               {/* Scan Image / PDF Upload */}
               <div className="space-y-1.5">

@@ -786,9 +786,9 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       <div
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="bg-zinc-900/90 border border-zinc-700/80 rounded-3xl p-2 shadow-lg space-y-1.5 animate-fadeIn"
+        className="bg-zinc-900/90 border border-zinc-700/80 rounded-3xl p-1.5 shadow-lg space-y-1 animate-fadeIn"
       >
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           {currentSupersetDef.exercises.map((exDef) => {
             const loggedEx = session.supersets.flatMap(s => s.exercises).find(e => e.exerciseId === exDef.id);
             const availableVariants = getOptionsForExercise(exDef.id, activeGymBrand);
@@ -830,10 +830,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             return (
               <div
                 key={exDef.id}
-                className="bg-zinc-950/80 border border-zinc-700/70 rounded-2xl p-2 space-y-1.5 shadow-inner"
+                className="bg-zinc-950/80 border border-zinc-700/70 rounded-2xl p-1.5 space-y-1 shadow-inner"
               >
                 {rec && rec.inputKg > 0 && (
-                  <div className="px-2 py-1 rounded-2xl bg-emerald-950/60 border border-emerald-800/80 text-[10px] text-emerald-300 leading-tight">
+                  <div className="px-2 py-0.5 rounded-2xl bg-emerald-950/60 border border-emerald-800/80 text-[10px] text-emerald-300 leading-tight">
                     <span className="font-black text-emerald-400">{aiRec ? 'ИИ' : 'План'}:</span>{' '}
                     {assisted ? `разгрузка ${rec.inputKg} кг` : `${rec.inputKg} кг`} · {rec.sets} подх. × {rec.reps}
                     {rec.note ? ` · ${rec.note}` : ''}
@@ -894,7 +894,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                   </span>
                 </div>
 
-                <div className="space-y-1 pt-0.5">
+                <div className="space-y-0.5 pt-0.5">
                   <div className="grid grid-cols-[minmax(0,1fr)_4.6rem_3.2rem_1.25rem] gap-1.5 px-1 text-[9px] uppercase font-bold text-zinc-500 tracking-wide">
                     <span>Сет / прошлый</span>
                     <span className="text-center">Вес</span>
@@ -915,7 +915,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                         return (
                           <div
                             key={st.id}
-                            className={`grid grid-cols-[minmax(0,1fr)_4.6rem_3.2rem_1.25rem] items-center gap-1 rounded-2xl px-1.5 py-1 border transition-all ${
+                            className={`grid grid-cols-[minmax(0,1fr)_4.6rem_3.2rem_1.25rem] items-center gap-1 rounded-2xl px-1.5 py-0.5 border transition-all ${
                               setDone
                                 ? 'bg-emerald-500 border-emerald-400 text-zinc-950 shadow-sm'
                                 : 'bg-zinc-900/90 border-zinc-700/80'
@@ -950,7 +950,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     currentSupersetDef.rest1Sec
                                   )
                                 }
-                                className={`h-8 w-full rounded-2xl font-mono font-bold text-xs flex flex-col items-center justify-center active:scale-95 transition-all ${
+                                className={`h-7 w-full rounded-2xl font-mono font-bold text-xs flex flex-col items-center justify-center active:scale-95 transition-all ${
                                   weightConfirmed
                                     ? 'bg-zinc-950 text-emerald-300 border border-zinc-800'
                                     : 'bg-zinc-950 text-white border border-zinc-600'
@@ -977,7 +977,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                                     currentSupersetDef.rest1Sec
                                   )
                                 }
-                                className={`h-8 w-full rounded-2xl font-mono font-bold text-xs flex items-center justify-center active:scale-95 transition-all ${
+                                className={`h-7 w-full rounded-2xl font-mono font-bold text-xs flex items-center justify-center active:scale-95 transition-all ${
                                   repsConfirmed
                                     ? 'bg-zinc-950 text-emerald-300 border border-zinc-800'
                                     : 'bg-zinc-950 text-white border border-zinc-600'
