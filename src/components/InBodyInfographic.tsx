@@ -114,10 +114,10 @@ function MetricRow({
   unit: string;
   color: string;
 }) {
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
   const points = records
     .filter(r => typeof r[metricKey] === 'number')
-    .map(r => ({ date: r.date, value: r[metricKey] as number }));
+    .map(r => ({ id: r.id, date: r.date, value: r[metricKey] as number }));
 
   if (points.length === 0) {
     return (
@@ -132,9 +132,9 @@ function MetricRow({
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max === min ? 1 : max - min;
-  const step = 44;
-  const pad = 16;
-  const w = Math.max(points.length * step + pad * 2, 200);
+  const step = 80;
+  const pad = step / 2;
+  const w = points.length * step;
   const h = 52;
   const coords = points.map((p, i) => {
     const x = pad + i * step;
@@ -145,10 +145,10 @@ function MetricRow({
   const last = points[points.length - 1];
   const first = points[0];
   const diff = Math.round((last.value - first.value) * 10) / 10;
-  const sel = selected !== null ? points[selected] : null;
+  const sel = points.find(point => point.id === selected);
 
   return (
-    <div className="py-2 border-b border-zinc-800/80 last:border-0 space-y-1">
+    <div className="min-w-0 py-2 border-b border-zinc-800/80 last:border-0 space-y-1">
       <div className="flex items-baseline justify-between gap-2 px-0.5">
         <div className="flex items-baseline gap-1.5 min-w-0">
           <span className="text-[10px] font-black uppercase tracking-wide text-zinc-400 w-14 shrink-0">{label}</span>
@@ -172,19 +172,20 @@ function MetricRow({
       )}
 
       <div
-        className="overflow-x-auto touch-pan-x -mx-1 px-1"
+        className="max-w-full overflow-x-auto overscroll-x-contain touch-pan-x"
+        aria-label={`История: ${label}. Прокручивайте по горизонтали`}
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         <svg
           viewBox={`0 0 ${w} ${h}`}
-          style={{ width: w, minWidth: w }}
-          className="h-14 overflow-visible"
+          style={{ width: w, minWidth: w, height: h }}
+          className="block"
         >
           <path d={d} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-          {coords.map((c, i) => {
-            const active = selected === i;
+          {coords.map(c => {
+            const active = selected === c.id;
             return (
-              <g key={i} onClick={() => setSelected(i)} className="cursor-pointer">
+              <g key={c.id} onClick={() => setSelected(c.id)} className="cursor-pointer">
                 <circle cx={c.x} cy={c.y} r="12" fill="transparent" />
                 <circle
                   cx={c.x}
@@ -198,6 +199,20 @@ function MetricRow({
             );
           })}
         </svg>
+        <div className="grid pb-2" style={{ width: w, gridTemplateColumns: `repeat(${points.length}, ${step}px)` }}>
+          {points.map(point => (
+            <button
+              key={point.id}
+              type="button"
+              onClick={() => setSelected(point.id)}
+              aria-pressed={selected === point.id}
+              className={`mx-0.5 rounded-lg border px-1 py-2 text-center font-mono ${selected === point.id ? 'border-emerald-500 bg-emerald-950/60' : 'border-zinc-800 bg-zinc-950'}`}
+            >
+              <span className="block text-xs font-bold text-white">{point.value} <span className="text-[9px] text-zinc-400">{unit}</span></span>
+              <span className="block text-[9px] text-zinc-400 mt-1">{formatDateDot(point.date)}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -272,10 +287,10 @@ export const InBodyInfographic: React.FC<{
           <h3 className="text-[10px] font-black uppercase tracking-wider text-zinc-400">
             История состава тела · {recordsAsc.length} зам.
           </h3>
-          <span className="text-[9px] text-zinc-600 font-mono">сверху старые · снизу актуальный</span>
+          <span className="text-[9px] text-zinc-400 font-mono">Новые сверху</span>
         </div>
         <div className="space-y-2">
-          {recordsAsc.map(rec => {
+          {[...recordsAsc].reverse().map(rec => {
             const prev = recordsAsc[recordsAsc.findIndex(r => r.id === rec.id) - 1];
             const recBars = buildInBodyBars(rec, prev, profile);
             const isLatest = rec.id === latest.id;
@@ -283,7 +298,7 @@ export const InBodyInfographic: React.FC<{
               <div
                 key={rec.id}
                 className={`rounded-2xl p-3 space-y-2 border ${
-                  isLatest ? 'bg-zinc-900 border-emerald-700' : 'bg-zinc-900 border-zinc-800'
+                  isLatest ? 'bg-emerald-950/40 border-emerald-400 ring-1 ring-emerald-400/30' : 'bg-zinc-900 border-zinc-800'
                 }`}
               >
                 <div className="flex justify-between items-center">
