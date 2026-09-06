@@ -69,19 +69,14 @@ function toCsv(rows: Record<string, unknown>[], headers: string[]) {
 }
 
 function compactForGit(snap: CloudSnapshot): CloudSnapshot {
-  const strip = (items: unknown[]) =>
-    (items || []).map((item: any) => {
-      const url = String(item?.imageUrl || '');
-      if (url.startsWith('http')) return item;
-      const { imageUrl, ...rest } = item || {};
-      return rest;
-    });
   return {
     ...snap,
     version: 4,
     updatedAt: new Date().toISOString(),
-    photos: strip(snap.photos),
-    inbody: strip(snap.inbody),
+    // Keep private image data in the private repository so every browser
+    // receives the complete InBody and progress-photo history.
+    photos: snap.photos || [],
+    inbody: snap.inbody || [],
   };
 }
 
