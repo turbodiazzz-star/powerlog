@@ -396,6 +396,7 @@ export const InBodyTracker: React.FC = () => {
 
           <form
             onSubmit={handleSave}
+            noValidate={batchStatus.length > 0}
             className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg sm:max-w-xl w-full shadow-2xl flex flex-col h-[calc(100vh-5rem)] max-h-[calc(100vh-5rem)] overflow-hidden text-xs"
           >
             {/* Fixed Header */}
@@ -673,13 +674,13 @@ export const InBodyTracker: React.FC = () => {
               >
                 Отмена
               </button>
-              <button
+              {!batchStatus.length && <button
                 type="submit"
                 className="px-6 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-black text-xs transition-all shadow-lg active:scale-95 flex items-center gap-1.5"
               >
                 <CheckCircle className="w-4 h-4 text-zinc-950 stroke-[2.5]" />
                 Сохранить запись
-              </button>
+              </button>}
             </div>
           </form>
         </div>
