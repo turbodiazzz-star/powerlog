@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updatedAt": "2026-09-06T06:29:16.367Z",
+  "updatedAt": "2026-09-06T06:30:31.666Z",
   "gyms": [
     {
       "id": "gym-matrix",
@@ -674,8 +674,8 @@
         }
       ]
     },
-    "elapsedSeconds": 24,
-    "lastUpdatedTimestamp": 1788675641621,
+    "elapsedSeconds": 595,
+    "lastUpdatedTimestamp": 1788676212843,
     "activeSupersetIndex": 2,
     "workoutStartedAt": 1788675617074,
     "restEndsAt": null,
