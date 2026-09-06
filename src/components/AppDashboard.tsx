@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 
 export const AppDashboard: React.FC = () => {
+  const APP_VERSION = '0003';
   const [activeNav, setActiveTab] = useState<'home' | 'progress'>('home');
   const [activeSessionProps, setActiveSessionProps] = useState<{
     workoutType: 'A' | 'B';
@@ -113,6 +114,7 @@ export const AppDashboard: React.FC = () => {
               </h1>
               <p className="text-[10px] text-zinc-400 font-mono leading-none">{currentDateFormatted}</p>
             </div>
+            <span className="text-[8px] text-zinc-600 font-mono self-end mb-0.5">v{APP_VERSION}</span>
           </div>
         </div>
       </header>
