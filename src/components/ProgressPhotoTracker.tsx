@@ -46,6 +46,7 @@ export const ProgressPhotoTracker: React.FC = () => {
   // Form State
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [imageUrl, setImageUrl] = useState('');
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [weightKg, setWeightKg] = useState('');
 
   useEffect(() => {
@@ -89,6 +90,7 @@ export const ProgressPhotoTracker: React.FC = () => {
     const initialDate = new Date().toISOString().split('T')[0];
     setDate(initialDate);
     setImageUrl('');
+    setSelectedImages([]);
     syncWithInBodyData(initialDate);
     setIsModalOpen(true);
   };
@@ -99,33 +101,38 @@ export const ProgressPhotoTracker: React.FC = () => {
   };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []).slice(0, 10);
+    if (!files.length) return;
 
     let photoDate = date;
-    if (file.lastModified) {
-      photoDate = new Date(file.lastModified).toISOString().split('T')[0];
+    if (files[0].lastModified) {
+      photoDate = new Date(files[0].lastModified).toISOString().split('T')[0];
       setDate(photoDate);
     }
     syncWithInBodyData(photoDate);
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      setImageUrl(evt.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    Promise.all(files.map(file => new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    }))).then(urls => {
+      setSelectedImages(urls);
+      setImageUrl(urls[0] || '');
+    }).catch(() => undefined);
+    e.target.value = '';
   };
 
   const handleSavePhoto = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!imageUrl) return;
+    const images = selectedImages.length ? selectedImages : (imageUrl ? [imageUrl] : []);
+    if (!images.length) return;
 
-    StorageService.saveProgressPhoto({
+    images.forEach(url => StorageService.saveProgressPhoto({
       date,
       pose: selectedPose,
-      imageUrl,
+      imageUrl: url,
       weightKg: weightKg ? parseFloat(weightKg) : undefined,
-    });
+    }));
 
     setIsModalOpen(false);
     resetForm();
@@ -143,6 +150,7 @@ export const ProgressPhotoTracker: React.FC = () => {
     const nowStr = new Date().toISOString().split('T')[0];
     setDate(nowStr);
     setImageUrl('');
+    setSelectedImages([]);
     setWeightKg('');
   };
 
@@ -349,20 +357,21 @@ export const ProgressPhotoTracker: React.FC = () => {
 
               {/* Upload Input */}
               <div>
-                <label className="block text-[11px] font-medium text-zinc-400 mb-1">Загрузить снимок</label>
+                <label className="block text-[11px] font-medium text-zinc-400 mb-1">Загрузить до 10 фото</label>
                 <label className="flex flex-col items-center justify-center p-3 border border-dashed border-zinc-700 hover:border-zinc-500 rounded-lg cursor-pointer bg-zinc-950/60 transition-colors">
                   <Upload className="w-4 h-4 text-indigo-400 mb-1" />
                   <span className="text-[11px] font-medium text-zinc-300">
-                    {imageUrl ? 'Изменить фото' : 'Выберите фото из галереи / камеры'}
+                    {selectedImages.length ? `Выбрано фото: ${selectedImages.length}/10` : 'Выберите до 10 фото из галереи / камеры'}
                   </span>
-                  <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                  <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" />
                 </label>
 
-                {imageUrl && (
-                  <div className="mt-2 rounded-lg overflow-hidden border border-zinc-800 max-h-32 aspect-[3/4] mx-auto">
-                    <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                {selectedImages.length > 0 && (
+                  <div className="mt-2 grid grid-cols-5 gap-1">
+                    {selectedImages.map((url, idx) => <img key={idx} src={url} alt={`Фото ${idx + 1}`} className="w-full aspect-square object-cover rounded border border-zinc-800" />)}
                   </div>
                 )}
+                <p className="text-[10px] text-zinc-500 mt-1">ИИ сопоставит снимки формы с последним InBody и предыдущей динамикой.</p>
               </div>
 
               <div className="grid grid-cols-2 gap-2">

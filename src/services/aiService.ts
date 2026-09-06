@@ -383,7 +383,7 @@ export class AiService {
 
     if (isOpenRouter) {
       const messagesContent: any[] = [{ type: 'text', text: contextText }];
-      for (const photo of photos.slice(0, 2)) {
+      for (const photo of photos.slice(0, 10)) {
         if (photo.imageUrl) {
           messagesContent.push({ type: 'image_url', image_url: { url: photo.imageUrl } });
           attachedImagesCount++;
@@ -415,7 +415,7 @@ export class AiService {
       if (!generatedMarkdown) throw new Error(lastErr || 'Не удалось сгенерировать отчет через OpenRouter');
     } else {
       const contentsParts: any[] = [{ text: contextText }];
-      for (const photo of photos.slice(0, 2)) {
+      for (const photo of photos.slice(0, 10)) {
         const imgData = this.parseBase64Image(photo.imageUrl);
         if (imgData) {
           contentsParts.push({
