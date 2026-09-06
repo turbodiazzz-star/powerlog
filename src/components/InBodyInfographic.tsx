@@ -142,9 +142,9 @@ function MetricRow({
     return { x, y, ...p };
   });
   const d = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x} ${c.y}`).join(' ');
-  const last = points[points.length - 1];
   const first = points[0];
-  const diff = Math.round((last.value - first.value) * 10) / 10;
+  const last = points[points.length - 1];
+  const diff = Math.round((first.value - last.value) * 10) / 10;
   const sel = points.find(point => point.id === selected);
 
   return (
@@ -226,11 +226,12 @@ export const InBodyInfographic: React.FC<{
 }> = ({ recordsAsc, profile, onDelete, onOpenScan }) => {
   if (recordsAsc.length === 0) return null;
 
-  const latest = recordsAsc[recordsAsc.length - 1];
-  const previous = recordsAsc.length > 1 ? recordsAsc[recordsAsc.length - 2] : undefined;
+  const recordsNewestFirst = [...recordsAsc].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const latest = recordsNewestFirst[0];
+  const previous = recordsNewestFirst.length > 1 ? recordsNewestFirst[1] : undefined;
   const bars = buildInBodyBars(latest, previous, profile);
   const heightCm = profile.heightCm || deriveHeightCm(latest);
-  const baseline = recordsAsc[0];
+  const baseline = recordsNewestFirst[recordsNewestFirst.length - 1];
 
   return (
     <div className="space-y-3">
@@ -273,7 +274,7 @@ export const InBodyInfographic: React.FC<{
         {KEY_METRICS.map(m => (
           <MetricRow
             key={m.key}
-            records={recordsAsc}
+            records={recordsNewestFirst}
             metricKey={m.key}
             label={m.label}
             unit={m.unit}
@@ -290,8 +291,8 @@ export const InBodyInfographic: React.FC<{
           <span className="text-[9px] text-zinc-400 font-mono">Новые сверху</span>
         </div>
         <div className="space-y-2">
-          {[...recordsAsc].reverse().map(rec => {
-            const prev = recordsAsc[recordsAsc.findIndex(r => r.id === rec.id) - 1];
+          {recordsNewestFirst.map((rec, index) => {
+            const prev = recordsNewestFirst[index + 1];
             const recBars = buildInBodyBars(rec, prev, profile);
             const isLatest = rec.id === latest.id;
             return (

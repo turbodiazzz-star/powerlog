@@ -125,8 +125,8 @@ export const InBodyTracker: React.FC = () => {
 
   const loadRecords = () => {
     const loaded = StorageService.getInBodyRecords();
-    // Sort chronologically ascending for charts
-    const sorted = [...loaded].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    // Keep the newest measurement first everywhere in the UI.
+    const sorted = [...loaded].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     setRecords(sorted);
   };
 
