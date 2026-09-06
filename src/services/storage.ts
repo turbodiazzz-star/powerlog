@@ -145,7 +145,9 @@ export class StorageService {
 
   static hasLoggedSets(session: WorkoutSession): boolean {
     return session.supersets.some(ss =>
-      ss.exercises.some(ex => ex.sets.some(s => s.completed || (s.weightKg > 0 && s.reps > 0)))
+      ss.exercises.some(ex => ex.sets.some(s =>
+        s.completed || (s.weightConfirmed === true && s.repsConfirmed === true && s.weightKg > 0 && s.reps > 0)
+      ))
     );
   }
 

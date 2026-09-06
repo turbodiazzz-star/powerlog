@@ -300,11 +300,13 @@ export class CloudSync {
 
   static schedulePush() {
     if (this.hydrating) return;
-    if (this.pushTimer) clearTimeout(this.pushTimer);
+    // Throttle writes instead of resetting the timer on every draft update.
+    if (this.pushTimer) return;
     this.pushTimer = setTimeout(() => {
       const snap = this.captureLocal();
       if (countRecords(snap) === 0 && !snap.draft) return;
       void this.pushSnapshot(snap);
-    }, 1200);
+      this.pushTimer = null;
+    }, 5000);
   }
 }

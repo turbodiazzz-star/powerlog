@@ -5,17 +5,17 @@ import App from './App.tsx'
 import { CloudSync } from './services/cloudSync'
 
 async function boot() {
-  try {
-    await CloudSync.hydrate()
-  } catch {
-    // local data still works
-  }
-
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <App />
     </StrictMode>,
   )
+
+  // Keep the UI responsive when the network is slow or unavailable.
+  void Promise.race([
+    CloudSync.hydrate(),
+    new Promise<void>(resolve => setTimeout(resolve, 5000)),
+  ]).catch(() => undefined)
 }
 
 void boot()
