@@ -276,6 +276,12 @@ export const InBodyTracker: React.FC = () => {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    // Batch files are persisted as soon as each scan is recognized. The form
+    // fields intentionally stay empty, so this button should finish the flow.
+    if (batchStatus.length > 0) {
+      setIsModalOpen(false);
+      return;
+    }
     if (!weightKg) return;
 
     StorageService.saveInBodyRecord({
@@ -404,7 +410,7 @@ export const InBodyTracker: React.FC = () => {
                   className="px-3 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-black text-xs transition-all shadow-sm active:scale-95 flex items-center gap-1"
                 >
                   <CheckCircle className="w-3.5 h-3.5 text-zinc-950 stroke-[2.5]" />
-                  <span>Сохранить</span>
+                  <span>{batchStatus.length > 0 ? 'Готово' : 'Сохранить'}</span>
                 </button>
                 <button
                   type="button"
