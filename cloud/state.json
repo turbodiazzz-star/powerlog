@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updatedAt": "2026-09-06T11:41:11.618Z",
+  "updatedAt": "2026-09-06T13:45:13.344Z",
   "gyms": [
     {
       "id": "gym-matrix",
@@ -376,21 +376,21 @@
     }
   ],
   "photos": [],
-  "selectedGymId": "gym-technogym",
+  "selectedGymId": "gym-matrix",
   "profile": {
     "gender": "male"
   },
   "draft": {
     "workoutType": "B",
     "dayName": "Ср",
-    "gymId": "gym-technogym",
+    "gymId": "gym-matrix",
     "session": {
-      "id": "session_1788675617070",
-      "date": "2026-09-06T06:20:17.070Z",
+      "id": "session_1788702215488",
+      "date": "2026-09-06T13:43:35.488Z",
       "workoutType": "B",
       "dayName": "Ср",
-      "gymId": "gym-technogym",
-      "gymName": "Зал Technogym",
+      "gymId": "gym-matrix",
+      "gymName": "Зал Matrix",
       "completed": false,
       "supersets": [
         {
@@ -403,10 +403,10 @@
               "exerciseId": "b-1.1",
               "exerciseTitle": "Сгибания ног в тренажере",
               "muscleGroup": "Бицепс бедра",
-              "machineName": "Сгибания ног сидя (Technogym)",
+              "machineName": "Сгибания ног сидя (Matrix)",
               "sets": [
                 {
-                  "id": "set_b-1.1_1_1788675617069",
+                  "id": "set_b-1.1_1_1788702215488",
                   "setNumber": 1,
                   "weightKg": 0,
                   "reps": 10,
@@ -415,7 +415,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-1.1_2_1788675617069",
+                  "id": "set_b-1.1_2_1788702215488",
                   "setNumber": 2,
                   "weightKg": 0,
                   "reps": 10,
@@ -424,7 +424,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-1.1_3_1788675617069",
+                  "id": "set_b-1.1_3_1788702215488",
                   "setNumber": 3,
                   "weightKg": 0,
                   "reps": 10,
@@ -433,7 +433,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-1.1_4_1788675617069",
+                  "id": "set_b-1.1_4_1788702215488",
                   "setNumber": 4,
                   "weightKg": 0,
                   "reps": 10,
@@ -447,10 +447,10 @@
               "exerciseId": "b-1.2",
               "exerciseTitle": "Вертикальная тяга верхнего блока к груди",
               "muscleGroup": "Широчайшие",
-              "machineName": "Вертикальная тяга верхнего блока (Technogym)",
+              "machineName": "Вертикальная тяга верхнего блока (Matrix)",
               "sets": [
                 {
-                  "id": "set_b-1.2_1_1788675617069",
+                  "id": "set_b-1.2_1_1788702215488",
                   "setNumber": 1,
                   "weightKg": 0,
                   "reps": 10,
@@ -459,7 +459,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-1.2_2_1788675617069",
+                  "id": "set_b-1.2_2_1788702215488",
                   "setNumber": 2,
                   "weightKg": 0,
                   "reps": 10,
@@ -468,7 +468,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-1.2_3_1788675617069",
+                  "id": "set_b-1.2_3_1788702215488",
                   "setNumber": 3,
                   "weightKg": 0,
                   "reps": 10,
@@ -477,7 +477,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-1.2_4_1788675617069",
+                  "id": "set_b-1.2_4_1788702215488",
                   "setNumber": 4,
                   "weightKg": 0,
                   "reps": 10,
@@ -502,7 +502,7 @@
               "machineName": "Тяга двух гантелей на наклонной скамье",
               "sets": [
                 {
-                  "id": "set_b-2.1_1_1788675617070",
+                  "id": "set_b-2.1_1_1788702215488",
                   "setNumber": 1,
                   "weightKg": 0,
                   "reps": 10,
@@ -511,7 +511,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-2.1_2_1788675617070",
+                  "id": "set_b-2.1_2_1788702215488",
                   "setNumber": 2,
                   "weightKg": 0,
                   "reps": 10,
@@ -520,7 +520,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-2.1_3_1788675617070",
+                  "id": "set_b-2.1_3_1788702215488",
                   "setNumber": 3,
                   "weightKg": 0,
                   "reps": 10,
@@ -529,7 +529,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-2.1_4_1788675617070",
+                  "id": "set_b-2.1_4_1788702215488",
                   "setNumber": 4,
                   "weightKg": 0,
                   "reps": 10,
@@ -543,10 +543,10 @@
               "exerciseId": "b-2.2",
               "exerciseTitle": "Сведения рук в Пек-Дек («Бабочка») / кроссовере",
               "muscleGroup": "Грудь (изоляция)",
-              "machineName": "Сведения рук в Пек-Дек («Бабочка») (Technogym)",
+              "machineName": "Сведения рук в Пек-Дек («Бабочка») (Matrix)",
               "sets": [
                 {
-                  "id": "set_b-2.2_1_1788675617070",
+                  "id": "set_b-2.2_1_1788702215488",
                   "setNumber": 1,
                   "weightKg": 0,
                   "reps": 10,
@@ -555,7 +555,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-2.2_2_1788675617070",
+                  "id": "set_b-2.2_2_1788702215488",
                   "setNumber": 2,
                   "weightKg": 0,
                   "reps": 10,
@@ -564,7 +564,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-2.2_3_1788675617070",
+                  "id": "set_b-2.2_3_1788702215488",
                   "setNumber": 3,
                   "weightKg": 0,
                   "reps": 10,
@@ -586,10 +586,10 @@
               "exerciseId": "b-3.1",
               "exerciseTitle": "Разведение рук в «Обратной бабочке» / Face Pull",
               "muscleGroup": "Задняя дельта",
-              "machineName": "Обратная бабочка (Reverse Pec-Deck) (Technogym)",
+              "machineName": "Обратная бабочка (Reverse Pec-Deck) (Matrix)",
               "sets": [
                 {
-                  "id": "set_b-3.1_1_1788675617070",
+                  "id": "set_b-3.1_1_1788702215488",
                   "setNumber": 1,
                   "weightKg": 0,
                   "reps": 10,
@@ -598,7 +598,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-3.1_2_1788675617070",
+                  "id": "set_b-3.1_2_1788702215488",
                   "setNumber": 2,
                   "weightKg": 0,
                   "reps": 10,
@@ -607,7 +607,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-3.1_3_1788675617070",
+                  "id": "set_b-3.1_3_1788702215488",
                   "setNumber": 3,
                   "weightKg": 0,
                   "reps": 10,
@@ -616,7 +616,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-3.1_4_1788675617070",
+                  "id": "set_b-3.1_4_1788702215488",
                   "setNumber": 4,
                   "weightKg": 0,
                   "reps": 10,
@@ -630,10 +630,10 @@
               "exerciseId": "b-3.2",
               "exerciseTitle": "Сгибания рук с гантелями на наклонной скамье (45–60°)",
               "muscleGroup": "Бицепс",
-              "machineName": "Тренажер рычажный (Technogym)",
+              "machineName": "Тренажер на бицепс (Matrix)",
               "sets": [
                 {
-                  "id": "set_b-3.2_1_1788675617070",
+                  "id": "set_b-3.2_1_1788702215488",
                   "setNumber": 1,
                   "weightKg": 0,
                   "reps": 10,
@@ -642,7 +642,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-3.2_2_1788675617070",
+                  "id": "set_b-3.2_2_1788702215488",
                   "setNumber": 2,
                   "weightKg": 0,
                   "reps": 10,
@@ -651,7 +651,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-3.2_3_1788675617070",
+                  "id": "set_b-3.2_3_1788702215488",
                   "setNumber": 3,
                   "weightKg": 0,
                   "reps": 10,
@@ -660,7 +660,7 @@
                   "repsConfirmed": false
                 },
                 {
-                  "id": "set_b-3.2_4_1788675617070",
+                  "id": "set_b-3.2_4_1788702215488",
                   "setNumber": 4,
                   "weightKg": 0,
                   "reps": 10,
@@ -674,10 +674,10 @@
         }
       ]
     },
-    "elapsedSeconds": 634,
-    "lastUpdatedTimestamp": 1788676251586,
-    "activeSupersetIndex": 2,
-    "workoutStartedAt": 1788675617074,
+    "elapsedSeconds": 96,
+    "lastUpdatedTimestamp": 1788702311499,
+    "activeSupersetIndex": 0,
+    "workoutStartedAt": 1788702215492,
     "restEndsAt": null,
     "timerInitialSeconds": 60,
     "isTimerRunning": false
