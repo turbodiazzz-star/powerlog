@@ -115,8 +115,9 @@ function MetricRow({
   color: string;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
-  const points = records
+  const points = [...records]
     .filter(r => typeof r[metricKey] === 'number')
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .map(r => ({ id: r.id, date: r.date, value: r[metricKey] as number }));
 
   if (points.length === 0) {
@@ -144,7 +145,7 @@ function MetricRow({
   const d = coords.map((c, i) => `${i === 0 ? 'M' : 'L'} ${c.x} ${c.y}`).join(' ');
   const first = points[0];
   const last = points[points.length - 1];
-  const diff = Math.round((first.value - last.value) * 10) / 10;
+  const diff = Math.round((last.value - first.value) * 10) / 10;
   const sel = points.find(point => point.id === selected);
 
   return (
