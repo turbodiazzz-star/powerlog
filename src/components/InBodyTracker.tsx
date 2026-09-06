@@ -87,6 +87,7 @@ export const InBodyTracker: React.FC = () => {
   const [ocrProgress, setOcrProgress] = useState<number>(0);
   const [ocrStatusText, setOcrStatusText] = useState<string>('');
   const [ocrResultMsg, setOcrResultMsg] = useState<{ type: 'success' | 'warn'; msg: string } | null>(null);
+  const [batchStatus, setBatchStatus] = useState<string[]>([]);
 
   useEffect(() => {
     loadRecords();
@@ -130,8 +131,56 @@ export const InBodyTracker: React.FC = () => {
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    if (files.length > 1) {
+      setBatchStatus([]);
+      setIsAnalyzing(true);
+      const statuses: string[] = [];
+      for (const file of files) {
+        const readerData = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+        try {
+          const fileDate = file.lastModified ? new Date(file.lastModified).toISOString().split('T')[0] : undefined;
+          const dataUrl = await compressImageForOcr(readerData);
+          const extracted = await AiService.scanInBodyWithGemini(dataUrl, fileDate);
+          const missing: string[] = [];
+          if (!extracted.date) missing.push('дата');
+          if (!extracted.weightKg) missing.push('вес');
+          if (!extracted.muscleMassKg) missing.push('мышцы');
+          if (!extracted.bodyFatPercent) missing.push('жир %');
+          if (!extracted.fatMassKg) missing.push('жир кг');
+          if (extracted.weightKg) {
+            StorageService.saveInBodyRecord({
+              date: extracted.date || fileDate || new Date().toISOString().split('T')[0],
+              weightKg: extracted.weightKg,
+              muscleMassKg: extracted.muscleMassKg,
+              fatMassKg: extracted.fatMassKg,
+              bodyFatPercent: extracted.bodyFatPercent,
+              fatFreeMassKg: extracted.fatFreeMassKg,
+              visceralFatLevel: extracted.visceralFatLevel,
+              bmi: extracted.bmi,
+              inBodyScore: extracted.inBodyScore,
+              imageUrl: dataUrl,
+            });
+            statuses.push(`${file.name}: сохранено${missing.length ? `, не уверенно: ${missing.join(', ')}` : ''}`);
+          } else {
+            statuses.push(`${file.name}: не сохранено — не найден вес${missing.length ? `; не определено: ${missing.join(', ')}` : ''}`);
+          }
+        } catch {
+          statuses.push(`${file.name}: ошибка распознавания`);
+        }
+        setBatchStatus([...statuses]);
+      }
+      setIsAnalyzing(false);
+      loadRecords();
+      return;
+    }
+    const file = files[0];
 
     setOcrResultMsg(null);
     setOcrProgress(0);
@@ -387,8 +436,15 @@ export const InBodyTracker: React.FC = () => {
                     {imageUrl ? 'Изменить файл (фото / PDF)' : 'Выбрать фото с телефона или PDF скан InBody'}
                   </span>
                   <span className="text-[10px] text-zinc-500">PNG, JPG, HEIC, PDF</span>
-                  <input type="file" accept="image/*,application/pdf,.pdf" onChange={handleImageUpload} className="hidden" />
+                  <input type="file" multiple accept="image/*,application/pdf,.pdf" onChange={handleImageUpload} className="hidden" />
                 </label>
+
+                {batchStatus.length > 0 && (
+                  <div className="space-y-1 bg-zinc-950 border border-zinc-800 rounded-xl p-2 text-[10px] font-mono text-zinc-300">
+                    <div className="font-black text-emerald-400">Пакет InBody · {batchStatus.length} файлов</div>
+                    {batchStatus.map(status => <div key={status} className={status.includes('не сохранено') || status.includes('не уверенно') ? 'text-amber-300' : 'text-zinc-300'}>{status}</div>)}
+                  </div>
+                )}
 
                 {isAnalyzing && (
                   <div className="space-y-2 bg-emerald-950/40 border border-emerald-800/50 p-3 rounded-xl animate-fadeIn">
