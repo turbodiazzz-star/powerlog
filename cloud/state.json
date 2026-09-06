@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updatedAt": "2026-09-06T13:48:36.210Z",
+  "updatedAt": "2026-09-06T13:52:14.185Z",
   "gyms": [
     {
       "id": "gym-matrix",
@@ -346,19 +346,6 @@
       "bmi": 27.4,
       "inBodyScore": 75,
       "notes": "",
-      "id": "inbody_1788551739031_neop"
-    },
-    {
-      "date": "2026-08-15",
-      "weightKg": 90.9,
-      "muscleMassKg": 38.6,
-      "fatMassKg": 23.1,
-      "bodyFatPercent": 25.4,
-      "fatFreeMassKg": 67.8,
-      "visceralFatLevel": 10,
-      "bmi": 27.4,
-      "inBodyScore": 75,
-      "notes": "",
       "id": "inbody_1788552343954_hczm"
     },
     {
@@ -373,6 +360,19 @@
       "inBodyScore": 80,
       "notes": "",
       "id": "inbody_1788552440209_4x1z"
+    },
+    {
+      "date": "2026-08-15",
+      "weightKg": 90.9,
+      "muscleMassKg": 38.6,
+      "fatMassKg": 23.1,
+      "bodyFatPercent": 25.4,
+      "fatFreeMassKg": 67.8,
+      "visceralFatLevel": 10,
+      "bmi": 27.4,
+      "inBodyScore": 75,
+      "notes": "",
+      "id": "inbody_1788551739031_neop"
     }
   ],
   "photos": [],
