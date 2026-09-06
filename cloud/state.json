@@ -1,6 +1,6 @@
 {
   "version": 4,
-  "updatedAt": "2026-09-06T10:58:48.789Z",
+  "updatedAt": "2026-09-06T11:41:11.618Z",
   "gyms": [
     {
       "id": "gym-matrix",
@@ -376,10 +376,311 @@
     }
   ],
   "photos": [],
-  "selectedGymId": "gym-matrix",
+  "selectedGymId": "gym-technogym",
   "profile": {
     "gender": "male"
   },
-  "draft": null,
+  "draft": {
+    "workoutType": "B",
+    "dayName": "Ср",
+    "gymId": "gym-technogym",
+    "session": {
+      "id": "session_1788675617070",
+      "date": "2026-09-06T06:20:17.070Z",
+      "workoutType": "B",
+      "dayName": "Ср",
+      "gymId": "gym-technogym",
+      "gymName": "Зал Technogym",
+      "completed": false,
+      "supersets": [
+        {
+          "supersetId": "superset-b1",
+          "supersetTitle": "СУПЕРСЕТ 1: Бицепс бедра + V-форма спины",
+          "restIntervalSec1": 75,
+          "restIntervalSec2": 105,
+          "exercises": [
+            {
+              "exerciseId": "b-1.1",
+              "exerciseTitle": "Сгибания ног в тренажере",
+              "muscleGroup": "Бицепс бедра",
+              "machineName": "Сгибания ног сидя (Technogym)",
+              "sets": [
+                {
+                  "id": "set_b-1.1_1_1788675617069",
+                  "setNumber": 1,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-1.1_2_1788675617069",
+                  "setNumber": 2,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-1.1_3_1788675617069",
+                  "setNumber": 3,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-1.1_4_1788675617069",
+                  "setNumber": 4,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                }
+              ]
+            },
+            {
+              "exerciseId": "b-1.2",
+              "exerciseTitle": "Вертикальная тяга верхнего блока к груди",
+              "muscleGroup": "Широчайшие",
+              "machineName": "Вертикальная тяга верхнего блока (Technogym)",
+              "sets": [
+                {
+                  "id": "set_b-1.2_1_1788675617069",
+                  "setNumber": 1,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-1.2_2_1788675617069",
+                  "setNumber": 2,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-1.2_3_1788675617069",
+                  "setNumber": 3,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-1.2_4_1788675617069",
+                  "setNumber": 4,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "supersetId": "superset-b2",
+          "supersetTitle": "СУПЕРСЕТ 2: Середина спины + Изоляция груди",
+          "restIntervalSec1": 75,
+          "restIntervalSec2": 105,
+          "exercises": [
+            {
+              "exerciseId": "b-2.1",
+              "exerciseTitle": "Тяга двух гантелей к поясу на наклонной скамье (30°)",
+              "muscleGroup": "Середина спины",
+              "machineName": "Тяга двух гантелей на наклонной скамье",
+              "sets": [
+                {
+                  "id": "set_b-2.1_1_1788675617070",
+                  "setNumber": 1,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-2.1_2_1788675617070",
+                  "setNumber": 2,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-2.1_3_1788675617070",
+                  "setNumber": 3,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-2.1_4_1788675617070",
+                  "setNumber": 4,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                }
+              ]
+            },
+            {
+              "exerciseId": "b-2.2",
+              "exerciseTitle": "Сведения рук в Пек-Дек («Бабочка») / кроссовере",
+              "muscleGroup": "Грудь (изоляция)",
+              "machineName": "Сведения рук в Пек-Дек («Бабочка») (Technogym)",
+              "sets": [
+                {
+                  "id": "set_b-2.2_1_1788675617070",
+                  "setNumber": 1,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-2.2_2_1788675617070",
+                  "setNumber": 2,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-2.2_3_1788675617070",
+                  "setNumber": 3,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "supersetId": "superset-b3",
+          "supersetTitle": "СУПЕРСЕТ 3: Задняя дельта + Бицепс",
+          "restIntervalSec1": 60,
+          "restIntervalSec2": 75,
+          "exercises": [
+            {
+              "exerciseId": "b-3.1",
+              "exerciseTitle": "Разведение рук в «Обратной бабочке» / Face Pull",
+              "muscleGroup": "Задняя дельта",
+              "machineName": "Обратная бабочка (Reverse Pec-Deck) (Technogym)",
+              "sets": [
+                {
+                  "id": "set_b-3.1_1_1788675617070",
+                  "setNumber": 1,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-3.1_2_1788675617070",
+                  "setNumber": 2,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-3.1_3_1788675617070",
+                  "setNumber": 3,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-3.1_4_1788675617070",
+                  "setNumber": 4,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                }
+              ]
+            },
+            {
+              "exerciseId": "b-3.2",
+              "exerciseTitle": "Сгибания рук с гантелями на наклонной скамье (45–60°)",
+              "muscleGroup": "Бицепс",
+              "machineName": "Тренажер рычажный (Technogym)",
+              "sets": [
+                {
+                  "id": "set_b-3.2_1_1788675617070",
+                  "setNumber": 1,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-3.2_2_1788675617070",
+                  "setNumber": 2,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-3.2_3_1788675617070",
+                  "setNumber": 3,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                },
+                {
+                  "id": "set_b-3.2_4_1788675617070",
+                  "setNumber": 4,
+                  "weightKg": 0,
+                  "reps": 10,
+                  "completed": false,
+                  "weightConfirmed": false,
+                  "repsConfirmed": false
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "elapsedSeconds": 634,
+    "lastUpdatedTimestamp": 1788676251586,
+    "activeSupersetIndex": 2,
+    "workoutStartedAt": 1788675617074,
+    "restEndsAt": null,
+    "timerInitialSeconds": 60,
+    "isTimerRunning": false
+  },
   "aiReports": []
 }
