@@ -11,6 +11,8 @@ const STORAGE_KEYS = {
   PHOTOS: 'fit_tracker_photos_v1',
   ACTIVE_DRAFT: 'fit_tracker_active_draft_v2',
   PROFILE: 'fit_tracker_body_profile_v1',
+  DELETED_INBODY: 'fit_tracker_deleted_inbody_v1',
+  DELETED_PHOTOS: 'fit_tracker_deleted_photos_v1',
 };
 
 export class StorageService {
@@ -331,6 +333,8 @@ export class StorageService {
   static deleteInBodyRecord(id: string): void {
     const records = this.getInBodyRecords().filter(r => r.id !== id);
     localStorage.setItem(STORAGE_KEYS.INBODY, JSON.stringify(records));
+    const deleted = this.getDeletedIds(STORAGE_KEYS.DELETED_INBODY); deleted.add(id);
+    localStorage.setItem(STORAGE_KEYS.DELETED_INBODY, JSON.stringify([...deleted]));
     StorageService.touchCloud();
   }
 
@@ -371,7 +375,13 @@ export class StorageService {
   static deleteProgressPhoto(id: string): void {
     const photos = this.getProgressPhotos().filter(p => p.id !== id);
     localStorage.setItem(STORAGE_KEYS.PHOTOS, JSON.stringify(photos));
+    const deleted = this.getDeletedIds(STORAGE_KEYS.DELETED_PHOTOS); deleted.add(id);
+    localStorage.setItem(STORAGE_KEYS.DELETED_PHOTOS, JSON.stringify([...deleted]));
     StorageService.touchCloud();
+  }
+
+  private static getDeletedIds(key: string): Set<string> {
+    try { return new Set(JSON.parse(localStorage.getItem(key) || '[]')); } catch { return new Set(); }
   }
 
   static getBodyProfile(): BodyProfile {

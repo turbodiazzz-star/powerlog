@@ -8,7 +8,6 @@ import {
   Plus,
   Upload,
   Trash2,
-  Bell,
   X,
   Sparkles,
   Zap,
@@ -66,6 +65,9 @@ export const ProgressPhotoTracker: React.FC = () => {
   const [isPreparing, setIsPreparing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [showAllPhotos, setShowAllPhotos] = useState(false);
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [fullScreenPhoto, setFullScreenPhoto] = useState<ProgressPhotoRecord | null>(null);
 
   useEffect(() => {
     loadPhotos();
@@ -206,15 +208,8 @@ export const ProgressPhotoTracker: React.FC = () => {
     }
   };
 
-  // Reminder calculation
-  const lastPhoto = photos[0];
-  let daysSinceLastPhoto = 0;
-  if (lastPhoto) {
-    const lastDate = new Date(lastPhoto.date).getTime();
-    const now = new Date().getTime();
-    daysSinceLastPhoto = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
-  }
-  const showReminder = !lastPhoto || daysSinceLastPhoto >= 14;
+  const displayedPhotos = showAllPhotos ? photos : photos.slice(0, 1);
+  const comparePhotos = photos.filter(photo => compareIds.includes(photo.id));
 
   return (
     <div className="space-y-4">
@@ -265,28 +260,6 @@ export const ProgressPhotoTracker: React.FC = () => {
       )}
 
       {/* Photo Reminder Card if >14 days */}
-      {showReminder && (
-        <div className="bg-zinc-900/90 border border-zinc-800 p-3 rounded-xl flex items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <Bell className="w-4 h-4 text-amber-400 shrink-0" />
-            <div>
-              <span className="font-bold text-white block">Напоминание!</span>
-              <span className="text-zinc-400 text-[11px]">
-                {lastPhoto
-                  ? `Прошло ${daysSinceLastPhoto} дн. Пора сделать новый снимок!`
-                  : 'Загрузите первое фото вашей формы.'}
-              </span>
-            </div>
-          </div>
-          <button
-            onClick={handleOpenModal}
-            className="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-3 py-1.5 rounded-lg font-bold border border-zinc-700 shrink-0 text-xs"
-          >
-            Сделать фото
-          </button>
-        </div>
-      )}
-
       {/* Photos Grid & Timeline */}
       {photos.length === 0 ? (
         <div className="bg-zinc-900/60 border border-zinc-800/80 rounded-xl p-6 text-center text-zinc-500 space-y-2">
@@ -305,7 +278,7 @@ export const ProgressPhotoTracker: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-            {photos.map(p => {
+            {displayedPhotos.map(p => {
               const dateStr = formatDateDot(p.date);
 
               return (
@@ -314,11 +287,9 @@ export const ProgressPhotoTracker: React.FC = () => {
                   className="bg-zinc-900 border border-zinc-800/90 rounded-xl overflow-hidden group shadow-sm flex flex-col justify-between"
                 >
                   <div className="relative aspect-[3/4] bg-zinc-950 overflow-hidden">
-                    <img
-                      src={p.imageUrl}
-                      alt={p.pose}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+                    <button type="button" className="w-full h-full" onClick={() => setFullScreenPhoto(p)} aria-label="Открыть фото на весь экран">
+                      <img src={p.imageUrl} alt="Фото формы" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    </button>
                     <div className="absolute top-1.5 left-1.5 bg-zinc-950/80 backdrop-blur-md px-1.5 py-0.5 rounded text-[9px] font-bold text-zinc-300 border border-zinc-800">
                       {POSE_LABELS[p.pose]?.title.split(' ')[0] || p.pose}
                     </div>
@@ -329,6 +300,10 @@ export const ProgressPhotoTracker: React.FC = () => {
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
+                    <label className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded bg-zinc-950/80 px-1.5 py-1 text-[9px] text-white">
+                      <input type="checkbox" checked={compareIds.includes(p.id)} onChange={() => setCompareIds(ids => ids.includes(p.id) ? ids.filter(id => id !== p.id) : ids.length < 2 ? [...ids, p.id] : ids)} />
+                      Сравнить
+                    </label>
                   </div>
 
                   <div className="p-2 bg-zinc-900 flex justify-between items-center text-[11px]">
@@ -339,8 +314,12 @@ export const ProgressPhotoTracker: React.FC = () => {
               );
             })}
           </div>
+          {photos.length > 1 && <button type="button" onClick={() => setShowAllPhotos(value => !value)} className="w-full rounded-lg border border-zinc-800 py-2 text-xs font-bold text-zinc-300">{showAllPhotos ? 'Свернуть историю' : `Показать остальные фото (${photos.length - 1})`}</button>}
+          {comparePhotos.length === 2 && <div className="rounded-xl border border-emerald-800/70 bg-zinc-900 p-2.5"><div className="mb-2 text-[10px] font-black uppercase tracking-wider text-emerald-400">Сравнение фото</div><div className="grid grid-cols-2 gap-2">{comparePhotos.map(photo => <button type="button" key={photo.id} onClick={() => setFullScreenPhoto(photo)}><img src={photo.imageUrl} alt="Сравнение формы" className="w-full aspect-[3/4] rounded-lg object-cover" /><span className="mt-1 block text-[10px] text-zinc-400">{formatDateDot(photo.date)}</span></button>)}</div></div>}
         </div>
       )}
+
+      {fullScreenPhoto && <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-4" onClick={() => setFullScreenPhoto(null)}><img src={fullScreenPhoto.imageUrl} alt="Фото формы на весь экран" className="max-h-full max-w-full object-contain" /></div>}
 
       {/* Modal: Add Progress Photo */}
       {isModalOpen && (
