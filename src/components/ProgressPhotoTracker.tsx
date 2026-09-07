@@ -17,8 +17,8 @@ import {
 
 const POSE_LABELS: Record<PhotoPose, { title: string; hint: string }> = {
   front: {
-    title: 'Анфас (Спереди)',
-    hint: 'Стопы вместе, руки вдоль тела, пресс расслаблен.',
+    title: 'Снимок формы',
+    hint: '',
   },
   side: {
     title: 'Профиль (Сбоку)',
@@ -226,7 +226,7 @@ export const ProgressPhotoTracker: React.FC = () => {
             Прогресс-Фото Формы
           </h2>
           <p className="text-xs text-zinc-400 mt-0.5">
-            4 ракурса по датам для наглядного сравнения
+            Снимки по датам для сравнения с InBody и предыдущей динамикой
           </p>
         </div>
 
