@@ -274,15 +274,18 @@ export const InBodyTracker: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = (e?: React.FormEvent) => {
+    e?.preventDefault();
     // Batch files are persisted as soon as each scan is recognized. The form
     // fields intentionally stay empty, so this button should finish the flow.
     if (batchStatus.length > 0) {
       setIsModalOpen(false);
       return;
     }
-    if (!weightKg) return;
+    if (!weightKg || Number.isNaN(parseFloat(weightKg)) || parseFloat(weightKg) <= 0) {
+      setOcrResultMsg({ type: 'warn', msg: 'Не найден вес. Укажите общий вес вручную или загрузите более чёткий скан.' });
+      return;
+    }
 
     StorageService.saveInBodyRecord({
       date,
@@ -396,7 +399,7 @@ export const InBodyTracker: React.FC = () => {
 
           <form
             onSubmit={handleSave}
-            noValidate={batchStatus.length > 0}
+            noValidate
             className="relative z-10 bg-zinc-900 border border-zinc-800 rounded-2xl max-w-lg sm:max-w-xl w-full shadow-2xl flex flex-col h-[calc(100vh-5rem)] max-h-[calc(100vh-5rem)] overflow-hidden text-xs"
           >
             {/* Fixed Header */}
@@ -407,11 +410,13 @@ export const InBodyTracker: React.FC = () => {
               </h3>
               <div className="flex items-center gap-2 shrink-0">
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={() => handleSave()}
+                  disabled={isAnalyzing}
                   className="px-3 py-1.5 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-black text-xs transition-all shadow-sm active:scale-95 flex items-center gap-1"
                 >
                   <CheckCircle className="w-3.5 h-3.5 text-zinc-950 stroke-[2.5]" />
-                  <span>{batchStatus.length > 0 ? 'Готово' : 'Сохранить'}</span>
+                <span>{batchStatus.length > 0 ? 'Готово' : 'Сохранить'}</span>
                 </button>
                 <button
                   type="button"
@@ -674,13 +679,15 @@ export const InBodyTracker: React.FC = () => {
               >
                 Отмена
               </button>
-              {!batchStatus.length && <button
-                type="submit"
+              <button
+                type="button"
+                onClick={() => handleSave()}
+                disabled={isAnalyzing}
                 className="px-6 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-zinc-950 font-black text-xs transition-all shadow-lg active:scale-95 flex items-center gap-1.5"
               >
                 <CheckCircle className="w-4 h-4 text-zinc-950 stroke-[2.5]" />
-                Сохранить запись
-              </button>}
+                {batchStatus.length ? 'Готово' : 'Сохранить запись'}
+              </button>
             </div>
           </form>
         </div>

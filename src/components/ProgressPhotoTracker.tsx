@@ -34,6 +34,23 @@ const POSE_LABELS: Record<PhotoPose, { title: string; hint: string }> = {
   },
 };
 
+const compressPhoto = (dataUrl: string, maxSide = 720, quality = 0.62): Promise<string> =>
+  new Promise(resolve => {
+    const image = new Image();
+    image.onload = () => {
+      const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      const context = canvas.getContext('2d');
+      if (!context) return resolve(dataUrl);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    image.onerror = () => resolve(dataUrl);
+    image.src = dataUrl;
+  });
+
 export const ProgressPhotoTracker: React.FC = () => {
   const [photos, setPhotos] = useState<ProgressPhotoRecord[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,6 +63,9 @@ export const ProgressPhotoTracker: React.FC = () => {
   const [imageUrl, setImageUrl] = useState('');
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [weightKg, setWeightKg] = useState('');
+  const [isPreparing, setIsPreparing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     loadPhotos();
@@ -89,6 +109,7 @@ export const ProgressPhotoTracker: React.FC = () => {
     setDate(initialDate);
     setImageUrl('');
     setSelectedImages([]);
+    setSaveError(null);
     syncWithInBodyData(initialDate);
     setIsModalOpen(true);
   };
@@ -98,7 +119,7 @@ export const ProgressPhotoTracker: React.FC = () => {
     syncWithInBodyData(newDate);
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []).slice(0, 10);
     if (!files.length) return;
 
@@ -108,29 +129,54 @@ export const ProgressPhotoTracker: React.FC = () => {
       setDate(photoDate);
     }
     syncWithInBodyData(photoDate);
-    Promise.all(files.map(file => new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    }))).then(urls => {
+    setIsPreparing(true);
+    setSaveError(null);
+    try {
+      const urls = await Promise.all(files.map(async file => {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        return compressPhoto(dataUrl);
+      }));
       setSelectedImages(urls);
       setImageUrl(urls[0] || '');
-    }).catch(() => undefined);
+    } catch {
+      setSaveError('Не удалось подготовить фотографии. Выберите их ещё раз.');
+    } finally {
+      setIsPreparing(false);
+    }
     e.target.value = '';
   };
 
-  const handleSavePhoto = (e?: React.FormEvent) => {
+  const handleSavePhoto = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const images = selectedImages.length ? selectedImages : (imageUrl ? [imageUrl] : []);
-    if (!images.length) return;
+    if (!images.length || isSaving) {
+      if (!images.length) setSaveError('Сначала выберите хотя бы одну фотографию.');
+      return;
+    }
 
-    images.forEach(url => StorageService.saveProgressPhoto({
-      date,
-      pose: 'front',
-      imageUrl: url,
-      weightKg: weightKg ? parseFloat(weightKg) : undefined,
-    }));
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      for (const url of images) {
+        StorageService.saveProgressPhoto({
+          date,
+          pose: 'front',
+          imageUrl: url,
+          weightKg: weightKg ? parseFloat(weightKg) : undefined,
+        });
+      }
+    } catch (error) {
+      console.error('Progress photo save failed', error);
+      setSaveError('Не удалось сохранить пакет. Освободите место в браузере или загрузите меньше фото за раз. Уже сохранённые снимки останутся в галерее.');
+      loadPhotos();
+      setIsSaving(false);
+      return;
+    }
 
     setIsModalOpen(false);
     resetForm();
@@ -142,6 +188,7 @@ export const ProgressPhotoTracker: React.FC = () => {
       photos: StorageService.getProgressPhotos(),
       recentSessions: StorageService.getSessions().filter(s => s.completed),
     }).catch(() => undefined);
+    setIsSaving(false);
   };
 
   const resetForm = () => {
@@ -298,7 +345,7 @@ export const ProgressPhotoTracker: React.FC = () => {
       {/* Modal: Add Progress Photo */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 bg-zinc-950/90 backdrop-blur-md animate-fadeIn">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-sm w-full p-4 shadow-2xl space-y-3 max-h-[57vh] overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl max-w-sm w-full shadow-2xl flex flex-col max-h-[calc(100dvh-2rem)] overflow-hidden">
             <div className="flex justify-between items-center border-b border-zinc-800 pb-2">
               <h3 className="text-sm font-bold text-white flex items-center gap-2">
                 <Camera className="w-4 h-4 text-indigo-400" />
@@ -312,14 +359,14 @@ export const ProgressPhotoTracker: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSavePhoto} className="space-y-3 text-xs">
+            <form onSubmit={handleSavePhoto} noValidate className="space-y-3 text-xs overflow-y-auto p-4">
               {/* Upload Input */}
               <div>
                 <label className="block text-[11px] font-medium text-zinc-400 mb-1">Загрузить до 10 фото</label>
                 <label className="flex flex-col items-center justify-center p-3 border border-dashed border-zinc-700 hover:border-zinc-500 rounded-lg cursor-pointer bg-zinc-950/60 transition-colors">
                   <Upload className="w-4 h-4 text-indigo-400 mb-1" />
                   <span className="text-[11px] font-medium text-zinc-300">
-                    {selectedImages.length ? `Выбрано фото: ${selectedImages.length}/10` : 'Выберите до 10 фото из галереи / камеры'}
+                    {isPreparing ? 'Подготавливаем фото…' : selectedImages.length ? `Выбрано фото: ${selectedImages.length}/10` : 'Выберите до 10 фото из галереи / камеры'}
                   </span>
                   <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} className="hidden" />
                 </label>
@@ -331,6 +378,8 @@ export const ProgressPhotoTracker: React.FC = () => {
                 )}
                 <p className="text-[10px] text-zinc-500 mt-1">ИИ сопоставит снимки формы с последним InBody и предыдущей динамикой.</p>
               </div>
+
+              {saveError && <div className="rounded-lg border border-rose-800 bg-rose-950/50 px-2.5 py-2 text-[11px] text-rose-200">{saveError}</div>}
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
@@ -367,10 +416,11 @@ export const ProgressPhotoTracker: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleSavePhoto()}
-                  className="px-4 py-1.5 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 font-bold text-xs transition-all"
+                  onClick={() => void handleSavePhoto()}
+                  disabled={isPreparing || isSaving || selectedImages.length === 0}
+                  className="px-4 py-1.5 rounded-lg bg-white text-zinc-950 hover:bg-zinc-200 disabled:bg-zinc-700 disabled:text-zinc-400 font-bold text-xs transition-all"
                 >
-                  Сохранить
+                  {isSaving ? 'Сохранение…' : 'Сохранить'}
                 </button>
               </div>
             </form>

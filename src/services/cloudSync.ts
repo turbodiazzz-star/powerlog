@@ -44,14 +44,38 @@ function mergeById<T extends { id?: string }>(local: T[], remote: T[]): T[] {
   const map = byId(local);
   for (const item of remote) {
     if (!item?.id) continue;
-    if (!map.has(item.id)) map.set(item.id, item);
+    const existing = map.get(item.id);
+    if (!existing) {
+      map.set(item.id, item);
+      continue;
+    }
+    // Keep the local copy as the authoritative edited record, but fill gaps
+    // from the cloud. This is especially important for imageUrl: an older
+    // browser can have the same record id without the image while the cloud
+    // copy already contains the uploaded scan/photo.
+    const merged = { ...item, ...existing } as T & { imageUrl?: string };
+    const remoteImage = (item as T & { imageUrl?: string }).imageUrl;
+    if (!merged.imageUrl && remoteImage) merged.imageUrl = remoteImage;
+    map.set(item.id, merged as T);
   }
   return Array.from(map.values());
 }
 
 function countRecords(snap: CloudSnapshot | null | undefined): number {
   if (!snap) return 0;
-  return (snap.sessions?.length || 0) + (snap.inbody?.length || 0) + (snap.photos?.length || 0);
+  // Treat every persisted collection as cloud-worthy. Previously a profile,
+  // gym, or machine change could stay only in localStorage until a workout or
+  // InBody record happened to exist.
+  return (
+    (snap.gyms?.length || 0) +
+    (snap.machines?.length || 0) +
+    (snap.sessions?.length || 0) +
+    (snap.inbody?.length || 0) +
+    (snap.photos?.length || 0) +
+    (snap.aiReports?.length || 0) +
+    (snap.profile ? 1 : 0) +
+    (snap.draft ? 1 : 0)
+  );
 }
 
 function csvEscape(value: unknown) {
