@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export const AppDashboard: React.FC = () => {
-  const APP_VERSION = '0030';
+  const APP_VERSION = '0034';
   const [activeNav, setActiveTab] = useState<'home' | 'progress' | 'program'>('home');
   const [activeSessionProps, setActiveSessionProps] = useState<{
     workoutType: string;
@@ -283,7 +283,7 @@ export const AppDashboard: React.FC = () => {
 
       {/* Sleek Minimalist Bottom Navigation Bar */}
       <nav className="fixed bottom-0 left-0 right-0 bg-zinc-900/95 border-t border-zinc-800/90 backdrop-blur-md z-40 pb-safe">
-        <div className="max-w-md mx-auto grid grid-cols-3 h-12 px-3 gap-2 py-1">
+        <div className="max-w-md mx-auto grid grid-cols-2 h-12 px-3 gap-2 py-1">
           <button
             onClick={() => setActiveTab('home')}
             className={`flex items-center justify-center gap-2 text-xs font-bold transition-all rounded-lg ${
@@ -306,13 +306,6 @@ export const AppDashboard: React.FC = () => {
           >
             <TrendingUp className="w-4 h-4" />
             <span>Прогресс</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('program')}
-            className={`flex items-center justify-center gap-1 text-xs font-bold transition-all rounded-lg ${activeNav === 'program' ? 'bg-zinc-800 text-white border border-zinc-700' : 'text-zinc-500 hover:text-zinc-300'}`}
-          >
-            <ChevronRight className="w-4 h-4" />
-            <span>Настроить</span>
           </button>
         </div>
       </nav>

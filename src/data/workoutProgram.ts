@@ -120,7 +120,7 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B', ProgramWorkout> = {
   B: {
     type: 'B',
     title: 'ТРЕНИРОВКА B',
-    subTitle: 'Бицепс бедра / Ширина спины / Середина спины / Грудь / Руки и дельты',
+    subTitle: 'Бицепс бедра / Ширина спины / Грудь / Задняя дельта / Бицепс',
     supersets: [
       {
         id: 'superset-b1',
@@ -142,6 +142,9 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B', ProgramWorkout> = {
             focusNotes: 'Медленное опускание (3 секунды). В жиме ногами задняя поверхность бедра выключена, поэтому сгибания — единственный ключевой инструмент.',
           },
           {
+            id: 'b-1.3', supersetId: 'superset-b1', code: '1.3', name: 'Румынская тяга со штангой', muscleGroup: 'Бицепс бедра', targetSets: 4, targetReps: '8–12', focusNotes: 'Таз назад, спина нейтральна, штанга скользит вдоль ног.'
+          },
+          {
             id: 'b-1.2',
             supersetId: 'superset-b1',
             code: '1.2',
@@ -156,7 +159,7 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B', ProgramWorkout> = {
       {
         id: 'superset-b2',
         number: 2,
-        title: 'СУПЕРСЕТ 2: Середина спины + Изоляция груди',
+        title: 'СУПЕРСЕТ 2: Задняя дельта + Изоляция груди',
         rest1Text: '60–90 сек',
         rest1Sec: 75,
         rest2Text: '90–120 сек',
@@ -166,11 +169,11 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B', ProgramWorkout> = {
             id: 'b-2.1',
             supersetId: 'superset-b2',
             code: '2.1',
-            name: 'Тяга двух гантелей к поясу на наклонной скамье (30°)',
-            muscleGroup: 'Середина спины',
+            name: 'Пэк-дек на заднюю дельту',
+            muscleGroup: 'Задняя дельта',
             targetSets: 4,
             targetReps: '9–12',
-            focusNotes: 'Идеальное упражнение на середину спины. Поясница разгружена. Хват нейтральный, локти через стороны, фиксация 1 сек со сведенными лопатками.',
+            focusNotes: 'Локти ведём назад и в стороны, без рывка, с паузой в сокращении.',
           },
           {
             id: 'b-2.2',
@@ -187,7 +190,7 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B', ProgramWorkout> = {
       {
         id: 'superset-b3',
         number: 3,
-        title: 'СУПЕРСЕТ 3: Задняя дельта + Бицепс',
+        title: 'СУПЕРСЕТ 3: Отстающая задняя дельта + Бицепс',
         rest1Text: '60 сек',
         rest1Sec: 60,
         rest2Text: '60–90 сек',
@@ -197,7 +200,7 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B', ProgramWorkout> = {
             id: 'b-3.1',
             supersetId: 'superset-b3',
             code: '3.1',
-            name: 'Разведение рук в «Обратной бабочке» / Face Pull',
+            name: 'Пэк-дек на заднюю дельту',
             muscleGroup: 'Задняя дельта',
             targetSets: 4,
             targetReps: '12–15',
