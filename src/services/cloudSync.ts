@@ -18,25 +18,13 @@ export interface CloudSnapshot {
   program?: unknown;
 }
 
-const OWNER = 'turbodiazzz-star';
-const REPO = 'powerlog-data';
-const API = 'https://api.github.com';
-const ACCESS_TOKEN_KEY = 'fit_tracker_github_access_token_v1';
+const WORKER_URL = 'https://powerlog-cloud.powerlog-worker.workers.dev';
 const PENDING_KEY = 'fit_tracker_cloud_pending_v1';
-const DEVICE_CLIENT_ID = 'Ov23lii2r5P5KL73k6h7';
 
 export type CloudStatus = 'disconnected' | 'syncing' | 'saved' | 'retrying';
 
 function emitStatus(status: CloudStatus) {
   window.dispatchEvent(new CustomEvent<CloudStatus>('powerlog:cloud-status', { detail: status }));
-}
-
-function writeToken(): string {
-  try {
-    return localStorage.getItem(ACCESS_TOKEN_KEY) || '';
-  } catch {
-    return '';
-  }
 }
 
 function byId<T extends { id?: string }>(items: T[]): Map<string, T> {
@@ -86,20 +74,6 @@ function countRecords(snap: CloudSnapshot | null | undefined): number {
   );
 }
 
-function csvEscape(value: unknown) {
-  const s = value == null ? '' : String(value);
-  if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
-  return s;
-}
-
-function toCsv(rows: Record<string, unknown>[], headers: string[]) {
-  return (
-    [headers.join(',')]
-      .concat(rows.map(row => headers.map(h => csvEscape(row[h])).join(',')))
-      .join('\n') + '\n'
-  );
-}
-
 function compactForGit(snap: CloudSnapshot): CloudSnapshot {
   return {
     ...snap,
@@ -112,103 +86,12 @@ function compactForGit(snap: CloudSnapshot): CloudSnapshot {
   };
 }
 
-async function gh(path: string, init: RequestInit = {}) {
-  const token = writeToken();
-  const res = await fetch(`${API}${path}`, {
-    ...init,
-    headers: {
-      Accept: 'application/vnd.github+json',
-      'X-GitHub-Api-Version': '2022-11-28',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(init.body ? { 'Content-Type': 'application/json' } : {}),
-      ...(init.headers || {}),
-    },
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(json.message || `GitHub HTTP ${res.status}`);
-  return json;
-}
-
-function tableFiles(snap: CloudSnapshot): { path: string; content: string }[] {
-  const sessions = (snap.sessions || []) as any[];
-  const inbody = (snap.inbody || []) as any[];
-  const photos = (snap.photos || []) as any[];
-  const gyms = (snap.gyms || []) as any[];
-  const machines = (snap.machines || []) as any[];
-  return [
-    { path: 'cloud/state.json', content: JSON.stringify(snap, null, 2) },
-    {
-      path: 'cloud/tables/sessions.csv',
-      content: toCsv(
-        sessions.map(s => ({
-          id: s.id,
-          date: s.date,
-          workoutType: s.workoutType,
-          dayName: s.dayName,
-          gymName: s.gymName,
-          durationMinutes: s.durationMinutes,
-          completed: s.completed,
-        })),
-        ['id', 'date', 'workoutType', 'dayName', 'gymName', 'durationMinutes', 'completed'],
-      ),
-    },
-    {
-      path: 'cloud/tables/inbody.csv',
-      content: toCsv(
-        inbody.map(r => ({
-          id: r.id,
-          date: r.date,
-          weightKg: r.weightKg,
-          muscleMassKg: r.muscleMassKg,
-          fatMassKg: r.fatMassKg,
-          bodyFatPercent: r.bodyFatPercent,
-          scan: r.imageUrl,
-        })),
-        ['id', 'date', 'weightKg', 'muscleMassKg', 'fatMassKg', 'bodyFatPercent', 'scan'],
-      ),
-    },
-    {
-      path: 'cloud/tables/photos.csv',
-      content: toCsv(
-        photos.map(p => ({
-          id: p.id,
-          date: p.date,
-          pose: p.pose,
-          weightKg: p.weightKg,
-          image: p.imageUrl,
-        })),
-        ['id', 'date', 'pose', 'weightKg', 'image'],
-      ),
-    },
-    {
-      path: 'cloud/tables/gyms.csv',
-      content: toCsv(
-        gyms.map(g => ({ id: g.id, name: g.name, brand: g.brand, notes: g.notes })),
-        ['id', 'name', 'brand', 'notes'],
-      ),
-    },
-    {
-      path: 'cloud/tables/machines.csv',
-      content: toCsv(
-        machines.map(m => ({
-          id: m.id,
-          gymId: m.gymId,
-          exerciseId: m.exerciseId,
-          machineName: m.machineName,
-          emptyWeightKg: m.emptyWeightKg,
-          ratioMultiplier: m.ratioMultiplier,
-        })),
-        ['id', 'gymId', 'exerciseId', 'machineName', 'emptyWeightKg', 'ratioMultiplier'],
-      ),
-    },
-  ];
-}
-
 export class CloudSync {
   private static pushTimer: ReturnType<typeof setTimeout> | null = null;
   private static pushing = false;
   private static queued = false;
   private static hydrating = false;
+  private static connected = false;
 
   static captureLocal(): CloudSnapshot {
     let aiReports: unknown[] = [];
@@ -274,10 +157,11 @@ export class CloudSync {
 
   static async pullRemote(): Promise<CloudSnapshot | null> {
     try {
-      if (!writeToken()) return null;
-      const file = await gh(`/repos/${OWNER}/${REPO}/contents/cloud/state.json?ref=main`);
-      if (typeof file.content !== 'string') return null;
-      const json = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g, '')))));
+      const res = await fetch(`${WORKER_URL}/state`, { credentials: 'include', cache: 'no-store' });
+      if (res.status === 401) { this.connected = false; return null; }
+      if (!res.ok) return null;
+      this.connected = true;
+      const json = await res.json();
       if (!json || typeof json !== 'object') return null;
       return json as CloudSnapshot;
     } catch {
@@ -286,36 +170,11 @@ export class CloudSync {
   }
 
   static async pushSnapshot(snap: CloudSnapshot): Promise<boolean> {
-    if (!writeToken()) return false;
     const compact = compactForGit(snap);
-    const files = tableFiles(compact);
     try {
-      const ref = await gh(`/repos/${OWNER}/${REPO}/git/ref/heads/main`);
-      const parentSha = ref.object.sha as string;
-      const parent = await gh(`/repos/${OWNER}/${REPO}/git/commits/${parentSha}`);
-      const tree = files.map(file => ({
-        path: file.path,
-        mode: '100644',
-        type: 'blob',
-        content: file.content,
-      }));
-      const newTree = await gh(`/repos/${OWNER}/${REPO}/git/trees`, {
-        method: 'POST',
-        body: JSON.stringify({ base_tree: parent.tree.sha, tree }),
-      });
-      const commit = await gh(`/repos/${OWNER}/${REPO}/git/commits`, {
-        method: 'POST',
-        body: JSON.stringify({
-          message: `cloud: sync ${compact.updatedAt}`,
-          tree: newTree.sha,
-          parents: [parentSha],
-        }),
-      });
-      await gh(`/repos/${OWNER}/${REPO}/git/refs/heads/main`, {
-        method: 'PATCH',
-        body: JSON.stringify({ sha: commit.sha }),
-      });
-      return true;
+      const res = await fetch(`${WORKER_URL}/state`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(compact) });
+      this.connected = res.ok;
+      return res.ok;
     } catch {
       return false;
     }
@@ -323,10 +182,6 @@ export class CloudSync {
 
   static async hydrate(): Promise<void> {
     if (this.hydrating) return;
-    if (!writeToken()) {
-      emitStatus('disconnected');
-      return;
-    }
     this.hydrating = true;
     emitStatus('syncing');
     try {
@@ -353,10 +208,6 @@ export class CloudSync {
     // five-second debounce is still waiting.
     this.queued = true;
     localStorage.setItem(PENDING_KEY, '1');
-    if (!writeToken()) {
-      emitStatus('disconnected');
-      return;
-    }
     emitStatus('syncing');
     if (this.pushing || this.pushTimer) return;
     this.pushTimer = setTimeout(() => {
@@ -390,16 +241,11 @@ export class CloudSync {
   }
 
   static isConnected(): boolean {
-    return Boolean(writeToken());
+    return this.connected;
   }
 
   static async startDeviceAuthorization(): Promise<{ userCode: string; verificationUri: string; deviceCode: string; interval: number }> {
-    const body = new URLSearchParams({ client_id: DEVICE_CLIENT_ID, scope: 'repo' });
-    const response = await fetch('https://github.com/login/device/code', {
-      method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
-      body,
-    });
+    const response = await fetch(`${WORKER_URL}/auth/start`, { method: 'POST', credentials: 'include' });
     const data = await response.json();
     if (!response.ok || !data.device_code || !data.user_code || !data.verification_uri) {
       throw new Error(data.error_description || 'Не удалось начать вход в GitHub');
@@ -408,19 +254,10 @@ export class CloudSync {
   }
 
   static async finishDeviceAuthorization(deviceCode: string): Promise<'pending' | 'connected'> {
-    const body = new URLSearchParams({
-      client_id: DEVICE_CLIENT_ID,
-      device_code: deviceCode,
-      grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
-    });
-    const response = await fetch('https://github.com/login/oauth/access_token', {
-      method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
-      body,
-    });
+    const response = await fetch(`${WORKER_URL}/auth/poll`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deviceCode }) });
     const data = await response.json();
-    if (data.access_token) {
-      localStorage.setItem(ACCESS_TOKEN_KEY, data.access_token);
+    if (data.status === 'connected') {
+      this.connected = true;
       emitStatus('syncing');
       await this.hydrate();
       return 'connected';
