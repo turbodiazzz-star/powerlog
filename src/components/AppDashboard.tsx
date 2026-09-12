@@ -15,8 +15,6 @@ import {
   TrendingUp,
   Clock,
   Cloud,
-  CheckCircle2,
-  RefreshCw,
 } from 'lucide-react';
 
 export const AppDashboard: React.FC = () => {
@@ -133,10 +131,10 @@ export const AppDashboard: React.FC = () => {
           </div>
           <div
             className={`shrink-0 rounded-lg border px-2 py-1 text-[9px] font-bold flex items-center gap-1 ${cloudStatus === 'saved' ? 'border-emerald-500/40 text-emerald-400 bg-emerald-950/30' : cloudStatus === 'disconnected' ? 'border-amber-500/50 text-amber-300 bg-amber-950/30' : 'border-zinc-600 text-zinc-300'}`}
-            aria-label="Статус облачного сохранения"
+            aria-label="Автоматическое облачное сохранение"
           >
-            {cloudStatus === 'saved' ? <CheckCircle2 className="w-3 h-3" /> : cloudStatus === 'syncing' ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Cloud className="w-3 h-3" />}
-            {cloudStatus === 'saved' ? 'В облаке' : cloudStatus === 'syncing' ? 'Сохраняю' : 'Нет связи'}
+            <Cloud className="w-3 h-3" />
+            <span className="sr-only">Сохраняется автоматически</span>
           </div>
         </div>
       </header>
