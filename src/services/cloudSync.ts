@@ -19,17 +19,21 @@ export interface CloudSnapshot {
 }
 
 const OWNER = 'turbodiazzz-star';
-const REPO = 'powerlog';
-const RAW_STATE = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/cloud/state.json`;
+const REPO = 'powerlog-data';
 const API = 'https://api.github.com';
+const ACCESS_TOKEN_KEY = 'fit_tracker_github_access_token_v1';
+const PENDING_KEY = 'fit_tracker_cloud_pending_v1';
+const DEVICE_CLIENT_ID = 'Ov23lii2r5P5KL73k6h7';
 
-declare const __PWR__: number[];
+export type CloudStatus = 'disconnected' | 'syncing' | 'saved' | 'retrying';
+
+function emitStatus(status: CloudStatus) {
+  window.dispatchEvent(new CustomEvent<CloudStatus>('powerlog:cloud-status', { detail: status }));
+}
 
 function writeToken(): string {
   try {
-    const nums = typeof __PWR__ === 'undefined' ? [] : __PWR__;
-    if (!nums.length) return '';
-    return nums.map(n => String.fromCharCode(n ^ 91)).join('');
+    return localStorage.getItem(ACCESS_TOKEN_KEY) || '';
   } catch {
     return '';
   }
@@ -270,9 +274,10 @@ export class CloudSync {
 
   static async pullRemote(): Promise<CloudSnapshot | null> {
     try {
-      const res = await fetch(`${RAW_STATE}?t=${Date.now()}`, { cache: 'no-store' });
-      if (!res.ok) return null;
-      const json = await res.json();
+      if (!writeToken()) return null;
+      const file = await gh(`/repos/${OWNER}/${REPO}/contents/cloud/state.json?ref=main`);
+      if (typeof file.content !== 'string') return null;
+      const json = JSON.parse(decodeURIComponent(escape(atob(file.content.replace(/\n/g, '')))));
       if (!json || typeof json !== 'object') return null;
       return json as CloudSnapshot;
     } catch {
@@ -318,7 +323,12 @@ export class CloudSync {
 
   static async hydrate(): Promise<void> {
     if (this.hydrating) return;
+    if (!writeToken()) {
+      emitStatus('disconnected');
+      return;
+    }
     this.hydrating = true;
+    emitStatus('syncing');
     try {
       const local = this.captureLocal();
       const remote = await this.pullRemote();
@@ -327,7 +337,10 @@ export class CloudSync {
       }
       const after = this.captureLocal();
       if (countRecords(after) > 0) {
-        await this.pushSnapshot(after);
+        const saved = await this.pushSnapshot(after);
+        emitStatus(saved ? 'saved' : 'retrying');
+      } else {
+        emitStatus('saved');
       }
     } finally {
       this.hydrating = false;
@@ -339,7 +352,12 @@ export class CloudSync {
     // commits, so a page refresh cannot drop a completed workout while a
     // five-second debounce is still waiting.
     this.queued = true;
-    localStorage.setItem('fit_tracker_cloud_pending_v1', '1');
+    localStorage.setItem(PENDING_KEY, '1');
+    if (!writeToken()) {
+      emitStatus('disconnected');
+      return;
+    }
+    emitStatus('syncing');
     if (this.pushing || this.pushTimer) return;
     this.pushTimer = setTimeout(() => {
       this.pushTimer = null;
@@ -358,14 +376,56 @@ export class CloudSync {
         const saved = await this.pushSnapshot(snap);
         if (!saved) {
           this.queued = true;
+          emitStatus('retrying');
           // Keep a visible durable marker and retry without requiring another edit.
           this.pushTimer = setTimeout(() => { this.pushTimer = null; void this.flushPushQueue(); }, 10000);
           return;
         }
       }
-      localStorage.removeItem('fit_tracker_cloud_pending_v1');
+      localStorage.removeItem(PENDING_KEY);
+      emitStatus('saved');
     } finally {
       this.pushing = false;
     }
+  }
+
+  static isConnected(): boolean {
+    return Boolean(writeToken());
+  }
+
+  static async startDeviceAuthorization(): Promise<{ userCode: string; verificationUri: string; deviceCode: string; interval: number }> {
+    const body = new URLSearchParams({ client_id: DEVICE_CLIENT_ID, scope: 'repo' });
+    const response = await fetch('https://github.com/login/device/code', {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+    const data = await response.json();
+    if (!response.ok || !data.device_code || !data.user_code || !data.verification_uri) {
+      throw new Error(data.error_description || 'Не удалось начать вход в GitHub');
+    }
+    return { userCode: data.user_code, verificationUri: data.verification_uri, deviceCode: data.device_code, interval: Math.max(5, Number(data.interval) || 5) };
+  }
+
+  static async finishDeviceAuthorization(deviceCode: string): Promise<'pending' | 'connected'> {
+    const body = new URLSearchParams({
+      client_id: DEVICE_CLIENT_ID,
+      device_code: deviceCode,
+      grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+    });
+    const response = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+    const data = await response.json();
+    if (data.access_token) {
+      localStorage.setItem(ACCESS_TOKEN_KEY, data.access_token);
+      emitStatus('syncing');
+      await this.hydrate();
+      return 'connected';
+    }
+    if (data.error === 'authorization_pending' || data.error === 'slow_down') return 'pending';
+    throw new Error(data.error_description || 'Авторизация GitHub не завершилась');
   }
 }
