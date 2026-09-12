@@ -132,17 +132,7 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B', ProgramWorkout> = {
         rest2Sec: 105,
         exercises: [
           {
-            id: 'b-1.1',
-            supersetId: 'superset-b1',
-            code: '1.1',
-            name: 'Сгибания ног в тренажере',
-            muscleGroup: 'Бицепс бедра',
-            targetSets: 4,
-            targetReps: '10–12',
-            focusNotes: 'Медленное опускание (3 секунды). В жиме ногами задняя поверхность бедра выключена, поэтому сгибания — единственный ключевой инструмент.',
-          },
-          {
-            id: 'b-1.3', supersetId: 'superset-b1', code: '1.3', name: 'Румынская тяга со штангой', muscleGroup: 'Бицепс бедра', targetSets: 4, targetReps: '8–12', focusNotes: 'Таз назад, спина нейтральна, штанга скользит вдоль ног.'
+            id: 'b-1.1', supersetId: 'superset-b1', code: '1.1', name: 'Румынская тяга со штангой', muscleGroup: 'Бицепс бедра', targetSets: 4, targetReps: '8–12', focusNotes: 'Таз назад, спина нейтральна, штанга скользит вдоль ног.'
           },
           {
             id: 'b-1.2',
