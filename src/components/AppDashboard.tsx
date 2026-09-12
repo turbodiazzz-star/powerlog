@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export const AppDashboard: React.FC = () => {
-  const APP_VERSION = '0029';
+  const APP_VERSION = '0030';
   const [activeNav, setActiveTab] = useState<'home' | 'progress' | 'program'>('home');
   const [activeSessionProps, setActiveSessionProps] = useState<{
     workoutType: string;
@@ -38,8 +38,6 @@ export const AppDashboard: React.FC = () => {
 
   const [activeDraft, setActiveDraft] = useState<ActiveWorkoutDraft | null>(null);
   const [cloudStatus, setCloudStatus] = useState<CloudStatus>(() => CloudSync.isConnected() ? 'syncing' : 'disconnected');
-  const [deviceAuth, setDeviceAuth] = useState<{ userCode: string; verificationUri: string; deviceCode: string; interval: number } | null>(null);
-  const [cloudError, setCloudError] = useState('');
 
   useEffect(() => {
     const update = (event: Event) => setCloudStatus((event as CustomEvent<CloudStatus>).detail);
@@ -48,30 +46,6 @@ export const AppDashboard: React.FC = () => {
     return () => window.removeEventListener('powerlog:cloud-status', update);
   }, []);
 
-  useEffect(() => {
-    if (!deviceAuth) return;
-    let stopped = false;
-    const timer = window.setInterval(async () => {
-      try {
-        const result = await CloudSync.finishDeviceAuthorization(deviceAuth.deviceCode);
-        if (!stopped && result === 'connected') setDeviceAuth(null);
-      } catch (error) {
-        if (!stopped) { setCloudError(error instanceof Error ? error.message : 'Не удалось подключить GitHub'); setDeviceAuth(null); }
-      }
-    }, deviceAuth.interval * 1000);
-    return () => { stopped = true; window.clearInterval(timer); };
-  }, [deviceAuth]);
-
-  const connectCloud = async () => {
-    setCloudError('');
-    try {
-      const auth = await CloudSync.startDeviceAuthorization();
-      setDeviceAuth(auth);
-      window.open(auth.verificationUri, '_blank', 'noopener,noreferrer');
-    } catch (error) {
-      setCloudError(error instanceof Error ? error.message : 'Не удалось открыть вход GitHub');
-    }
-  };
 
   // Auto-restore active draft session on initial mount if app was closed during workout
   useEffect(() => {
@@ -157,30 +131,15 @@ export const AppDashboard: React.FC = () => {
             </div>
             <span className="text-[8px] text-zinc-600 font-mono self-end mb-0.5">v{APP_VERSION}</span>
           </div>
-          <button
-            onClick={() => { if (!CloudSync.isConnected()) void connectCloud(); else void CloudSync.hydrate(); }}
+          <div
             className={`shrink-0 rounded-lg border px-2 py-1 text-[9px] font-bold flex items-center gap-1 ${cloudStatus === 'saved' ? 'border-emerald-500/40 text-emerald-400 bg-emerald-950/30' : cloudStatus === 'disconnected' ? 'border-amber-500/50 text-amber-300 bg-amber-950/30' : 'border-zinc-600 text-zinc-300'}`}
-            aria-label="Синхронизация с GitHub"
+            aria-label="Статус облачного сохранения"
           >
             {cloudStatus === 'saved' ? <CheckCircle2 className="w-3 h-3" /> : cloudStatus === 'syncing' ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Cloud className="w-3 h-3" />}
-            {cloudStatus === 'saved' ? 'В облаке' : cloudStatus === 'syncing' ? 'Синхр.' : cloudStatus === 'retrying' ? 'Повтор' : 'Подключить'}
-          </button>
+            {cloudStatus === 'saved' ? 'В облаке' : cloudStatus === 'syncing' ? 'Сохраняю' : 'Нет связи'}
+          </div>
         </div>
       </header>
-
-      {(deviceAuth || cloudError) && (
-        <div className="mx-3 mt-3 rounded-xl border border-emerald-500/40 bg-zinc-900 p-3 text-xs shadow-lg">
-          {deviceAuth ? <>
-            <p className="font-bold text-white">Подключаем личное облако GitHub</p>
-            <p className="mt-1 text-zinc-400">В открывшейся вкладке введи код:</p>
-            <p className="mt-2 rounded-lg bg-zinc-950 px-3 py-2 text-center font-mono text-lg tracking-[0.18em] text-emerald-400">{deviceAuth.userCode}</p>
-            <p className="mt-2 text-zinc-500">После подтверждения данные с этого устройства сразу сольются с приватным облаком.</p>
-          </> : <>
-            <p className="font-semibold text-rose-300">{cloudError}</p>
-            <button onClick={() => void connectCloud()} className="mt-2 text-emerald-400 font-bold">Повторить подключение</button>
-          </>}
-        </div>
-      )}
 
       {/* Main Content */}
       <main className="px-3 pt-3 space-y-4">

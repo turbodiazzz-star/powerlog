@@ -2,3 +2,7 @@ name = "powerlog-cloud"
 main = "src/index.ts"
 compatibility_date = "2026-09-12"
 
+[[d1_databases]]
+binding = "DB"
+database_name = "powerlog-data"
+database_id = "92120368-0411-4314-b114-f70bf0bcbb8f"
