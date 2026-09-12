@@ -190,7 +190,7 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B', ProgramWorkout> = {
       {
         id: 'superset-b3',
         number: 3,
-        title: 'СУПЕРСЕТ 3: Отстающая задняя дельта + Бицепс',
+        title: 'СУПЕРСЕТ 3: Икры + Бицепс',
         rest1Text: '60 сек',
         rest1Sec: 60,
         rest2Text: '60–90 сек',
@@ -200,11 +200,11 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B', ProgramWorkout> = {
             id: 'b-3.1',
             supersetId: 'superset-b3',
             code: '3.1',
-            name: 'Пэк-дек на заднюю дельту',
-            muscleGroup: 'Задняя дельта',
+            name: 'Подъёмы на носки в тренажёре',
+            muscleGroup: 'Икры',
             targetSets: 4,
             targetReps: '12–15',
-            focusNotes: 'Разворачивает плечи назад, убирает сутулость и формирует мощный задний пучок плеча.',
+            focusNotes: 'Полная амплитуда, пауза вверху и медленное опускание для акцента на икрах.',
           },
           {
             id: 'b-3.2',
