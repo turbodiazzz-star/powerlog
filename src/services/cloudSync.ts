@@ -202,6 +202,8 @@ function tableFiles(snap: CloudSnapshot): { path: string; content: string }[] {
 
 export class CloudSync {
   private static pushTimer: ReturnType<typeof setTimeout> | null = null;
+  private static pushing = false;
+  private static queued = false;
   private static hydrating = false;
 
   static captureLocal(): CloudSnapshot {
@@ -333,14 +335,37 @@ export class CloudSync {
   }
 
   static schedulePush() {
-    if (this.hydrating) return;
-    // Throttle writes instead of resetting the timer on every draft update.
-    if (this.pushTimer) return;
+    // Every user change is queued immediately. The queue serializes GitHub
+    // commits, so a page refresh cannot drop a completed workout while a
+    // five-second debounce is still waiting.
+    this.queued = true;
+    localStorage.setItem('fit_tracker_cloud_pending_v1', '1');
+    if (this.pushing || this.pushTimer) return;
     this.pushTimer = setTimeout(() => {
-      const snap = this.captureLocal();
-      if (countRecords(snap) === 0 && !snap.draft) return;
-      void this.pushSnapshot(snap);
       this.pushTimer = null;
-    }, 5000);
+      void this.flushPushQueue();
+    }, 0);
+  }
+
+  private static async flushPushQueue(): Promise<void> {
+    if (this.pushing) return;
+    this.pushing = true;
+    try {
+      while (this.queued) {
+        this.queued = false;
+        const snap = this.captureLocal();
+        if (countRecords(snap) === 0 && !snap.draft) continue;
+        const saved = await this.pushSnapshot(snap);
+        if (!saved) {
+          this.queued = true;
+          // Keep a visible durable marker and retry without requiring another edit.
+          this.pushTimer = setTimeout(() => { this.pushTimer = null; void this.flushPushQueue(); }, 10000);
+          return;
+        }
+      }
+      localStorage.removeItem('fit_tracker_cloud_pending_v1');
+    } finally {
+      this.pushing = false;
+    }
   }
 }
