@@ -247,10 +247,10 @@ export class CloudSync {
   static async startDeviceAuthorization(): Promise<{ userCode: string; verificationUri: string; deviceCode: string; interval: number }> {
     const response = await fetch(`${WORKER_URL}/auth/start`, { method: 'POST', credentials: 'include' });
     const data = await response.json();
-    if (!response.ok || !data.device_code || !data.user_code || !data.verification_uri) {
+    if (!response.ok || !data.deviceCode || !data.userCode || !data.verificationUri) {
       throw new Error(data.error_description || 'Не удалось начать вход в GitHub');
     }
-    return { userCode: data.user_code, verificationUri: data.verification_uri, deviceCode: data.device_code, interval: Math.max(5, Number(data.interval) || 5) };
+    return { userCode: data.userCode, verificationUri: data.verificationUri, deviceCode: data.deviceCode, interval: Math.max(5, Number(data.interval) || 5) };
   }
 
   static async finishDeviceAuthorization(deviceCode: string): Promise<'pending' | 'connected'> {
