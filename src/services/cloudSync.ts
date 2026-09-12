@@ -15,6 +15,9 @@ export interface CloudSnapshot {
   aiReports?: unknown[];
   deletedInbodyIds?: string[];
   deletedPhotoIds?: string[];
+  deletedSessionIds?: string[];
+  deletedGymIds?: string[];
+  deletedMachineIds?: string[];
   program?: unknown;
 }
 
@@ -116,6 +119,9 @@ export class CloudSync {
       photos: StorageService.getProgressPhotos(),
       deletedInbodyIds: JSON.parse(localStorage.getItem('fit_tracker_deleted_inbody_v1') || '[]'),
       deletedPhotoIds: JSON.parse(localStorage.getItem('fit_tracker_deleted_photos_v1') || '[]'),
+      deletedSessionIds: JSON.parse(localStorage.getItem('fit_tracker_deleted_sessions_v1') || '[]'),
+      deletedGymIds: JSON.parse(localStorage.getItem('fit_tracker_deleted_gyms_v1') || '[]'),
+      deletedMachineIds: JSON.parse(localStorage.getItem('fit_tracker_deleted_machines_v1') || '[]'),
       selectedGymId: StorageService.getSelectedGymId(),
       profile: StorageService.getBodyProfile(),
       draft: StorageService.getActiveDraft(),
@@ -127,6 +133,9 @@ export class CloudSync {
   static applySnapshot(snap: CloudSnapshot) {
     if (Array.isArray(snap.deletedInbodyIds)) localStorage.setItem('fit_tracker_deleted_inbody_v1', JSON.stringify(snap.deletedInbodyIds));
     if (Array.isArray(snap.deletedPhotoIds)) localStorage.setItem('fit_tracker_deleted_photos_v1', JSON.stringify(snap.deletedPhotoIds));
+    if (Array.isArray(snap.deletedSessionIds)) localStorage.setItem('fit_tracker_deleted_sessions_v1', JSON.stringify(snap.deletedSessionIds));
+    if (Array.isArray(snap.deletedGymIds)) localStorage.setItem('fit_tracker_deleted_gyms_v1', JSON.stringify(snap.deletedGymIds));
+    if (Array.isArray(snap.deletedMachineIds)) localStorage.setItem('fit_tracker_deleted_machines_v1', JSON.stringify(snap.deletedMachineIds));
     if (Array.isArray(snap.gyms) && snap.gyms.length) StorageService.saveGyms(snap.gyms as never, true);
     if (Array.isArray(snap.machines)) StorageService.saveMachines(snap.machines as never, true);
     if (Array.isArray(snap.sessions)) StorageService.saveSessions(snap.sessions as never, true);
@@ -143,12 +152,15 @@ export class CloudSync {
   static mergeSnapshots(local: CloudSnapshot, remote: CloudSnapshot): CloudSnapshot {
     const deletedInbodyIds = [...new Set([...(local.deletedInbodyIds || []), ...(remote.deletedInbodyIds || [])])];
     const deletedPhotoIds = [...new Set([...(local.deletedPhotoIds || []), ...(remote.deletedPhotoIds || [])])];
+    const deletedSessionIds = [...new Set([...(local.deletedSessionIds || []), ...(remote.deletedSessionIds || [])])];
+    const deletedGymIds = [...new Set([...(local.deletedGymIds || []), ...(remote.deletedGymIds || [])])];
+    const deletedMachineIds = [...new Set([...(local.deletedMachineIds || []), ...(remote.deletedMachineIds || [])])];
     return {
       version: 4,
       updatedAt: new Date().toISOString(),
-      gyms: mergeById(local.gyms as never, remote.gyms as never),
-      machines: mergeById(local.machines as never, remote.machines as never),
-      sessions: mergeById(local.sessions as never, remote.sessions as never),
+      gyms: mergeById(local.gyms as never, remote.gyms as never).filter((item: any) => !deletedGymIds.includes(item.id)),
+      machines: mergeById(local.machines as never, remote.machines as never).filter((item: any) => !deletedMachineIds.includes(item.id)),
+      sessions: mergeById(local.sessions as never, remote.sessions as never).filter((item: any) => !deletedSessionIds.includes(item.id)),
       photos: mergeById(local.photos as never, remote.photos as never).filter((item: any) => !deletedPhotoIds.includes(item.id)),
       inbody: mergeById(local.inbody as never, remote.inbody as never).filter((item: any) => !deletedInbodyIds.includes(item.id)),
       selectedGymId: local.selectedGymId || remote.selectedGymId,
@@ -158,6 +170,9 @@ export class CloudSync {
       program: local.program || remote.program,
       deletedInbodyIds,
       deletedPhotoIds,
+      deletedSessionIds,
+      deletedGymIds,
+      deletedMachineIds,
     };
   }
 
@@ -269,7 +284,7 @@ export class CloudSync {
       await this.hydrate();
       return 'connected';
     }
-    if (data.error === 'authorization_pending' || data.error === 'slow_down') return 'pending';
+    if (data.status === 'pending' || data.error === 'authorization_pending' || data.error === 'slow_down') return 'pending';
     throw new Error(data.error_description || 'Авторизация GitHub не завершилась');
   }
 }

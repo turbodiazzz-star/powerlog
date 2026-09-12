@@ -95,8 +95,7 @@ export const GymManager: React.FC<GymManagerProps> = ({ onSelectGym, selectedGym
 
   const handleDeleteMachine = (machineId: string) => {
     if (confirm('Удалить настройку тренажера?')) {
-      const updated = machines.filter(m => m.id !== machineId);
-      StorageService.saveMachines(updated);
+      StorageService.deleteMachine(machineId);
       loadData();
     }
   };

@@ -14,6 +14,9 @@ const STORAGE_KEYS = {
   PROGRAM: 'fit_tracker_program_v1',
   DELETED_INBODY: 'fit_tracker_deleted_inbody_v1',
   DELETED_PHOTOS: 'fit_tracker_deleted_photos_v1',
+  DELETED_SESSIONS: 'fit_tracker_deleted_sessions_v1',
+  DELETED_GYMS: 'fit_tracker_deleted_gyms_v1',
+  DELETED_MACHINES: 'fit_tracker_deleted_machines_v1',
 };
 
 export class StorageService {
@@ -66,7 +69,9 @@ export class StorageService {
 
   static deleteGym(gymId: string): void {
     const gyms = this.getGyms().filter(g => g.id !== gymId);
-    this.saveGyms(gyms);
+    localStorage.setItem(STORAGE_KEYS.GYMS, JSON.stringify(gyms));
+    this.markDeleted(STORAGE_KEYS.DELETED_GYMS, gymId);
+    StorageService.touchCloud();
   }
 
   static getSelectedGymId(): string {
@@ -118,6 +123,12 @@ export class StorageService {
     return saved;
   }
 
+  static deleteMachine(machineId: string): void {
+    localStorage.setItem(STORAGE_KEYS.MACHINES, JSON.stringify(this.getMachines().filter(machine => machine.id !== machineId)));
+    this.markDeleted(STORAGE_KEYS.DELETED_MACHINES, machineId);
+    StorageService.touchCloud();
+  }
+
   static getMachinesForGymAndExercise(gymId: string, exerciseId: string): MachineEquipment[] {
     const machines = this.getMachines();
     return machines.filter(m => m.gymId === gymId && m.exerciseId === exerciseId);
@@ -151,7 +162,9 @@ export class StorageService {
 
   static deleteSession(sessionId: string): void {
     const sessions = this.getSessions().filter(s => s.id !== sessionId);
-    this.saveSessions(sessions);
+    localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+    this.markDeleted(STORAGE_KEYS.DELETED_SESSIONS, sessionId);
+    StorageService.touchCloud();
   }
 
   static hasLoggedSets(session: WorkoutSession): boolean {
@@ -393,6 +406,12 @@ export class StorageService {
 
   private static getDeletedIds(key: string): Set<string> {
     try { return new Set(JSON.parse(localStorage.getItem(key) || '[]')); } catch { return new Set(); }
+  }
+
+  private static markDeleted(key: string, id: string): void {
+    const deleted = this.getDeletedIds(key);
+    deleted.add(id);
+    localStorage.setItem(key, JSON.stringify([...deleted]));
   }
 
   static getBodyProfile(): BodyProfile {
