@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export const AppDashboard: React.FC = () => {
-  const APP_VERSION = '0026';
+  const APP_VERSION = '0027';
   const [activeNav, setActiveTab] = useState<'home' | 'progress' | 'program'>('home');
   const [activeSessionProps, setActiveSessionProps] = useState<{
     workoutType: string;
