@@ -4,7 +4,7 @@ import type {
   ExerciseSet,
   Gym,
 } from '../types/workout';
-import { WORKOUT_PROGRAM } from '../data/workoutProgram';
+import { getWorkoutProgram } from '../data/workoutProgram';
 import { StorageService } from '../services/storage';
 import { getOptionsForExercise, isBlockMachineOption, getMachineBaseTareWeight, isAssistedMachine, type MachineOption } from '../data/machineVariants';
 import { WeightScrollPicker } from './WeightScrollPicker';
@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 
 interface ActiveWorkoutProps {
-  workoutType: 'A' | 'B';
+  workoutType: string;
   dayName: 'Пн' | 'Ср' | 'Пт' | 'Доп';
   gymId: string;
   onFinishWorkout: () => void;
@@ -42,11 +42,11 @@ const TIMER_PRESETS = [30, 60, 90, 120, 180];
 // Helper to build/sync session structure against current WORKOUT_PROGRAM definition
 const syncSessionWithProgram = (
   rawSession: WorkoutSession | null,
-  wType: 'A' | 'B',
+  wType: string,
   wDay: 'Пн' | 'Ср' | 'Пт' | 'Доп',
   gId: string
 ): WorkoutSession => {
-  const p = WORKOUT_PROGRAM[wType];
+  const p = getWorkoutProgram()[wType];
   const loadedGyms = StorageService.getGyms();
   const activeGym = loadedGyms.find(g => g.id === gId) || loadedGyms[0];
   const gymBrand = activeGym?.brand || 'matrix';
@@ -142,7 +142,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   gymId,
   onFinishWorkout,
 }) => {
-  const program = WORKOUT_PROGRAM[workoutType];
+  const program = getWorkoutProgram()[workoutType];
   const [gyms, setGyms] = useState<Gym[]>([]);
   const [currentGymId, setCurrentGymId] = useState<string>(gymId);
 

@@ -53,7 +53,7 @@ export interface LoggedSuperset {
 export interface WorkoutSession {
   id: string;
   date: string; // ISO string YYYY-MM-DDTHH:mm:ss.sssZ
-  workoutType: 'A' | 'B';
+  workoutType: string;
   dayName: 'Пн' | 'Ср' | 'Пт' | 'Доп';
   gymId?: string;
   gymName?: string;
@@ -87,7 +87,7 @@ export interface SupersetDefinition {
 }
 
 export interface ProgramWorkout {
-  type: 'A' | 'B';
+  type: string;
   title: string;
   subTitle: string;
   supersets: SupersetDefinition[];
@@ -122,7 +122,7 @@ export interface ProgressPhotoRecord {
 }
 
 export interface ActiveWorkoutDraft {
-  workoutType: 'A' | 'B';
+  workoutType: string;
   dayName: 'Пн' | 'Ср' | 'Пт' | 'Доп';
   gymId: string;
   session: WorkoutSession;

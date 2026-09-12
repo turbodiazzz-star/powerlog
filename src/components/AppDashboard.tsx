@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { WORKOUT_PROGRAM } from '../data/workoutProgram';
+import { getWorkoutProgram } from '../data/workoutProgram';
 import { StorageService } from '../services/storage';
 import { formatDateDot } from '../utils/dates';
 import { ActiveWorkout } from './ActiveWorkout';
 import { ProgressView } from './ProgressView';
+import { ProgramBuilder } from './ProgramBuilder';
 import type { Gym, ActiveWorkoutDraft } from '../types/workout';
 import {
   Dumbbell,
@@ -15,17 +16,17 @@ import {
 } from 'lucide-react';
 
 export const AppDashboard: React.FC = () => {
-  const APP_VERSION = '0020';
-  const [activeNav, setActiveTab] = useState<'home' | 'progress'>('home');
+  const APP_VERSION = '0021';
+  const [activeNav, setActiveTab] = useState<'home' | 'progress' | 'program'>('home');
   const [activeSessionProps, setActiveSessionProps] = useState<{
-    workoutType: 'A' | 'B';
+    workoutType: string;
     dayName: 'Пн' | 'Ср' | 'Пт' | 'Доп';
   } | null>(null);
 
   const [gyms, setGyms] = useState<Gym[]>([]);
   const [selectedGymId, setSelectedGymId] = useState<string>('');
   const [recommendation, setRecommendation] = useState<{
-    workoutType: 'A' | 'B';
+    workoutType: string;
     dayName: 'Пн' | 'Ср' | 'Пт' | 'Доп';
     completedCount: number;
     lastDate?: string;
@@ -66,7 +67,7 @@ export const AppDashboard: React.FC = () => {
     setActiveDraft(draft);
   };
 
-  const handleStartWorkout = (type: 'A' | 'B', day: 'Пн' | 'Ср' | 'Пт' | 'Доп') => {
+  const handleStartWorkout = (type: string, day: 'Пн' | 'Ср' | 'Пт' | 'Доп') => {
     setActiveSessionProps({
       workoutType: type,
       dayName: day,
@@ -81,6 +82,7 @@ export const AppDashboard: React.FC = () => {
   const currentGym = gyms.find(g => g.id === selectedGymId) || gyms[0];
 
   const currentDateFormatted = formatDateDot(new Date());
+  const program = getWorkoutProgram();
 
   if (activeSessionProps) {
     return (
@@ -183,7 +185,7 @@ export const AppDashboard: React.FC = () => {
                     ТРЕНИРОВКА {recommendation.workoutType}
                   </h2>
                   <p className="text-[11px] font-medium text-zinc-400 mt-0.5">
-                    {WORKOUT_PROGRAM[recommendation.workoutType].subTitle}
+                    {program[recommendation.workoutType]?.subTitle}
                   </p>
                 </div>
 
@@ -199,7 +201,7 @@ export const AppDashboard: React.FC = () => {
 
               {/* Supersets preview list */}
               <div className="space-y-1.5 pt-1 border-t border-zinc-800/80 text-[11px]">
-                {WORKOUT_PROGRAM[recommendation.workoutType].supersets.map(ss => (
+                {program[recommendation.workoutType]?.supersets.map(ss => (
                   <div
                     key={ss.id}
                     className="bg-zinc-950/80 border border-zinc-800/60 rounded-lg px-2.5 py-1.5 flex items-center justify-between text-xs"
@@ -239,7 +241,7 @@ export const AppDashboard: React.FC = () => {
                     <span className="font-bold text-white text-xs">ТРЕНИРОВКА A</span>
                     <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
                   </div>
-                  <p className="text-[10px] text-zinc-500 truncate">{WORKOUT_PROGRAM.A.subTitle}</p>
+                  <p className="text-[10px] text-zinc-500 truncate">{program.A?.subTitle}</p>
                 </button>
 
                 <button
@@ -250,7 +252,7 @@ export const AppDashboard: React.FC = () => {
                     <span className="font-bold text-white text-xs">ТРЕНИРОВКА B</span>
                     <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
                   </div>
-                  <p className="text-[10px] text-zinc-500 truncate">{WORKOUT_PROGRAM.B.subTitle}</p>
+                  <p className="text-[10px] text-zinc-500 truncate">{program.B?.subTitle}</p>
                 </button>
               </div>
             </div>
@@ -258,11 +260,12 @@ export const AppDashboard: React.FC = () => {
         )}
 
         {activeNav === 'progress' && <ProgressView />}
+        {activeNav === 'program' && <ProgramBuilder onSaved={refreshDashboardData} />}
       </main>
 
       {/* Sleek Minimalist Bottom Navigation Bar */}
       <nav className="fixed bottom-0 left-0 right-0 bg-zinc-900/95 border-t border-zinc-800/90 backdrop-blur-md z-40 pb-safe">
-        <div className="max-w-md mx-auto grid grid-cols-2 h-12 px-3 gap-2 py-1">
+        <div className="max-w-md mx-auto grid grid-cols-3 h-12 px-3 gap-2 py-1">
           <button
             onClick={() => setActiveTab('home')}
             className={`flex items-center justify-center gap-2 text-xs font-bold transition-all rounded-lg ${
@@ -285,6 +288,13 @@ export const AppDashboard: React.FC = () => {
           >
             <TrendingUp className="w-4 h-4" />
             <span>Прогресс</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('program')}
+            className={`flex items-center justify-center gap-1 text-xs font-bold transition-all rounded-lg ${activeNav === 'program' ? 'bg-zinc-800 text-white border border-zinc-700' : 'text-zinc-500 hover:text-zinc-300'}`}
+          >
+            <ChevronRight className="w-4 h-4" />
+            <span>Настроить</span>
           </button>
         </div>
       </nav>

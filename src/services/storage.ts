@@ -1,5 +1,5 @@
-import type { Gym, MachineEquipment, WorkoutSession, InBodyRecord, ProgressPhotoRecord, ActiveWorkoutDraft } from '../types/workout';
-import { INITIAL_GYMS } from '../data/workoutProgram';
+import type { Gym, MachineEquipment, WorkoutSession, InBodyRecord, ProgressPhotoRecord, ActiveWorkoutDraft, ProgramWorkout } from '../types/workout';
+import { INITIAL_GYMS, getWorkoutProgram } from '../data/workoutProgram';
 import type { BodyGender, BodyProfile } from '../utils/inBodyNorms';
 
 const STORAGE_KEYS = {
@@ -11,11 +11,20 @@ const STORAGE_KEYS = {
   PHOTOS: 'fit_tracker_photos_v1',
   ACTIVE_DRAFT: 'fit_tracker_active_draft_v2',
   PROFILE: 'fit_tracker_body_profile_v1',
+  PROGRAM: 'fit_tracker_program_v1',
   DELETED_INBODY: 'fit_tracker_deleted_inbody_v1',
   DELETED_PHOTOS: 'fit_tracker_deleted_photos_v1',
 };
 
 export class StorageService {
+  static getCustomProgram(): Record<string, ProgramWorkout> | null {
+    try { const value = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROGRAM) || 'null'); return value && typeof value === 'object' ? value : null; } catch { return null; }
+  }
+
+  static saveCustomProgram(program: Record<string, ProgramWorkout>, silent = false): void {
+    localStorage.setItem(STORAGE_KEYS.PROGRAM, JSON.stringify(program));
+    if (!silent) StorageService.touchCloud();
+  }
   // Gyms
   static getGyms(): Gym[] {
     try {
@@ -243,7 +252,7 @@ export class StorageService {
   }
 
   static getNextWorkoutRecommendation(): {
-    workoutType: 'A' | 'B';
+    workoutType: string;
     dayName: 'Пн' | 'Ср' | 'Пт' | 'Доп';
     completedCount: number;
     lastDate?: string;
@@ -255,7 +264,9 @@ export class StorageService {
     const totalCount = sessions.length;
     const lastSession = sessions[sessions.length - 1];
 
-    const nextType: 'A' | 'B' = lastSession ? (lastSession.workoutType === 'A' ? 'B' : 'A') : 'A';
+    const workoutTypes = Object.keys(getWorkoutProgram());
+    const lastIndex = lastSession ? workoutTypes.indexOf(lastSession.workoutType) : -1;
+    const nextType = workoutTypes[(lastIndex + 1 + workoutTypes.length) % workoutTypes.length] || 'A';
     const dayNames: Array<'Пн' | 'Ср' | 'Пт'> = ['Пн', 'Ср', 'Пт'];
     const nextDay = dayNames[totalCount % 3];
 
@@ -268,7 +279,7 @@ export class StorageService {
   }
 
   // Active Draft Session (Auto-save current weights, reps, timer state)
-  static getActiveDraft(workoutType?: 'A' | 'B'): ActiveWorkoutDraft | null {
+  static getActiveDraft(workoutType?: string): ActiveWorkoutDraft | null {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.ACTIVE_DRAFT);
       if (!data) return null;

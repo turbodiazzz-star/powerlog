@@ -218,3 +218,14 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B', ProgramWorkout> = {
     ],
   },
 };
+
+export type WorkoutProgramMap = Record<string, ProgramWorkout>;
+
+export function getWorkoutProgram(): WorkoutProgramMap {
+  try {
+    const saved = JSON.parse(localStorage.getItem('fit_tracker_program_v1') || '{}') as WorkoutProgramMap;
+    return Object.keys(saved).length ? saved : WORKOUT_PROGRAM;
+  } catch {
+    return WORKOUT_PROGRAM;
+  }
+}

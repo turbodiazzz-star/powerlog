@@ -521,7 +521,7 @@ export class AiService {
   }
 
   static async recommendSessionLoads(params: {
-    workoutType: 'A' | 'B';
+    workoutType: string;
     bodyWeightKg: number;
     items: Array<{
       exerciseId: string;
