@@ -20,11 +20,17 @@ export interface CloudSnapshot {
 
 const WORKER_URL = 'https://powerlog-cloud.powerlog-worker.workers.dev';
 const PENDING_KEY = 'fit_tracker_cloud_pending_v1';
+const SESSION_KEY = 'fit_tracker_cloud_session_v1';
 
 export type CloudStatus = 'disconnected' | 'syncing' | 'saved' | 'retrying';
 
 function emitStatus(status: CloudStatus) {
   window.dispatchEvent(new CustomEvent<CloudStatus>('powerlog:cloud-status', { detail: status }));
+}
+
+function authHeaders(): Record<string, string> {
+  const session = localStorage.getItem(SESSION_KEY);
+  return session ? { Authorization: `Bearer ${session}` } : {};
 }
 
 function byId<T extends { id?: string }>(items: T[]): Map<string, T> {
@@ -157,7 +163,7 @@ export class CloudSync {
 
   static async pullRemote(): Promise<CloudSnapshot | null> {
     try {
-      const res = await fetch(`${WORKER_URL}/state`, { credentials: 'include', cache: 'no-store' });
+      const res = await fetch(`${WORKER_URL}/state`, { credentials: 'include', cache: 'no-store', headers: authHeaders() });
       if (res.status === 401) { this.connected = false; return null; }
       if (!res.ok) return null;
       this.connected = true;
@@ -172,7 +178,7 @@ export class CloudSync {
   static async pushSnapshot(snap: CloudSnapshot): Promise<boolean> {
     const compact = compactForGit(snap);
     try {
-      const res = await fetch(`${WORKER_URL}/state`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(compact) });
+      const res = await fetch(`${WORKER_URL}/state`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(compact) });
       this.connected = res.ok;
       return res.ok;
     } catch {
@@ -241,7 +247,7 @@ export class CloudSync {
   }
 
   static isConnected(): boolean {
-    return this.connected;
+    return this.connected || Boolean(localStorage.getItem(SESSION_KEY));
   }
 
   static async startDeviceAuthorization(): Promise<{ userCode: string; verificationUri: string; deviceCode: string; interval: number }> {
@@ -257,6 +263,7 @@ export class CloudSync {
     const response = await fetch(`${WORKER_URL}/auth/poll`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deviceCode }) });
     const data = await response.json();
     if (data.status === 'connected') {
+      if (data.session) localStorage.setItem(SESSION_KEY, data.session);
       this.connected = true;
       emitStatus('syncing');
       await this.hydrate();

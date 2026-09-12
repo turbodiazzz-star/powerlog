@@ -49,7 +49,7 @@ async function hmac(value: string, secret: string) {
 }
 
 async function validSession(request: Request, env: Env) {
-  const token = cookies(request).powerlog_session;
+  const token = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '') || cookies(request).powerlog_session;
   if (!token) return false;
   const [payload, signature] = token.split('.');
   if (!payload || !signature || signature !== await hmac(payload, env.SESSION_SECRET)) return false;
@@ -103,7 +103,7 @@ async function createSession(request: Request, env: Env, accessToken: string) {
   const session = `${payload}.${await hmac(payload, env.SESSION_SECRET)}`;
   const headers = new Headers({ 'Content-Type': 'application/json' });
   headers.append('Set-Cookie', `powerlog_session=${session}; Path=/; Max-Age=15552000; HttpOnly; Secure; SameSite=None`);
-  return response(request, JSON.stringify({ status: 'connected' }), { headers });
+  return response(request, JSON.stringify({ status: 'connected', session }), { headers });
 }
 
 async function pollDevice(request: Request, env: Env) {
