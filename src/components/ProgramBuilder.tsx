@@ -21,7 +21,10 @@ export const ProgramBuilder: React.FC<{ onSaved?: () => void }> = ({ onSaved }) 
 
   const active = program[activeType];
   const machineNames = useMemo(() => Array.from(new Set(MACHINE_OPTIONS.map(item => item.name))).sort(), []);
-  const exerciseOptions = useMemo(() => Array.from(new Set([...machineNames, ...EQUIPMENT])).sort(), [machineNames]);
+  const exerciseOptions = useMemo(() => {
+    const names = MACHINE_OPTIONS.filter(item => item.muscleGroup === muscle || item.muscleGroup.includes(muscle) || muscle.includes(item.muscleGroup)).map(item => item.name);
+    return Array.from(new Set(muscle === 'Кардио' ? names : [...names, ...EQUIPMENT])).sort();
+  }, [muscle]);
 
   const save = (next: Record<string, ProgramWorkout>) => { setProgram(next); StorageService.saveCustomProgram(next); onSaved?.(); };
   const updateActive = (next: ProgramWorkout) => save({ ...program, [activeType]: next });
