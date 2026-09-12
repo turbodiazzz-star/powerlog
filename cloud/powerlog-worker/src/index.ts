@@ -65,6 +65,7 @@ async function github(env: Env, path: string, init: RequestInit = {}) {
     headers: {
       Authorization: `Bearer ${env.GH_TOKEN}`,
       Accept: 'application/vnd.github+json',
+      'User-Agent': 'powerlog-cloud',
       'X-GitHub-Api-Version': '2022-11-28',
       ...(init.body ? { 'Content-Type': 'application/json' } : {}),
     },
@@ -96,7 +97,7 @@ async function saveState(env: Env, content: string) {
 }
 
 async function createSession(request: Request, env: Env, accessToken: string) {
-  const user = await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/vnd.github+json' } }).then(r => r.json());
+  const user = await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/vnd.github+json', 'User-Agent': 'powerlog-cloud' } }).then(r => r.json());
   if (user.login !== OWNER) return response(request, JSON.stringify({ error: 'Доступ разрешён только владельцу приложения' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
   const payload = base64url(new TextEncoder().encode(JSON.stringify({ login: OWNER, exp: Date.now() + 1000 * 60 * 60 * 24 * 180 })));
   const session = `${payload}.${await hmac(payload, env.SESSION_SECRET)}`;
@@ -106,15 +107,19 @@ async function createSession(request: Request, env: Env, accessToken: string) {
 }
 
 async function pollDevice(request: Request, env: Env) {
-  const body = await request.json().catch(() => ({})) as { deviceCode?: string };
-  if (!body.deviceCode) return response(request, JSON.stringify({ error: 'Не передан код авторизации' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
-  const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
-    method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ client_id: env.GITHUB_CLIENT_ID, device_code: body.deviceCode, grant_type: 'urn:ietf:params:oauth:grant-type:device_code' }),
-  });
-  const token = await tokenResponse.json();
-  if (!token.access_token) return response(request, JSON.stringify({ status: 'pending' }), { headers: { 'Content-Type': 'application/json' } });
-  return createSession(request, env, token.access_token);
+  try {
+    const body = await request.json().catch(() => ({})) as { deviceCode?: string };
+    if (!body.deviceCode) return response(request, JSON.stringify({ error: 'Не передан код авторизации' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ client_id: env.GITHUB_CLIENT_ID, device_code: body.deviceCode, grant_type: 'urn:ietf:params:oauth:grant-type:device_code' }).toString(),
+    });
+    const token = await tokenResponse.json();
+    if (!token.access_token) return response(request, JSON.stringify({ status: 'pending' }), { headers: { 'Content-Type': 'application/json' } });
+    return createSession(request, env, token.access_token);
+  } catch (error) {
+    return response(request, JSON.stringify({ error: error instanceof Error ? error.message : 'auth failed' }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+  }
 }
 
 export default {
