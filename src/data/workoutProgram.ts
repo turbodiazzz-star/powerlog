@@ -213,10 +213,11 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B', ProgramWorkout> = {
 };
 
 export type WorkoutProgramMap = Record<string, ProgramWorkout>;
+export const PROGRAM_SCHEMA_VERSION = 3;
 
 export function getWorkoutProgram(): WorkoutProgramMap {
   try {
-    if (localStorage.getItem('fit_tracker_program_schema_v2') !== '1') return WORKOUT_PROGRAM;
+    if (localStorage.getItem('fit_tracker_program_schema_v3') !== '1') return WORKOUT_PROGRAM;
     const saved = JSON.parse(localStorage.getItem('fit_tracker_program_v1') || '{}') as WorkoutProgramMap;
     return Object.keys(saved).length ? saved : WORKOUT_PROGRAM;
   } catch {

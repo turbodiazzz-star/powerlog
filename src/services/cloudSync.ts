@@ -1,5 +1,6 @@
 import { StorageService } from './storage';
 import { AiService } from './aiService';
+import { PROGRAM_SCHEMA_VERSION } from '../data/workoutProgram';
 
 export interface CloudSnapshot {
   version: number;
@@ -19,6 +20,7 @@ export interface CloudSnapshot {
   deletedGymIds?: string[];
   deletedMachineIds?: string[];
   program?: unknown;
+  programSchema?: number;
 }
 
 const WORKER_URL = 'https://powerlog-cloud.powerlog-worker.workers.dev';
@@ -121,7 +123,10 @@ export class CloudSync {
       profile: StorageService.getBodyProfile(),
       draft: StorageService.getActiveDraft(),
       aiReports,
-      program: StorageService.getCustomProgram(),
+      program: localStorage.getItem(`fit_tracker_program_schema_v${PROGRAM_SCHEMA_VERSION}`) === '1'
+        ? StorageService.getCustomProgram()
+        : undefined,
+      programSchema: PROGRAM_SCHEMA_VERSION,
     };
   }
 
@@ -138,7 +143,9 @@ export class CloudSync {
     if (Array.isArray(snap.photos)) StorageService.replaceProgressPhotos(snap.photos as never);
     if (snap.selectedGymId) StorageService.setSelectedGymId(snap.selectedGymId, true);
     if (snap.profile) StorageService.saveBodyProfile(snap.profile as never, true);
-    if (snap.program && typeof snap.program === 'object') StorageService.saveCustomProgram(snap.program as never, true);
+    if (snap.programSchema === PROGRAM_SCHEMA_VERSION && snap.program && typeof snap.program === 'object') {
+      StorageService.saveCustomProgram(snap.program as never, true);
+    }
     if (Array.isArray(snap.aiReports)) {
       localStorage.setItem('fit_tracker_ai_reports_v1', JSON.stringify(snap.aiReports));
     }
@@ -162,7 +169,10 @@ export class CloudSync {
       profile: local.profile || remote.profile,
       draft: local.draft || remote.draft,
       aiReports: mergeById((local.aiReports as never) || [], (remote.aiReports as never) || []),
-      program: local.program || remote.program,
+      program: local.programSchema === PROGRAM_SCHEMA_VERSION
+        ? local.program
+        : (remote.programSchema === PROGRAM_SCHEMA_VERSION ? remote.program : undefined),
+      programSchema: PROGRAM_SCHEMA_VERSION,
       deletedInbodyIds,
       deletedPhotoIds,
       deletedSessionIds,

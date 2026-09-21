@@ -1,5 +1,5 @@
 import type { Gym, MachineEquipment, WorkoutSession, InBodyRecord, ProgressPhotoRecord, ActiveWorkoutDraft, ProgramWorkout } from '../types/workout';
-import { INITIAL_GYMS, getWorkoutProgram } from '../data/workoutProgram';
+import { INITIAL_GYMS, getWorkoutProgram, PROGRAM_SCHEMA_VERSION } from '../data/workoutProgram';
 import type { BodyGender, BodyProfile } from '../utils/inBodyNorms';
 
 const STORAGE_KEYS = {
@@ -26,7 +26,8 @@ export class StorageService {
 
   static saveCustomProgram(program: Record<string, ProgramWorkout>, silent = false): void {
     localStorage.setItem(STORAGE_KEYS.PROGRAM, JSON.stringify(program));
-    localStorage.setItem('fit_tracker_program_schema_v2', '1');
+    localStorage.removeItem('fit_tracker_program_schema_v2');
+    localStorage.setItem(`fit_tracker_program_schema_v${PROGRAM_SCHEMA_VERSION}`, '1');
     if (!silent) StorageService.touchCloud();
   }
   // Gyms
