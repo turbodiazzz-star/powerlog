@@ -219,6 +219,11 @@ export class StorageService {
           }
         }
       }
+
+      // A machine-specific request must never fall back to another machine
+      // for the same muscle group. If this exact variant has no history, the
+      // workout starts empty (weight 0) as expected.
+      return null;
     }
 
     // 2. Fallback to general last log for this exercise

@@ -440,12 +440,12 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         exercises: ss.exercises.map(ex => {
           if (ex.exerciseId === exerciseId) {
             const updatedSets = ex.sets.map(st => {
-              const lastWeight = history?.sets[0]?.weightKg;
-              const lastReps = history?.sets[0]?.reps;
+              const lastWeight = history?.sets[0]?.weightKg ?? 0;
+              const lastReps = history?.sets[0]?.reps ?? st.reps;
               return {
                 ...st,
-                weightKg: lastWeight !== undefined ? lastWeight : st.weightKg,
-                reps: lastReps !== undefined ? lastReps : st.reps,
+                weightKg: lastWeight,
+                reps: lastReps,
                 completed: false,
                 weightConfirmed: false,
                 repsConfirmed: false,
