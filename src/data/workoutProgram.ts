@@ -3,16 +3,16 @@ import type { ProgramWorkout, Gym } from '../types/workout';
 export const INITIAL_GYMS: Gym[] = [
   {
     id: 'gym-matrix',
-    name: 'Зал Matrix',
-    brand: 'matrix',
-    notes: 'Стандартные блоки.',
+    name: 'Зал Technogym',
+    brand: 'technogym',
+    notes: 'Тренажёры Technogym.',
     isDefault: true,
   },
   {
     id: 'gym-technogym',
-    name: 'Зал Technogym',
-    brand: 'technogym',
-    notes: 'Кабели с редукцией.',
+    name: 'Зал Matrix',
+    brand: 'matrix',
+    notes: 'Стандартные блоки.',
   },
 ];
 
@@ -215,5 +215,11 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B', ProgramWorkout> = {
 export type WorkoutProgramMap = Record<string, ProgramWorkout>;
 
 export function getWorkoutProgram(): WorkoutProgramMap {
-  return WORKOUT_PROGRAM;
+  try {
+    if (localStorage.getItem('fit_tracker_program_schema_v2') !== '1') return WORKOUT_PROGRAM;
+    const saved = JSON.parse(localStorage.getItem('fit_tracker_program_v1') || '{}') as WorkoutProgramMap;
+    return Object.keys(saved).length ? saved : WORKOUT_PROGRAM;
+  } catch {
+    return WORKOUT_PROGRAM;
+  }
 }

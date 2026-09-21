@@ -12,6 +12,24 @@ export interface MachineOption {
 }
 
 export const MACHINE_OPTIONS: MachineOption[] = [
+  {
+    id: 'technogym_pulldown_user_photo_a',
+    name: 'Тяга верхнего блока Pulldown (Technogym, фото)',
+    muscleGroup: 'Широчайшие',
+    exerciseId: 'a-1.2',
+    brand: 'technogym',
+    isBlockMachine: true,
+    focusNotes: 'Тренажёр Technogym Pulldown с фото пользователя. Тяни локти вниз к корпусу, без раскачки.',
+  },
+  {
+    id: 'technogym_pulldown_user_photo_b',
+    name: 'Тяга верхнего блока Pulldown (Technogym, фото)',
+    muscleGroup: 'Широчайшие',
+    exerciseId: 'b-1.2',
+    brand: 'technogym',
+    isBlockMachine: true,
+    focusNotes: 'Тренажёр Technogym Pulldown с фото пользователя. Тяни локти вниз к корпусу, без раскачки.',
+  },
   // 1. Квадрицепс (a-1.1)
   {
     id: 'leg_press_matrix',
@@ -868,6 +886,12 @@ export const MACHINE_OPTIONS: MachineOption[] = [
     focusNotes: 'Жим в рычажном тренажере на верх груди. Двигайся плавно, сохраняя лопатки на спинке.',
   },
   {
+    id: 'smith_upper_chest_matrix_b', name: 'Жим в Смите на наклонной скамье (Matrix)', muscleGroup: 'Верх груди', exerciseId: 'b-2.3', brand: 'matrix', isBlockMachine: false, baseTareWeight: 11, focusNotes: 'Наклон 25–30°, опускание к ключичной зоне груди.'
+  },
+  {
+    id: 'smith_upper_chest_technogym_b', name: 'Жим в Смите на наклонной скамье (Technogym)', muscleGroup: 'Верх груди', exerciseId: 'b-2.3', brand: 'technogym', isBlockMachine: false, baseTareWeight: 8, focusNotes: 'Наклон 25–30°, плавный жим на верх груди.'
+  },
+  {
     id: 'face_pull_matrix_b',
     name: 'Тяга к лицу (Face Pull) в кроссовере (Matrix)',
     muscleGroup: 'Задняя дельта',
@@ -902,6 +926,15 @@ export const MACHINE_OPTIONS: MachineOption[] = [
     brand: 'technogym',
     isBlockMachine: true,
     focusNotes: 'Плавные махи от нижнего блока в сторону, без раскачки.',
+  },
+  {
+    id: 'dumbbell_lateral_raise_b', name: 'Махи гантелями в стороны', muscleGroup: 'Средняя дельта', exerciseId: 'b-3.3', brand: 'free_weight', isBlockMachine: false, focusNotes: 'Поднимай локти в стороны до уровня плеч без раскачки.'
+  },
+  {
+    id: 'lateral_raise_machine_matrix_b', name: 'Махи в тренажёре на среднюю дельту (Matrix)', muscleGroup: 'Средняя дельта', exerciseId: 'b-3.3', brand: 'matrix', isBlockMachine: true, focusNotes: 'Работа в тренажёре с контролем негатива.'
+  },
+  {
+    id: 'lateral_raise_machine_technogym_b', name: 'Махи в тренажёре на среднюю дельту (Technogym)', muscleGroup: 'Средняя дельта', exerciseId: 'b-3.3', brand: 'technogym', isBlockMachine: true, focusNotes: 'Работа в тренажёре Technogym без рывка.'
   },
 ];
 

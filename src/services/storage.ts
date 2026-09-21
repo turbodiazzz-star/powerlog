@@ -26,6 +26,7 @@ export class StorageService {
 
   static saveCustomProgram(program: Record<string, ProgramWorkout>, silent = false): void {
     localStorage.setItem(STORAGE_KEYS.PROGRAM, JSON.stringify(program));
+    localStorage.setItem('fit_tracker_program_schema_v2', '1');
     if (!silent) StorageService.touchCloud();
   }
   // Gyms
@@ -75,6 +76,14 @@ export class StorageService {
   }
 
   static getSelectedGymId(): string {
+    if (!localStorage.getItem('fit_tracker_default_technogym_v1')) {
+      const technogym = this.getGyms().find(g => g.brand === 'technogym');
+      if (technogym) {
+        localStorage.setItem(STORAGE_KEYS.SELECTED_GYM, technogym.id);
+        localStorage.setItem('fit_tracker_default_technogym_v1', '1');
+        return technogym.id;
+      }
+    }
     const id = localStorage.getItem(STORAGE_KEYS.SELECTED_GYM);
     if (id) return id;
     const gyms = this.getGyms();

@@ -39,7 +39,9 @@ export const ProgramBuilder: React.FC<{ onSaved?: () => void }> = ({ onSaved }) 
   };
   const addExercise = (supersetId: string) => {
     if (!exerciseName.trim()) return;
-    updateActive({ ...active, supersets: active.supersets.map(ss => ss.id !== supersetId ? ss : { ...ss, exercises: [...ss.exercises, { id: makeId('ex'), supersetId: ss.id, code: `${ss.number}.${ss.exercises.length + 1}`, name: exerciseName.trim(), muscleGroup: muscle, targetSets: Math.max(1, Number(sets) || 4), targetReps: reps || '8–12', focusNotes: `${exerciseName.trim()}.` }] }) });
+    const machine = MACHINE_OPTIONS.find(item => item.name === exerciseName.trim() && (item.muscleGroup === muscle || item.muscleGroup.includes(muscle) || muscle.includes(item.muscleGroup)));
+    const exerciseId = machine?.exerciseId || makeId('ex');
+    updateActive({ ...active, supersets: active.supersets.map(ss => ss.id !== supersetId ? ss : { ...ss, exercises: [...ss.exercises, { id: exerciseId, supersetId: ss.id, code: `${ss.number}.${ss.exercises.length + 1}`, name: exerciseName.trim(), muscleGroup: muscle, targetSets: Math.max(1, Number(sets) || 4), targetReps: reps || '8–12', focusNotes: `${exerciseName.trim()}.` }] }) });
     setExerciseName('');
   };
   const moveSuperset = (index: number, direction: -1 | 1) => { const next = [...active.supersets]; const target = index + direction; if (target < 0 || target >= next.length) return; [next[index], next[target]] = [next[target], next[index]]; updateActive({ ...active, supersets: next }); };
