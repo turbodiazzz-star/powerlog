@@ -492,6 +492,33 @@ export const MACHINE_OPTIONS: MachineOption[] = [
     isBlockMachine: true,
     focusNotes: 'Дельтовидный тренажёр Technogym. Контроль негатива.',
   },
+  {
+    id: 'shoulder_press_matrix_a',
+    name: 'Жим вверх на плечи (Matrix)',
+    muscleGroup: 'Средняя дельта',
+    exerciseId: 'a-3.2',
+    brand: 'matrix',
+    isBlockMachine: true,
+    focusNotes: 'Жим вверх в тренажёре Matrix. Спина прижата, не переразгибай поясницу.',
+  },
+  {
+    id: 'shoulder_press_technogym_a',
+    name: 'Жим вверх на плечи (Technogym)',
+    muscleGroup: 'Средняя дельта',
+    exerciseId: 'a-3.2',
+    brand: 'technogym',
+    isBlockMachine: true,
+    focusNotes: 'Жим вверх в тренажёре Technogym. Движение плавное, локти под кистями.',
+  },
+  {
+    id: 'dumbbell_shoulder_press_a',
+    name: 'Жим гантелей вверх',
+    muscleGroup: 'Средняя дельта',
+    exerciseId: 'a-3.2',
+    brand: 'free_weight',
+    isBlockMachine: false,
+    focusNotes: 'Жим гантелей вверх сидя. Не своди плечи к ушам и не прогибай поясницу.',
+  },
 
   // 7. Бицепс бедра (B - b-1.1)
   {
@@ -935,6 +962,15 @@ export const MACHINE_OPTIONS: MachineOption[] = [
   },
   {
     id: 'lateral_raise_machine_technogym_b', name: 'Махи в тренажёре на среднюю дельту (Technogym)', muscleGroup: 'Средняя дельта', exerciseId: 'b-3.3', brand: 'technogym', isBlockMachine: true, focusNotes: 'Работа в тренажёре Technogym без рывка.'
+  },
+  {
+    id: 'shoulder_press_matrix_b', name: 'Жим вверх на плечи (Matrix)', muscleGroup: 'Средняя дельта', exerciseId: 'b-3.3', brand: 'matrix', isBlockMachine: true, focusNotes: 'Жим вверх в тренажёре Matrix с контролем амплитуды.'
+  },
+  {
+    id: 'shoulder_press_technogym_b', name: 'Жим вверх на плечи (Technogym)', muscleGroup: 'Средняя дельта', exerciseId: 'b-3.3', brand: 'technogym', isBlockMachine: true, focusNotes: 'Жим вверх в тренажёре Technogym без рывка.'
+  },
+  {
+    id: 'dumbbell_shoulder_press_b', name: 'Жим гантелей вверх', muscleGroup: 'Средняя дельта', exerciseId: 'b-3.3', brand: 'free_weight', isBlockMachine: false, focusNotes: 'Жим гантелей вверх сидя, корпус стабилен.'
   },
 ];
 
