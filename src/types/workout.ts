@@ -72,6 +72,10 @@ export interface ExerciseDefinition {
   muscleGroup: string;
   targetSets: number;
   targetReps: string;
+  /** Starting working weight prescription (kg). Assist machines = unload kg. */
+  targetWeightKg?: number;
+  /** Short progression rule shown in workout UI. */
+  progressionNotes?: string;
   focusNotes: string;
 }
 

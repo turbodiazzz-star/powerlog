@@ -97,7 +97,10 @@ const syncSessionWithProgram = (
       const variantName = selectedOption ? selectedOption.name : undefined;
       const history = StorageService.getLastExerciseLog(exDef.id, activeGym?.id, undefined, variantName);
       const lastWeight = history?.sets[0]?.weightKg || 0;
-      const lastReps = history?.sets[0]?.reps || 10;
+      const prescribed = exDef.targetWeightKg || 0;
+      const startWeight = Math.max(lastWeight, prescribed);
+      const repMatch = (exDef.targetReps || '').match(/(\d+)/);
+      const startReps = history?.sets[0]?.reps || (repMatch ? parseInt(repMatch[1], 10) : 10);
 
       const defaultSetsCount = exDef.targetSets;
       const sets: ExerciseSet[] = [];
@@ -106,8 +109,8 @@ const syncSessionWithProgram = (
         sets.push({
           id: `set_${exDef.id}_${i}_${Date.now()}`,
           setNumber: i,
-          weightKg: lastWeight,
-          reps: lastReps,
+          weightKg: startWeight,
+          reps: startReps,
           completed: false,
           weightConfirmed: false,
           repsConfirmed: false,
@@ -885,13 +888,20 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                 )}
 
                 {/* Target Plan Badge */}
-                <div className="flex items-center justify-between px-1 text-[10px] text-zinc-400 font-mono">
-                  <span>
-                    План: <strong className="text-zinc-200 font-sans">{exDef.targetSets} подх. по {exDef.targetReps} повт.</strong>
+                <div className="px-1 text-[10px] text-zinc-400 space-y-0.5">
+                  <div className="font-mono">
+                    План:{' '}
+                    <strong className="text-zinc-100 font-sans">
+                      {exDef.targetSets}×{exDef.targetReps}
+                      {exDef.targetWeightKg != null ? ` @ ${exDef.targetWeightKg} кг` : ''}
+                    </strong>
                     {assisted && bodyWeightKg > 0 && (
                       <span className="text-amber-400/90 ml-1">тело {bodyWeightKg} кг</span>
                     )}
-                  </span>
+                  </div>
+                  {exDef.progressionNotes && (
+                    <div className="text-emerald-400/90 leading-snug">{exDef.progressionNotes}</div>
+                  )}
                 </div>
 
                 <div className="space-y-0.5 pt-0.5">
