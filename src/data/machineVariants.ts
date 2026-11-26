@@ -974,11 +974,21 @@ export const MACHINE_OPTIONS: MachineOption[] = [
   },
 ];
 
+/** Same movement / equipment pool under a different program slot id. */
+const EXERCISE_ID_ALIASES: Record<string, string> = {
+  'c-2.1': 'a-2.2',
+  'c-3.2': 'b-1.1',
+  'c-4.2': 'b-2.4',
+};
+
 export function getOptionsForExercise(
   exerciseId: string,
   gymBrand?: string
 ): MachineOption[] {
-  const options = MACHINE_OPTIONS.filter(opt => opt.exerciseId === exerciseId);
+  const resolvedId = EXERCISE_ID_ALIASES[exerciseId] || exerciseId;
+  const options = MACHINE_OPTIONS.filter(
+    opt => opt.exerciseId === resolvedId || opt.exerciseId === exerciseId,
+  );
   if (!gymBrand || gymBrand === 'other') return options;
 
   // Filter options by current gym brand + free_weight options

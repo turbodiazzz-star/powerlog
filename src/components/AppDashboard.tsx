@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export const AppDashboard: React.FC = () => {
-  const APP_VERSION = '0044';
+  const APP_VERSION = '0045';
   const [activeNav, setActiveTab] = useState<'home' | 'progress' | 'program'>('home');
   const [activeSessionProps, setActiveSessionProps] = useState<{
     workoutType: string;
@@ -32,7 +32,7 @@ export const AppDashboard: React.FC = () => {
     dayName: 'Пн' | 'Ср' | 'Пт' | 'Доп';
     completedCount: number;
     lastDate?: string;
-  }>({ workoutType: 'U', dayName: 'Пн', completedCount: 0 });
+  }>({ workoutType: 'A', dayName: 'Пн', completedCount: 0 });
 
   const [activeDraft, setActiveDraft] = useState<ActiveWorkoutDraft | null>(null);
   const [cloudStatus, setCloudStatus] = useState<CloudStatus>(() => CloudSync.isConnected() ? 'syncing' : 'disconnected');
@@ -123,7 +123,7 @@ export const AppDashboard: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xs font-black tracking-wider text-white leading-tight uppercase">
-                ТРЕНИРОВКИ <span className="text-[9px] text-zinc-400 font-mono">U/L</span>
+                ТРЕНИРОВКИ <span className="text-[9px] text-zinc-400 font-mono">A/B/C</span>
               </h1>
               <p className="text-[10px] text-zinc-400 font-mono leading-none">{currentDateFormatted}</p>
             </div>
