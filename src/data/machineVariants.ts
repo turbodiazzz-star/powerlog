@@ -300,6 +300,42 @@ export const MACHINE_OPTIONS: MachineOption[] = [
     focusNotes: 'Жим в рычажном тренажере Technogym на наклонную грудь. Жмем плавно вперед и вверх, сохраняя натяжение верхней части грудных.',
   },
   {
+    id: 'barbell_incline_press',
+    name: 'Жим штанги на наклонной скамье',
+    muscleGroup: 'Верх груди',
+    exerciseId: 'a-2.1',
+    brand: 'free_weight',
+    isBlockMachine: false,
+    focusNotes: 'Свободная штанга, наклон 25–30°. Не основной вариант — по желанию.',
+  },
+  {
+    id: 'barbell_flat_press',
+    name: 'Жим штанги лёжа горизонтально',
+    muscleGroup: 'Верх груди',
+    exerciseId: 'a-2.1',
+    brand: 'free_weight',
+    isBlockMachine: false,
+    focusNotes: 'Классический жим лёжа. Запасной вариант, не на постоянной основе.',
+  },
+  {
+    id: 'dumbbell_incline_press',
+    name: 'Жим гантелей на наклонной скамье',
+    muscleGroup: 'Верх груди',
+    exerciseId: 'a-2.1',
+    brand: 'free_weight',
+    isBlockMachine: false,
+    focusNotes: 'Наклон 25–30°, гантели. Вариант по желанию.',
+  },
+  {
+    id: 'dumbbell_flat_press',
+    name: 'Жим гантелей лёжа горизонтально',
+    muscleGroup: 'Верх груди',
+    exerciseId: 'a-2.1',
+    brand: 'free_weight',
+    isBlockMachine: false,
+    focusNotes: 'Горизонтальная скамья, гантели. Вариант по желанию.',
+  },
+  {
     id: 'dips_free_weight_upper',
     name: 'Брусья (Свободный вес)',
     muscleGroup: 'Верх груди',
@@ -1130,12 +1166,16 @@ const EXERCISE_ID_ALIASES: Record<string, string> = {
  * Разные слоты программы (A vs C) могут иметь разный порядок на одном пуле машин.
  */
 const VARIANT_PRIORITY: Record<string, string[]> = {
-  // 1. Жим Смит / Хаммер
+  // День A: Хаммер первым; Смит и штанга — варианты
   'a-2.1': [
-    'smith_upper_chest_matrix',
-    'smith_upper_chest_technogym',
     'hammer_upper_chest_matrix',
     'hammer_upper_chest_technogym',
+    'smith_upper_chest_matrix',
+    'smith_upper_chest_technogym',
+    'barbell_incline_press',
+    'barbell_flat_press',
+    'dumbbell_incline_press',
+    'dumbbell_flat_press',
   ],
   'b-2.3': [
     'smith_upper_chest_matrix_b',

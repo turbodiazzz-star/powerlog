@@ -248,26 +248,27 @@ export class StorageService {
     return null;
   }
 
-  static getPenultimateVariantUsed(exerciseId: string): string | null {
+  /** Most recent machine with logged sets for this exercise. */
+  static getLastVariantUsed(exerciseId: string): string | null {
     const sessions = this.getSessions()
       .filter(s => s.completed || this.hasLoggedSets(s))
       .sort((a, b) => new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime());
 
-    const names: string[] = [];
     for (const session of sessions) {
-      let found: string | null = null;
       for (const superset of session.supersets) {
         for (const ex of superset.exercises) {
           if (ex.exerciseId === exerciseId && ex.machineName) {
-            found = ex.machineName;
+            const valid = ex.sets.some(s => (s.completed || s.weightKg > 0) && s.reps > 0);
+            if (valid) return ex.machineName;
           }
         }
       }
-      if (found && names[names.length - 1] !== found) {
-        names.push(found);
-      }
     }
-    return names[1] || names[0] || null;
+    return null;
+  }
+
+  static getPenultimateVariantUsed(exerciseId: string): string | null {
+    return this.getLastVariantUsed(exerciseId);
   }
 
   static getLatestBodyWeightKg(): number {
@@ -276,7 +277,7 @@ export class StorageService {
   }
 
   static getPreviousVariantUsed(exerciseId: string): string | null {
-    return this.getPenultimateVariantUsed(exerciseId);
+    return this.getLastVariantUsed(exerciseId);
   }
 
   static getNextWorkoutRecommendation(): {

@@ -36,59 +36,12 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B' | 'C', ProgramWorkout> = {
   A: {
     type: 'A',
     title: 'ДЕНЬ A',
-    subTitle: 'Горизонталь + жим ногами · объём до ног',
+    subTitle: 'Жим ногами → Хаммер → тяга → махи',
     supersets: [
       {
         id: 'superset-a1',
         number: 1,
-        title: '1. Жим на верх (пока свежий)',
-        rest1Text: '2–3 мин',
-        rest1Sec: 150,
-        rest2Text: '2–3 мин',
-        rest2Sec: 150,
-        exercises: [
-          {
-            id: 'a-2.1',
-            supersetId: 'superset-a1',
-            code: '1.1',
-            name: 'Жим в Смите на наклонной скамье (25–30°)',
-            muscleGroup: 'Верх груди',
-            targetSets: 4,
-            targetReps: '6–10',
-            targetWeightKg: 90,
-            progressionNotes:
-              '4×6–10 @ 90. Сеты 1–3 с запасом 1–2, 4-й почти в отказ. 4×10 → +2.5. Смит или Хаммер — один на цикл.',
-            focusNotes: 'Первым — пока нет усталости от ног. Опускание к ключицам.',
-          },
-        ],
-      },
-      {
-        id: 'superset-a2',
-        number: 2,
-        title: '2. Горизонтальная тяга',
-        rest1Text: '2 мин',
-        rest1Sec: 120,
-        rest2Text: '2 мин',
-        rest2Sec: 120,
-        exercises: [
-          {
-            id: 'a-2.2',
-            supersetId: 'superset-a2',
-            code: '2.1',
-            name: 'Тяга гантели к поясу в наклоне с упором',
-            muscleGroup: 'Середина спины',
-            targetSets: 4,
-            targetReps: '6–10',
-            targetWeightKg: 40,
-            progressionNotes: '4×6–10 @ 40 (было 3). 4×10 → 42.5. Не 16–20 повт.',
-            focusNotes: 'Локоть к поясу, пауза вверху. До ног — ещё полный фокус.',
-          },
-        ],
-      },
-      {
-        id: 'superset-a3',
-        number: 3,
-        title: '3. Жим ногами (главные ноги недели)',
+        title: '1. Жим ногами',
         rest1Text: '2.5–3 мин',
         rest1Sec: 165,
         rest2Text: '2.5–3 мин',
@@ -96,16 +49,56 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B' | 'C', ProgramWorkout> = {
         exercises: [
           {
             id: 'a-1.1',
-            supersetId: 'superset-a3',
-            code: '3.1',
+            supersetId: 'superset-a1',
+            code: '1.1',
             name: 'Жим ногами платформой (глубокий)',
             muscleGroup: 'Квадрицепс',
             targetSets: 4,
             targetReps: '6–10',
-            targetWeightKg: 205,
-            progressionNotes:
-              '4×6–10 @ 205. После него только махи. 4×10 → +5 кг.',
-            focusNotes: 'Стопы низко, глубина. Тяжёлая работа ног — здесь.',
+            focusNotes: 'Стопы низко, глубина. Вес подставляется с прошлого раза — не завышается.',
+          },
+        ],
+      },
+      {
+        id: 'superset-a2',
+        number: 2,
+        title: '2. Жим на верх (Хаммер по умолчанию)',
+        rest1Text: '2–3 мин',
+        rest1Sec: 150,
+        rest2Text: '2–3 мин',
+        rest2Sec: 150,
+        exercises: [
+          {
+            id: 'a-2.1',
+            supersetId: 'superset-a2',
+            code: '2.1',
+            name: 'Жим в Хаммере на верх груди',
+            muscleGroup: 'Верх груди',
+            targetSets: 4,
+            targetReps: '6–10',
+            focusNotes:
+              'В этом дне первым в списке — Хаммер. Смит / штанга лёжа / наклон — варианты в меню.',
+          },
+        ],
+      },
+      {
+        id: 'superset-a3',
+        number: 3,
+        title: '3. Горизонтальная тяга',
+        rest1Text: '2 мин',
+        rest1Sec: 120,
+        rest2Text: '2 мин',
+        rest2Sec: 120,
+        exercises: [
+          {
+            id: 'a-2.2',
+            supersetId: 'superset-a3',
+            code: '3.1',
+            name: 'Тяга гантели к поясу в наклоне с упором',
+            muscleGroup: 'Середина спины',
+            targetSets: 4,
+            targetReps: '6–10',
+            focusNotes: 'Локоть к поясу, пауза вверху.',
           },
         ],
       },
@@ -122,12 +115,10 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B' | 'C', ProgramWorkout> = {
             id: 'a-3.2',
             supersetId: 'superset-a4',
             code: '4.1',
-            name: 'Махи гантелями в стороны (или в кроссовере)',
+            name: 'Махи в кроссовере на блоке',
             muscleGroup: 'Средняя дельта',
             targetSets: 3,
             targetReps: '10–15',
-            targetWeightKg: 14,
-            progressionNotes: '3×15 @ 14 → +1–2 кг. Единственное после жима ногами.',
             focusNotes: 'Строгая форма. Не добавляй сюда тяжёлое.',
           },
         ],
@@ -252,11 +243,11 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B' | 'C', ProgramWorkout> = {
       {
         id: 'superset-b5',
         number: 5,
-        title: '5. Жим на плечи (отдельно, без каната)',
+        title: '5. Жим на плечи + трицепс',
         rest1Text: '2 мин',
         rest1Sec: 120,
-        rest2Text: '2 мин',
-        rest2Sec: 120,
+        rest2Text: '90 сек',
+        rest2Sec: 90,
         exercises: [
           {
             id: 'b-3.3',
@@ -266,36 +257,17 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B' | 'C', ProgramWorkout> = {
             muscleGroup: 'Средняя дельта',
             targetSets: 3,
             targetReps: '6–10',
-            targetWeightKg: 40,
-            progressionNotes:
-              '3×6–10. Приоритет: рычажный сидя → гантели сидя → блочный сидя. 3×10 → +2.5.',
-            focusNotes:
-              'Без суперсета с трицепсом — качество жима важнее. Канат после, отдельно.',
+            focusNotes: 'Рычажный сидя → гантели → блок. Суперсет с трицепсом.',
           },
-        ],
-      },
-      {
-        id: 'superset-b6',
-        number: 6,
-        title: '6. Трицепс изоляция (коротко)',
-        rest1Text: '75 сек',
-        rest1Sec: 75,
-        rest2Text: '75 сек',
-        rest2Sec: 75,
-        exercises: [
           {
             id: 'b-5.2',
-            supersetId: 'superset-b6',
-            code: '6.1',
+            supersetId: 'superset-b5',
+            code: '5.2',
             name: 'Разгибания на трицепс с канатом (верхний блок)',
             muscleGroup: 'Трицепс',
-            targetSets: 2,
+            targetSets: 3,
             targetReps: '10–15',
-            targetWeightKg: 25,
-            progressionNotes:
-              'Всего 2 подхода: брусья+жимы уже грузят трицепс. Изоляция добивает длинную головку (исследования). 2×15 → +2.5.',
-            focusNotes:
-              'После жима плеч, не вместе с ним. Жимы/брусья ≠ полная гипертрофия всех головок — 2–3 прямых сета/нед достаточно.',
+            focusNotes: 'Канат на верхнем блоке. 3 подхода.',
           },
         ],
       },
@@ -433,12 +405,12 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B' | 'C', ProgramWorkout> = {
 };
 
 export type WorkoutProgramMap = Record<string, ProgramWorkout>;
-export const PROGRAM_SCHEMA_VERSION = 9;
+export const PROGRAM_SCHEMA_VERSION = 10;
 
 export function getWorkoutProgram(): WorkoutProgramMap {
   try {
-    if (localStorage.getItem('fit_tracker_program_schema_v9') !== '1') {
-      localStorage.setItem('fit_tracker_program_schema_v9', '1');
+    if (localStorage.getItem('fit_tracker_program_schema_v10') !== '1') {
+      localStorage.setItem('fit_tracker_program_schema_v10', '1');
       localStorage.removeItem('fit_tracker_program_v1');
       localStorage.removeItem('fit_tracker_program_schema_v3');
       localStorage.removeItem('fit_tracker_program_schema_v4');
@@ -446,6 +418,7 @@ export function getWorkoutProgram(): WorkoutProgramMap {
       localStorage.removeItem('fit_tracker_program_schema_v6');
       localStorage.removeItem('fit_tracker_program_schema_v7');
       localStorage.removeItem('fit_tracker_program_schema_v8');
+      localStorage.removeItem('fit_tracker_program_schema_v9');
       return WORKOUT_PROGRAM;
     }
     const saved = JSON.parse(localStorage.getItem('fit_tracker_program_v1') || '{}') as WorkoutProgramMap;

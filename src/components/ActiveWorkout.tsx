@@ -9,9 +9,8 @@ import { StorageService } from '../services/storage';
 import { getOptionsForExercise, isBlockMachineOption, getMachineBaseTareWeight, isAssistedMachine, type MachineOption } from '../data/machineVariants';
 import { WeightScrollPicker } from './WeightScrollPicker';
 import { RepsScrollPicker } from './RepsScrollPicker';
-import { calcWorkingLoad, localLoadRecommendation } from '../utils/loadMath';
+import { calcWorkingLoad } from '../utils/loadMath';
 import { formatDateDot } from '../utils/dates';
-import { AiService } from '../services/aiService';
 import confetti from 'canvas-confetti';
 import {
   Plus,
@@ -87,7 +86,7 @@ const syncSessionWithProgram = (
       }
 
       const availableOptions = getOptionsForExercise(exDef.id, gymBrand);
-      const defaultVariant = StorageService.getPenultimateVariantUsed(exDef.id);
+      const defaultVariant = StorageService.getLastVariantUsed(exDef.id);
 
       let selectedOption: MachineOption | undefined = availableOptions.find(opt => opt.name === defaultVariant);
       if (!selectedOption) {
@@ -96,11 +95,10 @@ const syncSessionWithProgram = (
 
       const variantName = selectedOption ? selectedOption.name : undefined;
       const history = StorageService.getLastExerciseLog(exDef.id, activeGym?.id, undefined, variantName);
-      const lastWeight = history?.sets[0]?.weightKg || 0;
-      const prescribed = exDef.targetWeightKg || 0;
-      const startWeight = Math.max(lastWeight, prescribed);
-      const repMatch = (exDef.targetReps || '').match(/(\d+)/);
-      const startReps = history?.sets[0]?.reps || (repMatch ? parseInt(repMatch[1], 10) : 10);
+      // Вес = последний подход прошлой тренировки; повторы = 2-й подход; без авто-повышения
+      const histSets = history?.sets || [];
+      const startWeight = histSets.length ? histSets[histSets.length - 1].weightKg : 0;
+      const startReps = histSets[1]?.reps ?? histSets[0]?.reps ?? 10;
 
       const defaultSetsCount = exDef.targetSets;
       const sets: ExerciseSet[] = [];
@@ -191,10 +189,8 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const workoutStartedAtRef = useRef<number>(Date.now());
   const restEndsAtRef = useRef<number | null>(null);
-  const [aiRecs, setAiRecs] = useState<
-    Record<string, { inputKg: number; sets: number; reps: string; note: string }>
-  >({});
   const bodyWeightKg = StorageService.getLatestBodyWeightKg();
+  const autoFinishedRef = useRef(false);
 
   // Active session state with draft restore fallback and program structure normalization
   const [session, setSession] = useState<WorkoutSession>(() => {
@@ -231,38 +227,6 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
       workoutStartedAtRef.current = Date.now();
     }
   }, [workoutType]);
-
-  useEffect(() => {
-    const items = program.supersets.flatMap(ss =>
-      ss.exercises.map(exDef => {
-        const logged = session.supersets.flatMap(s => s.exercises).find(e => e.exerciseId === exDef.id);
-        const history = StorageService.getLastExerciseLog(
-          exDef.id,
-          currentGymId,
-          undefined,
-          logged?.machineName
-        );
-        return {
-          exerciseId: exDef.id,
-          muscleGroup: exDef.muscleGroup,
-          machineName: logged?.machineName || '',
-          targetSets: exDef.targetSets,
-          targetReps: exDef.targetReps,
-          lastSets: (history?.sets || []).map(s => ({ weightKg: s.weightKg, reps: s.reps })),
-        };
-      })
-    );
-
-    void AiService.recommendSessionLoads({
-      workoutType,
-      bodyWeightKg,
-      items,
-    }).then(recs => {
-      if (recs && Object.keys(recs).length) setAiRecs(recs);
-    });
-    // only once when workout screen opens
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Continuously save active draft AND sync logged sets directly to main history in localStorage
   useEffect(() => {
@@ -417,7 +381,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         ...ss,
         exercises: ss.exercises.map(ex => {
           const availableOptions = getOptionsForExercise(ex.exerciseId, gymBrand);
-          const defaultVariant = StorageService.getPenultimateVariantUsed(ex.exerciseId);
+          const defaultVariant = StorageService.getLastVariantUsed(ex.exerciseId);
 
           let selectedOption = availableOptions.find(opt => opt.name === ex.machineName);
           if (!selectedOption) {
@@ -435,6 +399,9 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
   const handleVariantChange = (exerciseId: string, variantName: string) => {
     const history = StorageService.getLastExerciseLog(exerciseId, currentGymId, undefined, variantName);
+    const histSets = history?.sets || [];
+    const startWeight = histSets.length ? histSets[histSets.length - 1].weightKg : 0;
+    const startReps = histSets[1]?.reps ?? histSets[0]?.reps ?? 10;
 
     setSession(prev => ({
       ...prev,
@@ -442,18 +409,14 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
         ...ss,
         exercises: ss.exercises.map(ex => {
           if (ex.exerciseId === exerciseId) {
-            const updatedSets = ex.sets.map(st => {
-              const lastWeight = history?.sets[0]?.weightKg ?? 0;
-              const lastReps = history?.sets[0]?.reps ?? st.reps;
-              return {
-                ...st,
-                weightKg: lastWeight,
-                reps: lastReps,
-                completed: false,
-                weightConfirmed: false,
-                repsConfirmed: false,
-              };
-            });
+            const updatedSets = ex.sets.map(st => ({
+              ...st,
+              weightKg: startWeight,
+              reps: startReps,
+              completed: false,
+              weightConfirmed: false,
+              repsConfirmed: false,
+            }));
 
             return {
               ...ex,
@@ -577,7 +540,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     setExpandedDetails(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const confirmAndFinishSession = () => {
+  const confirmAndFinishSession = (opts?: { silent?: boolean }) => {
     const completedSession: WorkoutSession = {
       ...session,
       durationMinutes: Math.round(elapsedSeconds / 60),
@@ -588,18 +551,29 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
     StorageService.saveSession(completedSession);
     StorageService.clearActiveDraft();
 
-    try {
-      confetti({
-        particleCount: 80,
-        spread: 60,
-        origin: { y: 0.6 },
-      });
-    } catch {
-      // ignore
+    if (!opts?.silent) {
+      try {
+        confetti({
+          particleCount: 80,
+          spread: 60,
+          origin: { y: 0.6 },
+        });
+      } catch {
+        // ignore
+      }
     }
 
     onFinishWorkout();
   };
+
+  // Автозавершение, если забыли нажать «Финиш» (лимит 3 часа)
+  useEffect(() => {
+    const LIMIT = 3 * 60 * 60;
+    if (elapsedSeconds < LIMIT || autoFinishedRef.current) return;
+    autoFinishedRef.current = true;
+    confirmAndFinishSession({ silent: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elapsedSeconds]);
 
   const formatElapsed = (sec: number) => {
     const mins = Math.floor(sec / 60);
@@ -795,7 +769,7 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
           {currentSupersetDef.exercises.map((exDef) => {
             const loggedEx = session.supersets.flatMap(s => s.exercises).find(e => e.exerciseId === exDef.id);
             const availableVariants = getOptionsForExercise(exDef.id, activeGymBrand);
-            const prevVariantName = StorageService.getPenultimateVariantUsed(exDef.id);
+            const prevVariantName = StorageService.getLastVariantUsed(exDef.id);
             const selectedVariantName = loggedEx?.machineName || availableVariants[0]?.name || '';
 
             const selectedOption = availableVariants.find(opt => opt.name === selectedVariantName) || availableVariants[0];
@@ -821,27 +795,19 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
 
             const detailsKey = `details_${exDef.id}`;
             const isDetailsOpen = !!expandedDetails[detailsKey];
-            const aiRec = aiRecs[exDef.id];
-            const localRec = localLoadRecommendation({
-              lastSets: (variantHistoryLog?.sets || []).map(s => ({ weightKg: s.weightKg, reps: s.reps })),
-              targetSets: exDef.targetSets,
-              targetReps: exDef.targetReps,
-              option: selectedOption,
-            });
-            const rec = aiRec || localRec;
+            const histSets = variantHistoryLog?.sets || [];
+            const planWeight = histSets.length ? histSets[histSets.length - 1].weightKg : loggedEx?.sets[0]?.weightKg || 0;
+            const planReps = histSets[1]?.reps ?? histSets[0]?.reps ?? loggedEx?.sets[0]?.reps ?? exDef.targetReps;
 
             return (
               <div
                 key={exDef.id}
                 className="bg-zinc-950/80 border border-zinc-700/70 rounded-2xl p-1.5 space-y-1 shadow-inner"
               >
-                {rec && rec.inputKg > 0 && (
-                  <div className="px-2 py-0.5 rounded-2xl bg-emerald-950/60 border border-emerald-800/80 text-[10px] text-emerald-300 leading-tight">
-                    <span className="font-black text-emerald-400">{aiRec ? 'ИИ' : 'План'}:</span>{' '}
-                    {assisted ? `разгрузка ${rec.inputKg} кг` : `${rec.inputKg} кг`} · {rec.sets} подх. × {rec.reps}
-                    {rec.note ? ` · ${rec.note}` : ''}
-                  </div>
-                )}
+                <div className="px-2 py-0.5 rounded-2xl bg-zinc-900 border border-zinc-700 text-[10px] text-zinc-300 leading-tight">
+                  <span className="font-bold text-zinc-100">На эту тренировку:</span>{' '}
+                  {assisted ? `разгрузка ${planWeight} кг` : `${planWeight} кг`} · {exDef.targetSets}×{planReps}
+                </div>
                 <div className="flex items-center justify-between gap-1 bg-zinc-900/80 p-1 rounded-2xl border border-zinc-700/60">
                   {/* Left: Muscle badge */}
                   <span className="bg-zinc-800 text-zinc-200 border border-zinc-700 text-[10px] font-bold px-1.5 py-0.5 rounded-lg shrink-0">
@@ -887,22 +853,9 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                   </div>
                 )}
 
-                {/* Target Plan Badge */}
-                <div className="px-1 text-[10px] text-zinc-400 space-y-0.5">
-                  <div className="font-mono">
-                    План:{' '}
-                    <strong className="text-zinc-100 font-sans">
-                      {exDef.targetSets}×{exDef.targetReps}
-                      {exDef.targetWeightKg != null ? ` @ ${exDef.targetWeightKg} кг` : ''}
-                    </strong>
-                    {assisted && bodyWeightKg > 0 && (
-                      <span className="text-amber-400/90 ml-1">тело {bodyWeightKg} кг</span>
-                    )}
-                  </div>
-                  {exDef.progressionNotes && (
-                    <div className="text-emerald-400/90 leading-snug">{exDef.progressionNotes}</div>
-                  )}
-                </div>
+                {assisted && bodyWeightKg > 0 && (
+                  <div className="px-1 text-[10px] text-amber-400/90">тело {bodyWeightKg} кг</div>
+                )}
 
                 <div className="space-y-0.5 pt-0.5">
                   <div className="grid grid-cols-[minmax(0,1fr)_4.6rem_3.2rem_1.25rem] gap-1.5 px-1 text-[9px] uppercase font-bold text-zinc-500 tracking-wide">

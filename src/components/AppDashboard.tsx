@@ -17,8 +17,10 @@ import {
   Cloud,
 } from 'lucide-react';
 
+const LOGO_SRC = `${import.meta.env.BASE_URL}favicon.svg`;
+
 export const AppDashboard: React.FC = () => {
-  const APP_VERSION = '0047';
+  const APP_VERSION = '0048';
   const [activeNav, setActiveTab] = useState<'home' | 'progress' | 'program'>('home');
   const [activeSessionProps, setActiveSessionProps] = useState<{
     workoutType: string;
@@ -118,9 +120,11 @@ export const AppDashboard: React.FC = () => {
       <header className="bg-zinc-900/95 border-b border-zinc-800/80 backdrop-blur-md sticky top-0 z-40 pt-safe px-4 pb-2.5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-emerald-400 flex items-center justify-center shrink-0 shadow-sm">
-              <Dumbbell className="w-4 h-4 text-zinc-950 stroke-[2.5]" />
-            </div>
+            <img
+              src={LOGO_SRC}
+              alt=""
+              className="w-7 h-7 rounded-lg shrink-0 shadow-sm border border-zinc-700 bg-zinc-950"
+            />
             <div>
               <h1 className="text-xs font-black tracking-wider text-white leading-tight uppercase">
                 ТРЕНИРОВКИ <span className="text-[9px] text-zinc-400 font-mono">A/B/C</span>
