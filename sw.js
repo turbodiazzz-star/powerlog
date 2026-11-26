@@ -1,23 +1,87 @@
+/* Auto-generated offline shell for Powerlog */
+const CACHE = 'powerlog-shell-mwxdoj8p';
+const PRECACHE = [
+  "./",
+  "./.nojekyll",
+  "./apple-touch-icon.png",
+  "./assets/index-C6EbHQET.css",
+  "./assets/index-CF3X1-KP.js",
+  "./favicon.svg",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./icons.svg",
+  "./index.html",
+  "./manifest.json"
+];
+
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE)
+      .then((cache) => cache.addAll(PRECACHE))
+      .then(() => self.skipWaiting())
+      .catch(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => caches.delete(cacheName))
-      );
-    })
+    caches.keys().then((keys) =>
+      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
+function isCloudRequest(url) {
+  return (
+    url.hostname.includes('workers.dev') ||
+    url.hostname.includes('githubusercontent.com') ||
+    url.pathname.includes('/api/')
+  );
+}
+
 self.addEventListener('fetch', (event) => {
-  // Always fetch fresh from network. Never pass an undefined cache match to
-  // respondWith: browsers treat that as a service-worker failure.
+  const req = event.request;
+  if (req.method !== 'GET') return;
+
+  const url = new URL(req.url);
+  if (isCloudRequest(url)) return;
+
+  // App navigation: network first, offline → cached shell
+  if (req.mode === 'navigate') {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          void caches.open(CACHE).then((c) => c.put('./index.html', copy));
+          return res;
+        })
+        .catch(async () => {
+          return (
+            (await caches.match('./index.html')) ||
+            (await caches.match(PRECACHE.find((p) => p.endsWith('index.html')) || './index.html')) ||
+            new Response('Офлайн. Откройте приложение ещё раз после сети.', {
+              status: 503,
+              headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+            })
+          );
+        })
+    );
+    return;
+  }
+
+  // Static assets: cache first, then network and store
   event.respondWith(
-    fetch(event.request)
-      .catch(() => new Response('', { status: 503, statusText: 'Offline' }))
+    caches.match(req).then((cached) => {
+      if (cached) return cached;
+      return fetch(req)
+        .then((res) => {
+          if (res.ok) {
+            const copy = res.clone();
+            void caches.open(CACHE).then((c) => c.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match('./index.html'));
+    })
   );
 });
