@@ -6,7 +6,14 @@ import type {
 } from '../types/workout';
 import { getWorkoutProgram } from '../data/workoutProgram';
 import { StorageService } from '../services/storage';
-import { getOptionsForExercise, isBlockMachineOption, getMachineBaseTareWeight, isAssistedMachine, type MachineOption } from '../data/machineVariants';
+import {
+  getOptionsForExercise,
+  isBlockMachineOption,
+  getMachineBaseTareWeight,
+  isAssistedMachine,
+  resolveOptionByHistoricalName,
+  type MachineOption,
+} from '../data/machineVariants';
 import { WeightScrollPicker } from './WeightScrollPicker';
 import { RepsScrollPicker } from './RepsScrollPicker';
 import { calcWorkingLoad } from '../utils/loadMath';
@@ -86,15 +93,16 @@ const syncSessionWithProgram = (
       }
 
       const availableOptions = getOptionsForExercise(exDef.id, gymBrand);
-      const defaultVariant = StorageService.getLastVariantUsed(exDef.id);
-
-      let selectedOption: MachineOption | undefined = availableOptions.find(opt => opt.name === defaultVariant);
-      if (!selectedOption) {
-        selectedOption = availableOptions[0];
-      }
+      const lastUsedRaw = StorageService.getLastVariantUsed(exDef.id);
+      // Старое имя тренажёра после переименования → текущая опция
+      let selectedOption: MachineOption | undefined =
+        resolveOptionByHistoricalName(availableOptions, lastUsedRaw) || availableOptions[0];
 
       const variantName = selectedOption ? selectedOption.name : undefined;
-      const history = StorageService.getLastExerciseLog(exDef.id, activeGym?.id, undefined, variantName);
+      const history =
+        StorageService.getLastExerciseLog(exDef.id, activeGym?.id, undefined, variantName) ||
+        StorageService.getLastExerciseLog(exDef.id, activeGym?.id, undefined, lastUsedRaw || undefined) ||
+        StorageService.getLastExerciseLog(exDef.id, activeGym?.id);
       // Вес = последний подход прошлой тренировки; повторы = 2-й подход; без авто-повышения
       const histSets = history?.sets || [];
       const startWeight = histSets.length ? histSets[histSets.length - 1].weightKg : 0;
@@ -398,10 +406,20 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
   };
 
   const handleVariantChange = (exerciseId: string, variantName: string) => {
-    const history = StorageService.getLastExerciseLog(exerciseId, currentGymId, undefined, variantName);
+    const history =
+      StorageService.getLastExerciseLog(exerciseId, currentGymId, undefined, variantName) ||
+      StorageService.getLastExerciseLog(exerciseId, currentGymId);
     const histSets = history?.sets || [];
-    const startWeight = histSets.length ? histSets[histSets.length - 1].weightKg : 0;
-    const startReps = histSets[1]?.reps ?? histSets[0]?.reps ?? 10;
+    // Если на ЭТОМ тренажёре истории нет — не подставляем чужой вес
+    const matched =
+      history &&
+      (!history.machineName ||
+        history.machineName === variantName ||
+        resolveOptionByHistoricalName(getOptionsForExercise(exerciseId), history.machineName)?.name ===
+          variantName);
+    const startWeight = matched && histSets.length ? histSets[histSets.length - 1].weightKg : 0;
+    const startReps =
+      matched && histSets.length ? histSets[1]?.reps ?? histSets[0]?.reps ?? 10 : 10;
 
     setSession(prev => ({
       ...prev,
@@ -770,9 +788,11 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
             const loggedEx = session.supersets.flatMap(s => s.exercises).find(e => e.exerciseId === exDef.id);
             const availableVariants = getOptionsForExercise(exDef.id, activeGymBrand);
             const prevVariantName = StorageService.getLastVariantUsed(exDef.id);
-            const selectedVariantName = loggedEx?.machineName || availableVariants[0]?.name || '';
-
-            const selectedOption = availableVariants.find(opt => opt.name === selectedVariantName) || availableVariants[0];
+            const selectedOption =
+              resolveOptionByHistoricalName(availableVariants, loggedEx?.machineName) ||
+              resolveOptionByHistoricalName(availableVariants, prevVariantName) ||
+              availableVariants[0];
+            const selectedVariantName = selectedOption?.name || availableVariants[0]?.name || '';
             const techniqueNotes = selectedOption?.focusNotes || exDef.focusNotes;
 
             const isBlockMachine = selectedOption?.isBlockMachine ?? isBlockMachineOption(selectedVariantName);
@@ -786,12 +806,10 @@ export const ActiveWorkout: React.FC<ActiveWorkoutProps> = ({
                 selectedVariantName.toLowerCase().includes('matrix')) &&
               isBlockMachine;
 
-            const variantHistoryLog = StorageService.getLastExerciseLog(
-              exDef.id,
-              currentGymId,
-              undefined,
-              selectedVariantName
-            );
+            const variantHistoryLog =
+              StorageService.getLastExerciseLog(exDef.id, currentGymId, undefined, selectedVariantName) ||
+              StorageService.getLastExerciseLog(exDef.id, currentGymId, undefined, loggedEx?.machineName) ||
+              StorageService.getLastExerciseLog(exDef.id, currentGymId);
 
             const detailsKey = `details_${exDef.id}`;
             const isDetailsOpen = !!expandedDetails[detailsKey];

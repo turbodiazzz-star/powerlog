@@ -1357,9 +1357,48 @@ export function getOptionsForExercise(
   return sortByPriority(exerciseId, options);
 }
 
+/** Normalize machine labels so renamed variants still match history. */
+export function normalizeMachineKey(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/\(.*?\)/g, ' ')
+    .replace(/technogym|matrix|свободный вес|фото/gi, ' ')
+    .replace(/[^a-zа-яё0-9]+/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function machinesMatch(a?: string | null, b?: string | null): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const na = normalizeMachineKey(a);
+  const nb = normalizeMachineKey(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  if (na.includes(nb) || nb.includes(na)) return true;
+  const ta = na.split(' ').filter(t => t.length > 2);
+  const tb = new Set(nb.split(' ').filter(t => t.length > 2));
+  const overlap = ta.filter(t => tb.has(t));
+  // Face Pull / скотта / рычажный etc.
+  return overlap.length >= 2 || (overlap.length >= 1 && (na.length < 18 || nb.length < 18));
+}
+
+/** Map a historical machine name onto the current option list. */
+export function resolveOptionByHistoricalName(
+  options: MachineOption[],
+  historicalName?: string | null,
+): MachineOption | undefined {
+  if (!historicalName || !options.length) return undefined;
+  const exact = options.find(o => o.name === historicalName);
+  if (exact) return exact;
+  return options.find(o => machinesMatch(o.name, historicalName));
+}
+
 export function isBlockMachineOption(machineName?: string): boolean {
   if (!machineName) return false;
-  const match = MACHINE_OPTIONS.find(opt => opt.name === machineName);
+  const match =
+    MACHINE_OPTIONS.find(opt => opt.name === machineName) ||
+    MACHINE_OPTIONS.find(opt => machinesMatch(opt.name, machineName));
   if (match) return !!match.isBlockMachine;
 
   // Fallback heuristic if string contains block keywords
@@ -1388,7 +1427,10 @@ export function isBlockMachineOption(machineName?: string): boolean {
 
 export function getMachineOption(machineName?: string): MachineOption | undefined {
   if (!machineName) return undefined;
-  return MACHINE_OPTIONS.find(opt => opt.name === machineName);
+  return (
+    MACHINE_OPTIONS.find(opt => opt.name === machineName) ||
+    MACHINE_OPTIONS.find(opt => machinesMatch(opt.name, machineName))
+  );
 }
 
 export function isAssistedMachine(machineName?: string): boolean {

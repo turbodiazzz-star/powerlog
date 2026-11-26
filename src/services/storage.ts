@@ -1,5 +1,6 @@
 import type { Gym, MachineEquipment, WorkoutSession, InBodyRecord, ProgressPhotoRecord, ActiveWorkoutDraft, ProgramWorkout } from '../types/workout';
 import { INITIAL_GYMS, getWorkoutProgram, PROGRAM_SCHEMA_VERSION } from '../data/workoutProgram';
+import { machinesMatch } from '../data/machineVariants';
 import type { BodyGender, BodyProfile } from '../utils/inBodyNorms';
 
 const STORAGE_KEYS = {
@@ -189,7 +190,8 @@ export class StorageService {
     exerciseId: string,
     _gymId?: string,
     machineId?: string,
-    variantName?: string
+    variantName?: string,
+    opts?: { allowExerciseFallback?: boolean }
   ): {
     sessionDate: string;
     gymName?: string;
@@ -200,30 +202,37 @@ export class StorageService {
       .filter(s => s.completed || this.hasLoggedSets(s))
       .sort((a, b) => new Date(b.completedAt || b.date).getTime() - new Date(a.completedAt || a.date).getTime());
 
-    // 1. First search for matching variantName if provided
+    const pack = (session: (typeof sessions)[0], ex: (typeof sessions)[0]['supersets'][0]['exercises'][0]) => {
+      const validSets = ex.sets.filter(s => (s.completed || s.weightKg > 0) && s.reps > 0);
+      if (!validSets.length) return null;
+      return {
+        sessionDate: session.date,
+        gymName: ex.gymName || session.gymName,
+        machineName: ex.machineName,
+        sets: validSets.map(s => ({ weightKg: s.weightKg, reps: s.reps, notes: s.notes })),
+      };
+    };
+
+    // 1. Prefer matching variant (exact or renamed)
     if (variantName) {
       for (const session of sessions) {
         for (const superset of session.supersets) {
           for (const ex of superset.exercises) {
-            if (ex.exerciseId === exerciseId && ex.machineName === variantName) {
-              const validSets = ex.sets.filter(s => (s.completed || s.weightKg > 0) && s.reps > 0);
-              if (validSets.length > 0) {
-                return {
-                  sessionDate: session.date,
-                  gymName: ex.gymName || session.gymName,
-                  machineName: ex.machineName,
-                  sets: validSets.map(s => ({ weightKg: s.weightKg, reps: s.reps, notes: s.notes })),
-                };
-              }
+            if (ex.exerciseId !== exerciseId) continue;
+            if (ex.machineName === variantName || machinesMatch(ex.machineName, variantName)) {
+              const hit = pack(session, ex);
+              if (hit) return hit;
             }
           }
         }
       }
 
-      // A machine-specific request must never fall back to another machine
-      // for the same muscle group. If this exact variant has no history, the
-      // workout starts empty (weight 0) as expected.
-      return null;
+      // After renames / priority changes: still restore last weight for this exercise
+      if (opts?.allowExerciseFallback !== false) {
+        // fall through to general lookup
+      } else {
+        return null;
+      }
     }
 
     // 2. Fallback to general last log for this exercise
@@ -232,15 +241,8 @@ export class StorageService {
         for (const ex of superset.exercises) {
           if (ex.exerciseId === exerciseId) {
             if (machineId && ex.machineId !== machineId) continue;
-            const validSets = ex.sets.filter(s => (s.completed || s.weightKg > 0) && s.reps > 0);
-            if (validSets.length > 0) {
-              return {
-                sessionDate: session.date,
-                gymName: ex.gymName || session.gymName,
-                machineName: ex.machineName,
-                sets: validSets.map(s => ({ weightKg: s.weightKg, reps: s.reps, notes: s.notes })),
-              };
-            }
+            const hit = pack(session, ex);
+            if (hit) return hit;
           }
         }
       }
