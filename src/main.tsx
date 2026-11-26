@@ -16,6 +16,11 @@ async function boot() {
     CloudSync.hydrate(),
     new Promise<void>(resolve => setTimeout(resolve, 5000)),
   ]).catch(() => undefined)
+
+  // Когда сеть вернулась — дотянуть облако и выгрузить локальные правки
+  window.addEventListener('online', () => {
+    void CloudSync.hydrate();
+  });
 }
 
 void boot()

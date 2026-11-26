@@ -20,11 +20,8 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.getRegistrations().then(regs => {
-            return Promise.all(regs.map(reg => reg.unregister()));
-          }).then(() => {
-            return navigator.serviceWorker.register('./sw.js?v=0017');
-          }).catch(() => undefined);
+          // Keep SW registered for offline shell. Do not unregister on every load.
+          navigator.serviceWorker.register('./sw.js').catch(() => undefined);
         });
       }
     </script>
