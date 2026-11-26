@@ -71,27 +71,27 @@ export const MACHINE_OPTIONS: MachineOption[] = [
   },
   {
     id: 'hack_squat_matrix',
-    name: 'Гакк-приседания (Matrix)',
+    name: 'Жим ногами / гакк рычажный (Matrix)',
     muscleGroup: 'Квадрицепс',
     exerciseId: 'a-1.1',
     brand: 'matrix',
     isBlockMachine: false,
     baseTareWeight: 30,
-    focusNotes: 'Спина и таз прижаты к салазкам. Указывайте только блины: пустая каретка ~30 кг. Глубокий опуск, колени по носкам.',
+    focusNotes: 'Рычажный гакк/салазки. Указывайте только блины: пустая каретка ~30 кг. Глубокий опуск.',
   },
   {
     id: 'hack_squat_technogym',
-    name: 'Гакк-приседания (Technogym)',
+    name: 'Жим ногами / гакк рычажный (Technogym)',
     muscleGroup: 'Квадрицепс',
     exerciseId: 'a-1.1',
     brand: 'technogym',
     isBlockMachine: false,
     baseTareWeight: 32,
-    focusNotes: 'Гакк Technogym Pure. Блины + каретка. Не блокируйте колени вверху.',
+    focusNotes: 'Рычажный гакк Technogym. Блины + каретка. Не блокируйте колени вверху.',
   },
   {
     id: 'leg_extension_matrix',
-    name: 'Разгибания ног сидя (Matrix)',
+    name: 'Разгибания ног блочные сидя (Matrix)',
     muscleGroup: 'Квадрицепс',
     exerciseId: 'l-3.1',
     brand: 'matrix',
@@ -100,12 +100,30 @@ export const MACHINE_OPTIONS: MachineOption[] = [
   },
   {
     id: 'leg_extension_technogym',
-    name: 'Разгибания ног сидя (Technogym)',
+    name: 'Разгибания ног блочные сидя (Technogym)',
     muscleGroup: 'Квадрицепс',
     exerciseId: 'l-3.1',
     brand: 'technogym',
     isBlockMachine: true,
     focusNotes: 'Разгибания Technogym Selection. Без рывка, контроль негатива.',
+  },
+  {
+    id: 'leg_extension_lever_matrix',
+    name: 'Разгибания ног рычажные / блины (Matrix)',
+    muscleGroup: 'Квадрицепс',
+    exerciseId: 'l-3.1',
+    brand: 'matrix',
+    isBlockMachine: false,
+    focusNotes: 'Рычажные разгибания под блины. Контроль негатива.',
+  },
+  {
+    id: 'leg_extension_lever_technogym',
+    name: 'Разгибания ног рычажные / блины (Technogym)',
+    muscleGroup: 'Квадрицепс',
+    exerciseId: 'l-3.1',
+    brand: 'technogym',
+    isBlockMachine: false,
+    focusNotes: 'Рычажные разгибания Technogym под блины.',
   },
   {
     id: 'smith_squat_matrix',
@@ -231,6 +249,16 @@ export const MACHINE_OPTIONS: MachineOption[] = [
     isBlockMachine: false,
     focusNotes: 'Подтягивания под своим весом. Хват чуть шире плеч, грудь вверх.',
   },
+  {
+    id: 'technogym_converging_lat',
+    name: 'Вертикальная тяга сходящимися рукоятями / по дуге (Technogym)',
+    muscleGroup: 'Широчайшие',
+    exerciseId: 'a-1.2',
+    brand: 'technogym',
+    isBlockMachine: true,
+    focusNotes:
+      'Только Technogym: сидя, две независимые рукояти идут по дуге (не строго вертикально вниз). Тяни к верхней груди, локти вниз-назад.',
+  },
 
   // 3. Верх груди (A - a-2.1)
   {
@@ -305,16 +333,16 @@ export const MACHINE_OPTIONS: MachineOption[] = [
   // 4. Середина спины (A - a-2.2)
   {
     id: 'dumbbell_row_incline',
-    name: 'Тяга гантелей к поясу в наклоне',
+    name: 'Тяга гантели к поясу в наклоне',
     muscleGroup: 'Середина спины',
     exerciseId: 'a-2.2',
     brand: 'free_weight',
     isBlockMachine: false, // Dumbbells
-    focusNotes: 'Ведем гантели под углом к поясу, отводя локти в стороны под ~45–60° и в верхней точке максимально сжимая лопатки вместе.',
+    focusNotes: 'Ведем гантель к поясу, локоть ~45–60°, вверху сжимаем лопатку 1 сек.',
   },
   {
     id: 'seated_cable_row_matrix',
-    name: 'Тяга горизонтального блока сидя (Matrix)',
+    name: 'Горизонтальная тяга блока сидя (Matrix)',
     muscleGroup: 'Середина спины',
     exerciseId: 'a-2.2',
     brand: 'matrix',
@@ -323,7 +351,7 @@ export const MACHINE_OPTIONS: MachineOption[] = [
   },
   {
     id: 'seated_cable_row_technogym',
-    name: 'Тяга горизонтального блока сидя (Technogym)',
+    name: 'Горизонтальная тяга блока сидя (Technogym)',
     muscleGroup: 'Середина спины',
     exerciseId: 'a-2.2',
     brand: 'technogym',
@@ -358,30 +386,20 @@ export const MACHINE_OPTIONS: MachineOption[] = [
     focusNotes: 'Chest-supported row Technogym. Поясница разгружена.',
   },
 
-  // 5. Низ груди / Трицепс (A - a-3.1)
-  {
-    id: 'dips_lower_chest_bodyweight',
-    name: 'Отжимания на брусьях (Свободный вес)',
-    muscleGroup: 'Низ груди / Трицепс',
-    exerciseId: 'a-3.1',
-    brand: 'free_weight',
-    isBodyweight: true,
-    isBlockMachine: false,
-    focusNotes: 'Наклон корпуса вперед 30°, локти чуть в стороны для перевода нагрузки на волокна нижнего отдела грудных и трицепс.',
-  },
+  // 5. Низ груди / Трицепс (A - a-3.1) — брусья
   {
     id: 'dips_gravitron_lower_matrix',
-    name: 'Отжимания в гравитроне (Matrix)',
+    name: 'Брусья в гравитроне (Matrix)',
     muscleGroup: 'Низ груди / Трицепс',
     exerciseId: 'a-3.1',
     brand: 'matrix',
     isAssisted: true,
     isBlockMachine: true,
-    focusNotes: 'Разгрузка со знаком минус. 91 − 7 = 84 кг рабочих. Наклон корпуса 30°.',
+    focusNotes: 'В поле — РАЗГРУЗКА. Рабочий = вес тела − стек. Наклон корпуса ~30° под грудь.',
   },
   {
     id: 'dips_gravitron_lower_technogym',
-    name: 'Отжимания в гравитроне (Technogym)',
+    name: 'Брусья в гравитроне (Technogym)',
     muscleGroup: 'Низ груди / Трицепс',
     exerciseId: 'a-3.1',
     brand: 'technogym',
@@ -390,13 +408,41 @@ export const MACHINE_OPTIONS: MachineOption[] = [
     focusNotes: 'Противовес вычитается из веса тела. Контролируемый разгиб.',
   },
   {
+    id: 'dips_lower_chest_bodyweight',
+    name: 'Брусья со своим весом',
+    muscleGroup: 'Низ груди / Трицепс',
+    exerciseId: 'a-3.1',
+    brand: 'free_weight',
+    isBodyweight: true,
+    isBlockMachine: false,
+    focusNotes: 'Наклон корпуса вперед 30°, локти чуть в стороны. Вес в поле = 0 или добавленный пояс.',
+  },
+  {
+    id: 'dips_lever_matrix',
+    name: 'Брусья / отжимания в рычажном тренажёре (Matrix)',
+    muscleGroup: 'Низ груди / Трицепс',
+    exerciseId: 'a-3.1',
+    brand: 'matrix',
+    isBlockMachine: false,
+    focusNotes: 'Рычажный dip-тренажёр под блины. Наклон под грудь.',
+  },
+  {
+    id: 'dips_lever_technogym',
+    name: 'Брусья / отжимания в рычажном тренажёре (Technogym)',
+    muscleGroup: 'Низ груди / Трицепс',
+    exerciseId: 'a-3.1',
+    brand: 'technogym',
+    isBlockMachine: false,
+    focusNotes: 'Рычажный dip Technogym. Запасной вариант вместо гравитрона.',
+  },
+  {
     id: 'hammer_lower_chest_matrix',
     name: 'Жим в Хаммере на низ груди (Matrix)',
     muscleGroup: 'Низ груди / Трицепс',
     exerciseId: 'a-3.1',
     brand: 'matrix',
     isBlockMachine: false, // Plate-loaded
-    focusNotes: 'Рычажный жим в Хаммере на низ груди. Сиденье отрегулировано так, чтобы рукояти выжимались вниз и вперед. Максимальное сжатие груди в пике.',
+    focusNotes: 'Рычажный жим в Хаммере на низ груди. Сиденье: рукояти вниз-вперёд.',
   },
   {
     id: 'hammer_lower_chest_technogym',
@@ -405,7 +451,7 @@ export const MACHINE_OPTIONS: MachineOption[] = [
     exerciseId: 'a-3.1',
     brand: 'technogym',
     isBlockMachine: false,
-    focusNotes: 'Рычажный жим Technogym для нижней части груди. Спина плотно прижата, выжим вниз и вперед.',
+    focusNotes: 'Рычажный жим Technogym для нижней части груди.',
   },
   {
     id: 'chest_press_matrix',
@@ -458,7 +504,7 @@ export const MACHINE_OPTIONS: MachineOption[] = [
   },
   {
     id: 'crossover_lateral_raises_matrix',
-    name: 'Протяжка / махи в кроссовере (Matrix)',
+    name: 'Махи в кроссовере на блоке (Matrix)',
     muscleGroup: 'Средняя дельта',
     exerciseId: 'a-3.2',
     brand: 'matrix',
@@ -467,7 +513,7 @@ export const MACHINE_OPTIONS: MachineOption[] = [
   },
   {
     id: 'crossover_lateral_raises_technogym',
-    name: 'Протяжка / махи в кроссовере (Technogym)',
+    name: 'Махи в кроссовере на блоке (Technogym)',
     muscleGroup: 'Средняя дельта',
     exerciseId: 'a-3.2',
     brand: 'technogym',
@@ -476,21 +522,21 @@ export const MACHINE_OPTIONS: MachineOption[] = [
   },
   {
     id: 'lateral_raise_machine_matrix',
-    name: 'Махи в тренажёре на среднюю дельту (Matrix)',
+    name: 'Махи сидя в тренажёре (валики под локтями, Matrix)',
     muscleGroup: 'Средняя дельта',
     exerciseId: 'a-3.2',
     brand: 'matrix',
     isBlockMachine: true,
-    focusNotes: 'Локти в упорах. Подъём строго в стороны, без читинга корпусом.',
+    focusNotes: 'Сидя, валики/подушки под локтями, рукояти в руках. Подъём локтей в стороны без читинга корпусом.',
   },
   {
     id: 'lateral_raise_machine_technogym',
-    name: 'Махи в тренажёре на среднюю дельту (Technogym)',
+    name: 'Махи сидя в тренажёре (валики под локтями, Technogym)',
     muscleGroup: 'Средняя дельта',
     exerciseId: 'a-3.2',
     brand: 'technogym',
     isBlockMachine: true,
-    focusNotes: 'Дельтовидный тренажёр Technogym. Контроль негатива.',
+    focusNotes: 'Сидя, валики под локтями. Строго средняя дельта, контроль негатива.',
   },
   {
     id: 'shoulder_press_matrix_a',
@@ -833,16 +879,16 @@ export const MACHINE_OPTIONS: MachineOption[] = [
   },
   {
     id: 'biceps_machine_technogym',
-    name: 'Тренажер рычажный (Technogym)',
+    name: 'Бицепс рычажный / скамья Скотта под блины (Technogym)',
     muscleGroup: 'Бицепс',
     exerciseId: 'b-3.2',
     brand: 'technogym',
-    isBlockMachine: true,
-    focusNotes: 'Рычажный бицепс-тренажер Technogym. Плавный подъём и медленное опускание.',
+    isBlockMachine: false,
+    focusNotes: 'Рычаг или скамья Скотта с блинами. Плавный подъём, медленный негатив.',
   },
   {
     id: 'biceps_ez_bar',
-    name: 'Сгибания рук с EZ-грифом',
+    name: 'Сгибания стоя с EZ-грифом',
     muscleGroup: 'Бицепс',
     exerciseId: 'b-3.2',
     brand: 'free_weight',
@@ -851,48 +897,68 @@ export const MACHINE_OPTIONS: MachineOption[] = [
   },
   {
     id: 'biceps_dumbbells_incline',
-    name: 'Сгибания рук с гантелями (на наклонной скамье)',
+    name: 'Сгибания с гантелями (наклон / стоя)',
     muscleGroup: 'Бицепс',
     exerciseId: 'b-3.2',
     brand: 'free_weight',
     isBlockMachine: false,
-    focusNotes: 'Локти остаются сзади корпуса на наклонной скамье 45–60°. Это максимально натягивает длинную головку бицепса.',
+    focusNotes: 'Наклон 45–60° или стоя. Локти стабильны, без раскачки.',
   },
   {
     id: 'preacher_curl_matrix',
-    name: 'Скамья Скотта / проповедник (Matrix)',
+    name: 'Скамья Скотта под блины (Matrix)',
     muscleGroup: 'Бицепс',
     exerciseId: 'b-3.2',
     brand: 'matrix',
-    isBlockMachine: true,
-    focusNotes: 'Локти на пюпитре. Полная амплитуда без отрыва плеч.',
+    isBlockMachine: false,
+    focusNotes: 'Локти на пюпитре, блины на гриф. Полная амплитуда без отрыва плеч.',
   },
   {
     id: 'preacher_curl_technogym',
-    name: 'Скамья Скотта / проповедник (Technogym)',
+    name: 'Скамья Скотта под блины (Technogym)',
     muscleGroup: 'Бицепс',
     exerciseId: 'b-3.2',
     brand: 'technogym',
-    isBlockMachine: true,
-    focusNotes: 'Проповедник Technogym. Медленный негатив.',
+    isBlockMachine: false,
+    focusNotes: 'Проповедник Technogym под блины. Медленный негатив.',
   },
   {
     id: 'cable_curl_matrix',
-    name: 'Сгибания на нижнем блоке (Matrix)',
+    name: 'Сгибания на блоке в кроссовере (Matrix)',
     muscleGroup: 'Бицепс',
     exerciseId: 'b-3.2',
     brand: 'matrix',
     isBlockMachine: true,
-    focusNotes: 'Прямая или EZ-рукоять от нижнего блока. Локти прижаты.',
+    focusNotes: 'Нижний блок, прямая или EZ-рукоять. Локти прижаты, постоянное натяжение.',
   },
   {
     id: 'cable_curl_technogym',
-    name: 'Сгибания на нижнем блоке (Technogym)',
+    name: 'Сгибания на блоке в кроссовере (Technogym)',
     muscleGroup: 'Бицепс',
     exerciseId: 'b-3.2',
     brand: 'technogym',
     isBlockMachine: true,
     focusNotes: 'Нижний блок Technogym. Постоянное натяжение бицепса.',
+  },
+  {
+    id: 'smith_upper_chest_matrix_b',
+    name: 'Жим в Смите на наклонной скамье (Matrix)',
+    muscleGroup: 'Верх груди',
+    exerciseId: 'b-2.3',
+    brand: 'matrix',
+    isBlockMachine: false,
+    baseTareWeight: 11,
+    focusNotes: 'Наклон 25–30°, опускание к ключичной зоне груди.',
+  },
+  {
+    id: 'smith_upper_chest_technogym_b',
+    name: 'Жим в Смите на наклонной скамье (Technogym)',
+    muscleGroup: 'Верх груди',
+    exerciseId: 'b-2.3',
+    brand: 'technogym',
+    isBlockMachine: false,
+    baseTareWeight: 8,
+    focusNotes: 'Наклон 25–30°, плавный жим на верх груди.',
   },
   {
     id: 'hammer_upper_chest_matrix_b',
@@ -913,14 +979,8 @@ export const MACHINE_OPTIONS: MachineOption[] = [
     focusNotes: 'Жим в рычажном тренажере на верх груди. Двигайся плавно, сохраняя лопатки на спинке.',
   },
   {
-    id: 'smith_upper_chest_matrix_b', name: 'Жим в Смите на наклонной скамье (Matrix)', muscleGroup: 'Верх груди', exerciseId: 'b-2.3', brand: 'matrix', isBlockMachine: false, baseTareWeight: 11, focusNotes: 'Наклон 25–30°, опускание к ключичной зоне груди.'
-  },
-  {
-    id: 'smith_upper_chest_technogym_b', name: 'Жим в Смите на наклонной скамье (Technogym)', muscleGroup: 'Верх груди', exerciseId: 'b-2.3', brand: 'technogym', isBlockMachine: false, baseTareWeight: 8, focusNotes: 'Наклон 25–30°, плавный жим на верх груди.'
-  },
-  {
     id: 'face_pull_matrix_b',
-    name: 'Тяга к лицу (Face Pull) в кроссовере (Matrix)',
+    name: 'Face Pull в кроссовере (Matrix)',
     muscleGroup: 'Задняя дельта',
     exerciseId: 'b-2.4',
     brand: 'matrix',
@@ -929,7 +989,7 @@ export const MACHINE_OPTIONS: MachineOption[] = [
   },
   {
     id: 'face_pull_technogym_b',
-    name: 'Тяга к лицу (Face Pull) в кроссовере (Technogym)',
+    name: 'Face Pull в кроссовере (Technogym)',
     muscleGroup: 'Задняя дельта',
     exerciseId: 'b-2.4',
     brand: 'technogym',
@@ -937,40 +997,85 @@ export const MACHINE_OPTIONS: MachineOption[] = [
     focusNotes: 'Тяга канатной рукояти к лицу с контролем и без рывка.',
   },
   {
-    id: 'crossover_lateral_raise_matrix_b',
-    name: 'Махи в кроссовере в сторону (Matrix)',
+    id: 'reverse_pec_deck_matrix_b',
+    name: 'Обратная бабочка / Pec Deck rear (Matrix)',
+    muscleGroup: 'Задняя дельта',
+    exerciseId: 'b-2.4',
+    brand: 'matrix',
+    isBlockMachine: true,
+    focusNotes: 'Грудь в подушку, разведение рук назад за счёт задней дельты, без рывка.',
+  },
+  {
+    id: 'reverse_pec_deck_technogym_b',
+    name: 'Обратная бабочка / Pec Deck rear (Technogym)',
+    muscleGroup: 'Задняя дельта',
+    exerciseId: 'b-2.4',
+    brand: 'technogym',
+    isBlockMachine: true,
+    focusNotes: 'Обратная бабочка Technogym. Локти чуть согнуты, своди лопатки.',
+  },
+  {
+    id: 'shoulder_press_lever_matrix_b',
+    name: 'Жим вверх сидя рычажный (Matrix)',
+    muscleGroup: 'Средняя дельта',
+    exerciseId: 'b-3.3',
+    brand: 'matrix',
+    isBlockMachine: false,
+    focusNotes: 'Рычажный жим сидя. Спина прижата, выжим вверх без прогиба поясницы.',
+  },
+  {
+    id: 'shoulder_press_lever_technogym_b',
+    name: 'Жим вверх сидя рычажный (Technogym)',
+    muscleGroup: 'Средняя дельта',
+    exerciseId: 'b-3.3',
+    brand: 'technogym',
+    isBlockMachine: false,
+    focusNotes: 'Рычажный жим сидя Technogym. Контроль негатива.',
+  },
+  {
+    id: 'dumbbell_shoulder_press_b',
+    name: 'Жим гантелей сидя вверх',
+    muscleGroup: 'Средняя дельта',
+    exerciseId: 'b-3.3',
+    brand: 'free_weight',
+    isBlockMachine: false,
+    focusNotes: 'Жим гантелей вверх сидя, корпус стабилен.',
+  },
+  {
+    id: 'shoulder_press_matrix_b',
+    name: 'Жим вверх сидя блочный (Matrix)',
     muscleGroup: 'Средняя дельта',
     exerciseId: 'b-3.3',
     brand: 'matrix',
     isBlockMachine: true,
-    focusNotes: 'Мах в сторону от нижнего блока, локоть ведёт движение до уровня плеча.',
+    focusNotes: 'Блочный Shoulder Press Matrix. Плавная амплитуда.',
   },
   {
-    id: 'crossover_lateral_raise_technogym_b',
-    name: 'Махи в кроссовере в сторону (Technogym)',
+    id: 'shoulder_press_technogym_b',
+    name: 'Жим вверх сидя блочный (Technogym)',
     muscleGroup: 'Средняя дельта',
     exerciseId: 'b-3.3',
     brand: 'technogym',
     isBlockMachine: true,
-    focusNotes: 'Плавные махи от нижнего блока в сторону, без раскачки.',
+    focusNotes: 'Блочный Shoulder Press Technogym. Без рывка.',
   },
   {
-    id: 'dumbbell_lateral_raise_b', name: 'Махи гантелями в стороны', muscleGroup: 'Средняя дельта', exerciseId: 'b-3.3', brand: 'free_weight', isBlockMachine: false, focusNotes: 'Поднимай локти в стороны до уровня плеч без раскачки.'
+    id: 'crossover_lateral_raise_matrix_b',
+    name: 'Махи в кроссовере на блоке (Matrix)',
+    muscleGroup: 'Средняя дельта',
+    exerciseId: 'b-3.3',
+    brand: 'matrix',
+    isBlockMachine: true,
+    focusNotes: 'Запасной вариант: мах от нижнего блока, если жима нет.',
   },
   {
-    id: 'lateral_raise_machine_matrix_b', name: 'Махи в тренажёре на среднюю дельту (Matrix)', muscleGroup: 'Средняя дельта', exerciseId: 'b-3.3', brand: 'matrix', isBlockMachine: true, focusNotes: 'Работа в тренажёре с контролем негатива.'
-  },
-  {
-    id: 'lateral_raise_machine_technogym_b', name: 'Махи в тренажёре на среднюю дельту (Technogym)', muscleGroup: 'Средняя дельта', exerciseId: 'b-3.3', brand: 'technogym', isBlockMachine: true, focusNotes: 'Работа в тренажёре Technogym без рывка.'
-  },
-  {
-    id: 'shoulder_press_matrix_b', name: 'Жим вверх на плечи (Matrix)', muscleGroup: 'Средняя дельта', exerciseId: 'b-3.3', brand: 'matrix', isBlockMachine: true, focusNotes: 'Жим вверх в тренажёре Matrix с контролем амплитуды.'
-  },
-  {
-    id: 'shoulder_press_technogym_b', name: 'Жим вверх на плечи (Technogym)', muscleGroup: 'Средняя дельта', exerciseId: 'b-3.3', brand: 'technogym', isBlockMachine: true, focusNotes: 'Жим вверх в тренажёре Technogym без рывка.'
-  },
-  {
-    id: 'dumbbell_shoulder_press_b', name: 'Жим гантелей вверх', muscleGroup: 'Средняя дельта', exerciseId: 'b-3.3', brand: 'free_weight', isBlockMachine: false, focusNotes: 'Жим гантелей вверх сидя, корпус стабилен.'
+    id: 'crossover_lateral_raise_technogym_b',
+    name: 'Махи в кроссовере на блоке (Technogym)',
+    muscleGroup: 'Средняя дельта',
+    exerciseId: 'b-3.3',
+    brand: 'technogym',
+    isBlockMachine: true,
+    focusNotes: 'Запасной вариант: махи от нижнего блока.',
   },
 
   // Трицепс блок (B - b-5.2)
@@ -1020,22 +1125,196 @@ const EXERCISE_ID_ALIASES: Record<string, string> = {
   'c-4.2': 'b-2.4',
 };
 
+/**
+ * Порядок в выпадающем списке (по id опции). Чем раньше — тем выше приоритет.
+ * Разные слоты программы (A vs C) могут иметь разный порядок на одном пуле машин.
+ */
+const VARIANT_PRIORITY: Record<string, string[]> = {
+  // 1. Жим Смит / Хаммер
+  'a-2.1': [
+    'smith_upper_chest_matrix',
+    'smith_upper_chest_technogym',
+    'hammer_upper_chest_matrix',
+    'hammer_upper_chest_technogym',
+  ],
+  'b-2.3': [
+    'smith_upper_chest_matrix_b',
+    'smith_upper_chest_technogym_b',
+    'hammer_upper_chest_matrix_b',
+    'hammer_upper_chest_technogym_b',
+  ],
+  // 2. Тяга дня A: гантель → блок сидя → штанга
+  'a-2.2': [
+    'dumbbell_row_incline',
+    'seated_cable_row_matrix',
+    'seated_cable_row_technogym',
+    'barbell_bent_row',
+    'chest_supported_row_matrix',
+    'chest_supported_row_technogym',
+  ],
+  // 11. День C: горизонтальный блок первым (не дублировать гантель как дефолт)
+  'c-2.1': [
+    'seated_cable_row_matrix',
+    'seated_cable_row_technogym',
+    'chest_supported_row_matrix',
+    'chest_supported_row_technogym',
+    'dumbbell_row_incline',
+    'barbell_bent_row',
+  ],
+  // 3. Жим ногами: платформа → блок → рычаг
+  'a-1.1': [
+    'leg_press_matrix',
+    'leg_press_technogym',
+    'leg_press_block_matrix',
+    'leg_press_block_technogym',
+    'hack_squat_matrix',
+    'hack_squat_technogym',
+    'smith_squat_matrix',
+    'smith_squat_technogym',
+  ],
+  // 4. Махи дня A: кроссовер → гантели → валики под локтями
+  'a-3.2': [
+    'crossover_lateral_raises_matrix',
+    'crossover_lateral_raises_technogym',
+    'dumbbell_lateral_raises',
+    'lateral_raise_machine_matrix',
+    'lateral_raise_machine_technogym',
+  ],
+  // 13. День C плечи-махи: кроссовер приоритет (жим рычагом уже был в B)
+  'c-4.1': [
+    'crossover_lateral_raises_matrix',
+    'crossover_lateral_raises_technogym',
+    'dumbbell_lateral_raises',
+    'lateral_raise_machine_matrix',
+    'lateral_raise_machine_technogym',
+  ],
+  // 5. Вертикальная тяга: гравитрон → блок → свои → рычаг → дуга Technogym
+  'a-1.2': [
+    'gravitron_pullups_matrix',
+    'gravitron_pullups_technogym',
+    'technogym_pulldown_user_photo_a',
+    'lat_pulldown_wide_matrix_a',
+    'lat_pulldown_wide_technogym_a',
+    'lat_pulldown_close_matrix_a',
+    'lat_pulldown_close_technogym_a',
+    'pullups_bodyweight',
+    'hammer_lat_pull_matrix',
+    'hammer_lat_pull_technogym',
+    'technogym_converging_lat',
+    'pullover_cable_matrix',
+    'pullover_cable_technogym',
+  ],
+  // 7 / 12. Сгибания: лежа → сидя
+  'b-1.1': [
+    'leg_curl_lying_matrix',
+    'leg_curl_lying_technogym',
+    'leg_curl_seated_matrix',
+    'leg_curl_seated_technogym',
+    'seated_leg_curl_alt_matrix',
+    'seated_leg_curl_alt_technogym',
+    'rdl_dumbbells',
+  ],
+  'c-3.2': [
+    'leg_curl_lying_matrix',
+    'leg_curl_lying_technogym',
+    'leg_curl_seated_matrix',
+    'leg_curl_seated_technogym',
+    'seated_leg_curl_alt_matrix',
+    'seated_leg_curl_alt_technogym',
+    'rdl_dumbbells',
+  ],
+  // 12. Разгибания: блок → рычаг
+  'l-3.1': [
+    'leg_extension_matrix',
+    'leg_extension_technogym',
+    'leg_extension_lever_matrix',
+    'leg_extension_lever_technogym',
+  ],
+  // 8. Бицепс: рычаг/Скотт блины → EZ → гантели → блок
+  'b-3.2': [
+    'biceps_machine_technogym',
+    'preacher_curl_technogym',
+    'preacher_curl_matrix',
+    'biceps_machine_matrix',
+    'biceps_ez_bar',
+    'biceps_dumbbells_incline',
+    'cable_curl_matrix',
+    'cable_curl_technogym',
+  ],
+  // 8. Задняя дельта день B: Face Pull → обратная бабочка
+  'b-2.4': [
+    'face_pull_matrix_b',
+    'face_pull_technogym_b',
+    'reverse_pec_deck_matrix_b',
+    'reverse_pec_deck_technogym_b',
+  ],
+  // 14. День C задняя дельта: сначала обратная бабочка
+  'c-4.2': [
+    'reverse_pec_deck_matrix_b',
+    'reverse_pec_deck_technogym_b',
+    'face_pull_matrix_b',
+    'face_pull_technogym_b',
+  ],
+  // 9. Средняя дельта день B: рычажный жим → гантели → блок
+  'b-3.3': [
+    'shoulder_press_lever_matrix_b',
+    'shoulder_press_lever_technogym_b',
+    'dumbbell_shoulder_press_b',
+    'shoulder_press_matrix_b',
+    'shoulder_press_technogym_b',
+    'crossover_lateral_raise_matrix_b',
+    'crossover_lateral_raise_technogym_b',
+  ],
+  // 10. Брусья: гравитрон → свой вес → рычаг
+  'a-3.1': [
+    'dips_gravitron_lower_matrix',
+    'dips_gravitron_lower_technogym',
+    'dips_lower_chest_bodyweight',
+    'dips_lever_matrix',
+    'dips_lever_technogym',
+    'hammer_lower_chest_matrix',
+    'hammer_lower_chest_technogym',
+    'chest_press_matrix',
+    'chest_press_technogym',
+    'decline_smith_matrix',
+    'decline_smith_technogym',
+  ],
+  'b-5.2': [
+    'tricep_rope_matrix',
+    'tricep_rope_technogym',
+    'tricep_pushdown_bar_matrix',
+    'tricep_pushdown_bar_technogym',
+  ],
+};
+
+function sortByPriority(exerciseId: string, options: MachineOption[]): MachineOption[] {
+  const order = VARIANT_PRIORITY[exerciseId];
+  if (!order?.length) return options;
+  const rank = new Map(order.map((id, i) => [id, i]));
+  return [...options].sort((a, b) => {
+    const ra = rank.has(a.id) ? rank.get(a.id)! : 1000;
+    const rb = rank.has(b.id) ? rank.get(b.id)! : 1000;
+    return ra - rb;
+  });
+}
+
 export function getOptionsForExercise(
   exerciseId: string,
   gymBrand?: string
 ): MachineOption[] {
   const resolvedId = EXERCISE_ID_ALIASES[exerciseId] || exerciseId;
-  const options = MACHINE_OPTIONS.filter(
+  let options = MACHINE_OPTIONS.filter(
     opt => opt.exerciseId === resolvedId || opt.exerciseId === exerciseId,
   );
-  if (!gymBrand || gymBrand === 'other') return options;
 
-  // Filter options by current gym brand + free_weight options
-  const filtered = options.filter(
-    opt => opt.brand === 'free_weight' || opt.brand === 'both' || opt.brand === gymBrand
-  );
+  if (gymBrand && gymBrand !== 'other') {
+    const filtered = options.filter(
+      opt => opt.brand === 'free_weight' || opt.brand === 'both' || opt.brand === gymBrand,
+    );
+    if (filtered.length > 0) options = filtered;
+  }
 
-  return filtered.length > 0 ? filtered : options;
+  return sortByPriority(exerciseId, options);
 }
 
 export function isBlockMachineOption(machineName?: string): boolean {

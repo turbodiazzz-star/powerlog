@@ -24,10 +24,10 @@ export const INITIAL_GYMS: Gym[] = [
  *   Бицепс бедра   0+5+5 = 10
  *   Грудь          4+4+4 = 12
  *   Спина          4+4+4 = 12
- *   Средняя дельта 3+3+3 = 9
+ *   Средняя дельта 3+3жим+3 = 9
  *   Задняя дельта  0+4+4 = 8
  *   Бицепс         0+4+0 = 4 (+тяги)
- *   Трицепс        0+3+4 = 7 (канат + брусья)
+ *   Трицепс        2 канат + 4 брусья (+жимы)
  *
  * Добавки в дни B и C (без жима ногами). День A: +1 к тяге до ног;
  * после жима ногами по-прежнему только махи.
@@ -215,7 +215,7 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B' | 'C', ProgramWorkout> = {
       {
         id: 'superset-b4',
         number: 4,
-        title: '4. Задняя дельта + бицепс',
+        title: '4. Задняя дельта + бицепс (добивка рук)',
         rest1Text: '75 сек',
         rest1Sec: 75,
         rest2Text: '90 сек',
@@ -230,57 +230,72 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B' | 'C', ProgramWorkout> = {
             targetSets: 4,
             targetReps: '10–15',
             targetWeightKg: 27.5,
-            progressionNotes: '4×10–15 @ 27.5 (было 3). 4×15 → 30.',
-            focusNotes: 'Суперсет с бицепсом.',
+            progressionNotes: '4×15 @ 27.5 → 30. Альтернатива: обратная бабочка.',
+            focusNotes:
+              'Суперсет с бицепсом оставляем: цель блока — добить руки и заднюю дельту. Тяги уже дали косвенный бицепс — здесь контролируемая изоляция.',
           },
           {
             id: 'b-3.2',
             supersetId: 'superset-b4',
             code: '4.2',
-            name: 'Сгибания рук с гантелями на наклонной скамье (45–60°)',
+            name: 'Сгибания на бицепс',
             muscleGroup: 'Бицепс',
             targetSets: 4,
             targetReps: '8–12',
             targetWeightKg: 37.5,
-            progressionNotes: '4×8–12 @ 37.5 (было 3). 4×12 → +2.5. Рычаг ок.',
-            focusNotes: 'Медленный негатив.',
+            progressionNotes:
+              '4×12 → +2.5. Приоритет: рычаг/Скотт под блины → EZ стоя → гантели → блок в кроссовере.',
+            focusNotes: 'Медленный негатив. Не гонись за весом после тяг.',
           },
         ],
       },
       {
         id: 'superset-b5',
         number: 5,
-        title: '5. Средняя дельта + трицепс (добор)',
+        title: '5. Жим на плечи (отдельно, без каната)',
+        rest1Text: '2 мин',
+        rest1Sec: 120,
+        rest2Text: '2 мин',
+        rest2Sec: 120,
+        exercises: [
+          {
+            id: 'b-3.3',
+            supersetId: 'superset-b5',
+            code: '5.1',
+            name: 'Жим вверх сидя на плечи',
+            muscleGroup: 'Средняя дельта',
+            targetSets: 3,
+            targetReps: '6–10',
+            targetWeightKg: 40,
+            progressionNotes:
+              '3×6–10. Приоритет: рычажный сидя → гантели сидя → блочный сидя. 3×10 → +2.5.',
+            focusNotes:
+              'Без суперсета с трицепсом — качество жима важнее. Канат после, отдельно.',
+          },
+        ],
+      },
+      {
+        id: 'superset-b6',
+        number: 6,
+        title: '6. Трицепс изоляция (коротко)',
         rest1Text: '75 сек',
         rest1Sec: 75,
         rest2Text: '75 сек',
         rest2Sec: 75,
         exercises: [
           {
-            id: 'b-3.3',
-            supersetId: 'superset-b5',
-            code: '5.1',
-            name: 'Махи в кроссовере в сторону',
-            muscleGroup: 'Средняя дельта',
-            targetSets: 3,
-            targetReps: '10–15',
-            targetWeightKg: 18,
-            progressionNotes:
-              '3×15 @ 18 → +2. Добор средней дельты (день без жима ногами — можно).',
-            focusNotes: 'Только махи, не жим вверх. Суперсет с трицепсом.',
-          },
-          {
             id: 'b-5.2',
-            supersetId: 'superset-b5',
-            code: '5.2',
+            supersetId: 'superset-b6',
+            code: '6.1',
             name: 'Разгибания на трицепс с канатом (верхний блок)',
             muscleGroup: 'Трицепс',
-            targetSets: 3,
+            targetSets: 2,
             targetReps: '10–15',
             targetWeightKg: 25,
             progressionNotes:
-              '3×15 @ 25 → +2.5. Прямая работа трицепса до нормы недели.',
-            focusNotes: 'Локти прижаты, разгибание до конца. Подбери вес под зал.',
+              'Всего 2 подхода: брусья+жимы уже грузят трицепс. Изоляция добивает длинную головку (исследования). 2×15 → +2.5.',
+            focusNotes:
+              'После жима плеч, не вместе с ним. Жимы/брусья ≠ полная гипертрофия всех головок — 2–3 прямых сета/нед достаточно.',
           },
         ],
       },
@@ -329,14 +344,14 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B' | 'C', ProgramWorkout> = {
             id: 'c-2.1',
             supersetId: 'superset-c2',
             code: '2.1',
-            name: 'Тяга гантели к поясу в наклоне с упором',
+            name: 'Горизонтальная тяга блока сидя',
             muscleGroup: 'Середина спины',
             targetSets: 4,
             targetReps: '8–12',
-            targetWeightKg: 38,
+            targetWeightKg: 55,
             progressionNotes:
-              '4×8–12 @ 38 (было 3). Отдельная прогрессия от дня A. 4×12 → +2.',
-            focusNotes: 'Можно рычажную/блочную горизонтальную тягу.',
+              '4×8–12. Дефолт — блок сидя (гантель уже в день A — так и нужно 2×/нед спину, но разными снарядами). 4×12 → +5.',
+            focusNotes: 'Горизонтальный блок / упор в грудь. Гантель — запасной вариант в списке.',
           },
         ],
       },
@@ -389,27 +404,27 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B' | 'C', ProgramWorkout> = {
             id: 'c-4.1',
             supersetId: 'superset-c4',
             code: '4.1',
-            name: 'Махи гантелями в стороны (или в кроссовере)',
+            name: 'Махи в кроссовере на блоке',
             muscleGroup: 'Средняя дельта',
             targetSets: 3,
             targetReps: '10–15',
             targetWeightKg: 14,
             progressionNotes:
-              '3×15 @ 14. Третий стимул средней дельты за неделю (A+B+C ≈ 9).',
-            focusNotes: 'Гантели или кроссовер. Суперсет с face pull.',
+              '3×15. Кроссовер приоритетнее гантелей. Рычажный жим сидя — в день B, здесь не дублируем.',
+            focusNotes: 'Суперсет с обратной бабочкой.',
           },
           {
             id: 'c-4.2',
             supersetId: 'superset-c4',
             code: '4.2',
-            name: 'Тяга к лицу (Face Pull) в кроссовере',
+            name: 'Обратная бабочка / задняя дельта',
             muscleGroup: 'Задняя дельта',
             targetSets: 4,
             targetReps: '10–15',
-            targetWeightKg: 25,
+            targetWeightKg: 35,
             progressionNotes:
-              '4×10–15 @ 25 (было 2). Вместе с B = 8 на заднюю дельту.',
-            focusNotes: 'К лицу, кисти наружу.',
+              '4×10–15. Здесь первой — обратная бабочка (Face Pull уже был в B).',
+            focusNotes: 'Face Pull — второй в списке, если бабочки нет.',
           },
         ],
       },
@@ -418,18 +433,19 @@ export const WORKOUT_PROGRAM: Record<'A' | 'B' | 'C', ProgramWorkout> = {
 };
 
 export type WorkoutProgramMap = Record<string, ProgramWorkout>;
-export const PROGRAM_SCHEMA_VERSION = 8;
+export const PROGRAM_SCHEMA_VERSION = 9;
 
 export function getWorkoutProgram(): WorkoutProgramMap {
   try {
-    if (localStorage.getItem('fit_tracker_program_schema_v8') !== '1') {
-      localStorage.setItem('fit_tracker_program_schema_v8', '1');
+    if (localStorage.getItem('fit_tracker_program_schema_v9') !== '1') {
+      localStorage.setItem('fit_tracker_program_schema_v9', '1');
       localStorage.removeItem('fit_tracker_program_v1');
       localStorage.removeItem('fit_tracker_program_schema_v3');
       localStorage.removeItem('fit_tracker_program_schema_v4');
       localStorage.removeItem('fit_tracker_program_schema_v5');
       localStorage.removeItem('fit_tracker_program_schema_v6');
       localStorage.removeItem('fit_tracker_program_schema_v7');
+      localStorage.removeItem('fit_tracker_program_schema_v8');
       return WORKOUT_PROGRAM;
     }
     const saved = JSON.parse(localStorage.getItem('fit_tracker_program_v1') || '{}') as WorkoutProgramMap;
