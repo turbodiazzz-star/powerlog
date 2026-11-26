@@ -1,11 +1,11 @@
 /* Auto-generated offline shell for Powerlog */
-const CACHE = 'powerlog-shell-mwxet6yy';
+const CACHE = 'powerlog-shell-mwxewa7g';
 const PRECACHE = [
   "./",
   "./.nojekyll",
   "./apple-touch-icon.png",
   "./assets/index-BEsv8Ev0.css",
-  "./assets/index-CdI1BS2l.js",
+  "./assets/index-DwyfhDn5.js",
   "./favicon.svg",
   "./icon-192.png",
   "./icon-512.png",
