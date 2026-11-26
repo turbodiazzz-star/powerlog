@@ -20,7 +20,7 @@ import {
 const LOGO_SRC = `${import.meta.env.BASE_URL}favicon.svg`;
 
 export const AppDashboard: React.FC = () => {
-  const APP_VERSION = '0048';
+  const APP_VERSION = '0049';
   const [activeNav, setActiveTab] = useState<'home' | 'progress' | 'program'>('home');
   const [activeSessionProps, setActiveSessionProps] = useState<{
     workoutType: string;
