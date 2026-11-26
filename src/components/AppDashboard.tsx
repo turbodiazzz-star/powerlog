@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 export const AppDashboard: React.FC = () => {
-  const APP_VERSION = '0042';
+  const APP_VERSION = '0044';
   const [activeNav, setActiveTab] = useState<'home' | 'progress' | 'program'>('home');
   const [activeSessionProps, setActiveSessionProps] = useState<{
     workoutType: string;
@@ -32,7 +32,7 @@ export const AppDashboard: React.FC = () => {
     dayName: 'Пн' | 'Ср' | 'Пт' | 'Доп';
     completedCount: number;
     lastDate?: string;
-  }>({ workoutType: 'A', dayName: 'Пн', completedCount: 0 });
+  }>({ workoutType: 'U', dayName: 'Пн', completedCount: 0 });
 
   const [activeDraft, setActiveDraft] = useState<ActiveWorkoutDraft | null>(null);
   const [cloudStatus, setCloudStatus] = useState<CloudStatus>(() => CloudSync.isConnected() ? 'syncing' : 'disconnected');
@@ -123,7 +123,7 @@ export const AppDashboard: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xs font-black tracking-wider text-white leading-tight uppercase">
-                ТРЕНИРОВКИ <span className="text-[9px] text-zinc-400 font-mono">A/B</span>
+                ТРЕНИРОВКИ <span className="text-[9px] text-zinc-400 font-mono">U/L</span>
               </h1>
               <p className="text-[10px] text-zinc-400 font-mono leading-none">{currentDateFormatted}</p>
             </div>
@@ -251,27 +251,19 @@ export const AppDashboard: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <button
-                  onClick={() => handleStartWorkout('A', 'Пн')}
-                  className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 p-2.5 rounded-lg text-left transition-all"
-                >
-                  <div className="flex justify-between items-center mb-0.5">
-                    <span className="font-bold text-white text-xs">ТРЕНИРОВКА A</span>
-                    <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
-                  </div>
-                  <p className="text-[10px] text-zinc-500 truncate">{program.A?.subTitle}</p>
-                </button>
-
-                <button
-                  onClick={() => handleStartWorkout('B', 'Ср')}
-                  className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 p-2.5 rounded-lg text-left transition-all"
-                >
-                  <div className="flex justify-between items-center mb-0.5">
-                    <span className="font-bold text-white text-xs">ТРЕНИРОВКА B</span>
-                    <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
-                  </div>
-                  <p className="text-[10px] text-zinc-500 truncate">{program.B?.subTitle}</p>
-                </button>
+                {Object.keys(program).map((type, idx) => (
+                  <button
+                    key={type}
+                    onClick={() => handleStartWorkout(type, (['Пн', 'Ср', 'Пт'] as const)[idx % 3])}
+                    className="bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 p-2.5 rounded-lg text-left transition-all"
+                  >
+                    <div className="flex justify-between items-center mb-0.5">
+                      <span className="font-bold text-white text-xs">{program[type]?.title || type}</span>
+                      <ChevronRight className="w-3.5 h-3.5 text-zinc-500" />
+                    </div>
+                    <p className="text-[10px] text-zinc-500 truncate">{program[type]?.subTitle}</p>
+                  </button>
+                ))}
               </div>
             </div>
           </div>

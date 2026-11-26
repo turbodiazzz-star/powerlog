@@ -17,10 +17,9 @@ import {
   ChevronUp,
 } from 'lucide-react';
 
-const ALL_EXERCISES: ExerciseDefinition[] = [
-  ...WORKOUT_PROGRAM.A.supersets.flatMap(s => s.exercises),
-  ...WORKOUT_PROGRAM.B.supersets.flatMap(s => s.exercises),
-];
+const ALL_EXERCISES: ExerciseDefinition[] = Object.values(WORKOUT_PROGRAM).flatMap(w =>
+  w.supersets.flatMap(s => s.exercises),
+);
 
 export const WorkoutHistoryAnalytics: React.FC = () => {
   const [sessions, setSessions] = useState<WorkoutSession[]>([]);

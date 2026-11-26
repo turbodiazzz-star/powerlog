@@ -5,10 +5,9 @@ import { formatDateDot } from '../utils/dates';
 import { WORKOUT_PROGRAM } from '../data/workoutProgram';
 import { Building2, Plus, Edit2, Trash2, Dumbbell, AlertCircle, Settings2, Download, Upload } from 'lucide-react';
 
-const ALL_EXERCISES = [
-  ...WORKOUT_PROGRAM.A.supersets.flatMap(s => s.exercises),
-  ...WORKOUT_PROGRAM.B.supersets.flatMap(s => s.exercises),
-];
+const ALL_EXERCISES = Object.values(WORKOUT_PROGRAM).flatMap(w =>
+  w.supersets.flatMap(s => s.exercises),
+);
 
 interface GymManagerProps {
   onSelectGym?: (gymId: string) => void;
