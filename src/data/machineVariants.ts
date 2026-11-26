@@ -972,12 +972,51 @@ export const MACHINE_OPTIONS: MachineOption[] = [
   {
     id: 'dumbbell_shoulder_press_b', name: 'Жим гантелей вверх', muscleGroup: 'Средняя дельта', exerciseId: 'b-3.3', brand: 'free_weight', isBlockMachine: false, focusNotes: 'Жим гантелей вверх сидя, корпус стабилен.'
   },
+
+  // Трицепс блок (B - b-5.2)
+  {
+    id: 'tricep_rope_matrix',
+    name: 'Разгибания на трицепс с канатом (Matrix)',
+    muscleGroup: 'Трицепс',
+    exerciseId: 'b-5.2',
+    brand: 'matrix',
+    isBlockMachine: true,
+    focusNotes: 'Канат на верхнем блоке. Локти прижаты к корпусу, разгибание до полного выпрямления.',
+  },
+  {
+    id: 'tricep_rope_technogym',
+    name: 'Разгибания на трицепс с канатом (Technogym)',
+    muscleGroup: 'Трицепс',
+    exerciseId: 'b-5.2',
+    brand: 'technogym',
+    isBlockMachine: true,
+    focusNotes: 'Канат Technogym. Локти не гуляют, контроль негатива.',
+  },
+  {
+    id: 'tricep_pushdown_bar_matrix',
+    name: 'Разгибания на трицепс прямой рукоятью (Matrix)',
+    muscleGroup: 'Трицепс',
+    exerciseId: 'b-5.2',
+    brand: 'matrix',
+    isBlockMachine: true,
+    focusNotes: 'Прямая или V-рукоять. Локти фиксированы.',
+  },
+  {
+    id: 'tricep_pushdown_bar_technogym',
+    name: 'Разгибания на трицепс прямой рукоятью (Technogym)',
+    muscleGroup: 'Трицепс',
+    exerciseId: 'b-5.2',
+    brand: 'technogym',
+    isBlockMachine: true,
+    focusNotes: 'Прямая или V-рукоять Technogym. Полная амплитуда.',
+  },
 ];
 
 /** Same movement / equipment pool under a different program slot id. */
 const EXERCISE_ID_ALIASES: Record<string, string> = {
   'c-2.1': 'a-2.2',
   'c-3.2': 'b-1.1',
+  'c-4.1': 'a-3.2',
   'c-4.2': 'b-2.4',
 };
 
