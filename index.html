@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
     <link rel="manifest" href="./manifest.json" />
     <title>Тренировки — Мобильный Дневник A/B/C</title>
-    <script type="module" crossorigin src="/powerlog/assets/index-C49rMLjV.js"></script>
+    <script type="module" crossorigin src="/powerlog/assets/index-DSz521KI.js"></script>
     <link rel="stylesheet" crossorigin href="/powerlog/assets/index-BEsv8Ev0.css">
   </head>
   <body class="bg-slate-950 text-slate-100 antialiased min-h-screen">
@@ -21,8 +21,19 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          // Keep SW registered for offline shell. Do not unregister on every load.
-          navigator.serviceWorker.register('./sw.js').catch(() => undefined);
+          let refreshing = false;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (refreshing) return;
+            refreshing = true;
+            window.location.reload();
+          });
+          navigator.serviceWorker
+            .register('./sw.js?v=0053')
+            .then((reg) => {
+              reg.update().catch(() => undefined);
+              setInterval(() => reg.update().catch(() => undefined), 60_000);
+            })
+            .catch(() => undefined);
         });
       }
     </script>

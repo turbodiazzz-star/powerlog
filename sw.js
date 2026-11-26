@@ -1,11 +1,11 @@
 /* Auto-generated offline shell for Powerlog */
-const CACHE = 'powerlog-shell-mwxeas62';
+const CACHE = 'powerlog-shell-mwxee3wb';
 const PRECACHE = [
   "./",
   "./.nojekyll",
   "./apple-touch-icon.png",
   "./assets/index-BEsv8Ev0.css",
-  "./assets/index-C49rMLjV.js",
+  "./assets/index-DSz521KI.js",
   "./favicon.svg",
   "./icon-192.png",
   "./icon-512.png",
@@ -46,16 +46,21 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (isCloudRequest(url)) return;
 
-  // App navigation: network first, offline → cached shell
-  if (req.mode === 'navigate') {
-    event.respondWith(
-      fetch(req)
-        .then((res) => {
+  // Network first everywhere so updates land; cache only as offline fallback.
+  event.respondWith(
+    fetch(req)
+      .then((res) => {
+        if (res.ok) {
           const copy = res.clone();
-          void caches.open(CACHE).then((c) => c.put('./index.html', copy));
-          return res;
-        })
-        .catch(async () => {
+          void caches.open(CACHE).then((c) => {
+            if (req.mode === 'navigate') c.put('./index.html', copy);
+            else c.put(req, copy);
+          });
+        }
+        return res;
+      })
+      .catch(async () => {
+        if (req.mode === 'navigate') {
           return (
             (await caches.match('./index.html')) ||
             (await caches.match(PRECACHE.find((p) => p.endsWith('index.html')) || './index.html')) ||
@@ -64,24 +69,8 @@ self.addEventListener('fetch', (event) => {
               headers: { 'Content-Type': 'text/plain; charset=utf-8' },
             })
           );
-        })
-    );
-    return;
-  }
-
-  // Static assets: cache first, then network and store
-  event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req)
-        .then((res) => {
-          if (res.ok) {
-            const copy = res.clone();
-            void caches.open(CACHE).then((c) => c.put(req, copy));
-          }
-          return res;
-        })
-        .catch(() => caches.match('./index.html'));
-    })
+        }
+        return (await caches.match(req)) || Response.error();
+      })
   );
 });
